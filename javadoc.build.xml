@@ -1,0 +1,33 @@
+<project name="javadoc" default="javadoc">
+  <description>
+    Provides JavaDoc. 
+    Invocation:  ant -f javadoc.build.xml (to produce in build directory)
+                 ant -Djavadoc.dir=javadoc -f javadoc.build.xml (to produce in SVN directory)   
+  </description>
+  
+  <import file="build.xml"/>
+  <property name="javadoc.dir" location="${build.dir}/javadoc" />
+  <property name="javadoc.failonerror" value="false"/>
+ 
+  <tstamp>
+    <format property="javadoc.timestamp" pattern="dd-MMM-yyyy hh:mm:ss" />
+  </tstamp>   
+
+  <target name="javadoc" depends="compile" description="Generate JavaDoc.">
+    <mkdir dir="${javadoc.dir}" />
+    <javadoc classpathref="compile.classpath"
+             sourcepath="${src.dir}"
+             destdir="${javadoc.dir}"
+             author="true"
+             version="true"
+             use="true"
+             package="true"
+             overview="${src.dir}/overview.html"
+             windowtitle="${system.name} API"
+             doctitle="${system.name} API (generated on: ${javadoc.timestamp})"
+             failonerror="${javadoc.failonerror}"
+             linksource="true"/>
+    <!-- Needed because some files have a mixture of EOL types, leading to SVN commit error. -->
+    <fixcrlf srcdir="${javadoc.dir}" includes="**/*.html"/>
+  </target>
+</project>

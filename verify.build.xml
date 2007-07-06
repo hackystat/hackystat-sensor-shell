@@ -1,0 +1,52 @@
+<project name="verify" default="verify">
+  <description>
+    Runs junit, pmd, checkstyle, findbugs, and javadoc, failing the build if problems found.
+    Invocation: ant -f verify.build.xml
+  </description>
+
+  <!-- First, override the default settings of these properties. -->
+  <property name="javadoc.failonerror" value="true"/>
+  <property name="pmd.failonerror" value="true"/>
+  <property name="findbugs.failOnError" value="true"/>  
+  <property name="checkstyle.failOnViolation" value="true"/> 
+  <property name="junit.haltonfailure" value="true"/>
+
+  <!-- Now import the target definitions. -->
+  <import file="javadoc.build.xml"/>
+  <import file="pmd.build.xml"/>
+  <import file="findbugs.build.xml"/>
+  <import file="checkstyle.build.xml"/>
+  <import file="junit.build.xml"/>
+  <import file="emma.build.xml"/>
+  
+  <echo>
+    Hackystat Utilities Verification Task
+    
+    System and Environment settings:
+      Ant version:     ${ant.version}
+      Checkstyle Home: ${env.CHECKSTYLE_HOME}
+      Emma Home:       ${env.EMMA_HOME}
+      FindBugs Home:   ${env.FINDBUGS_HOME} 
+      Java version:    ${java.version}
+      JUnit Home:      ${env.JUNIT_HOME}
+      PMD  Home:       ${env.PMD_HOME}
+    
+    This task fails the build unless all of the following are true:
+      * System compiles without warnings or errors.
+      * JavaDocs can be built without warnings or errors. 
+      * JUnit test cases all pass.
+      * Checkstyle of source code generates no warnings. 
+      * PMD generates no warnings. 
+      * FindBugs generates no warnings. 
+    
+    It also runs the Emma code coverage tool and prints a summary report. 
+  </echo>
+      
+  <target name="verify" 
+    depends="clean, compile, checkstyle.tool,  junit.tool, javadoc, findbugs.tool,
+    emma.tool,   pmd.tool, emma.echo" 
+    description="Invoke analyzers, fail if any errors found.">
+      <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
+  </target>
+  
+</project>

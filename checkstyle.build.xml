@@ -1,0 +1,45 @@
+<project name="checkstyle" default="checkstyle.tool">
+  <description>
+  Provides the Checkstyle tool and the Hackystat Checkstyle sensor. 
+  Note: The error message "Unable to create a Checker" indicates you have an old version of Checkstyle in ant/lib.
+  </description>
+
+  <import file="build.xml"/>
+  <property environment="env"/>
+  <property name="checkstyle.dir" location="${build.dir}/checkstyle" />
+  <property name="checkstyle.version" value="4.3"/>
+  <property name="checkstyle.jar" value="checkstyle-all-${checkstyle.version}.jar"/>
+  <property name="checkstyle.failOnViolation" value="false"/> 
+
+  <target name="checkstyle.tool" depends="compile" description="Checks the style of the sources and reports issues.">
+    <!-- Check for the CHECKSTYLE_HOME environment variable, failing the build if it can't be found. -->
+    <available file="${env.CHECKSTYLE_HOME}/${checkstyle.jar}" property="checkstyle.available"/>
+    <fail unless="checkstyle.available" message="Error: CHECKSTYLE_HOME not set or ${env.CHECKSTYLE_HOME}/${checkstyle.jar} not found."/>
+    <taskdef resource="checkstyletask.properties" classpath="${env.CHECKSTYLE_HOME}/${checkstyle.jar}" />
+
+    <mkdir dir="${checkstyle.dir}"/>
+    <checkstyle config="${basedir}/lib/checkstyle/hackystat.checkstyle.xml"
+                failOnViolation="${checkstyle.failOnViolation}" >
+      <fileset dir="${src.dir}" includes="**/*.java" />
+      <formatter type="plain"/>
+      <formatter type="xml" tofile="${checkstyle.dir}/checkstyle.xml"/>
+      <classpath>
+        <pathelement location="${build.dir}/classes" />
+        <path refid="compile.classpath"/>
+      </classpath>   
+    </checkstyle>
+  </target>
+  
+  <target name="checkstyle.sensor" description="Sends CodeIssue data to Hackystat using the Checkstyle Sensor.">
+    <!-- Define the checkstyle sensor taskdef, failing the build if the sensor is not installed. -->
+    <available classname="org.hackystat.sensor.checkstyle.CheckstyleSensor" property="checkstyle.sensor.available"/>
+    <fail unless="checkstyle.sensor.available" message="Error: Checkstyle sensor not installed."/>
+    <taskdef name="hacky-checkstyle" classname="org.hackystat.sensor.checkstyle.CheckstyleSensor"/>
+
+    <hacky-checkstyle verbose="${hackystat.verbose.mode}" >
+      <fileset file="${checkstyle.dir}/checkstyle.xml"/>
+    </hacky-checkstyle>
+  </target>
+</project>
+
+
