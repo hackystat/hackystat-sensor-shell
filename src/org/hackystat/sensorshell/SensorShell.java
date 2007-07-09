@@ -16,18 +16,11 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
-import org.hackystat.core.kernel.admin.SensorProperties;
-import org.hackystat.core.kernel.sdt.SdtManager;
-import org.hackystat.core.kernel.sdt.SensorDataType;
-import org.hackystat.core.kernel.shell.command.ShellCommand;
-import org.hackystat.core.kernel.soap.Notification;
-import org.hackystat.core.kernel.util.DateInfo;
-import org.hackystat.core.kernel.util.OneLineFormatter;
-
-import com.meterware.httpunit.WebConversation;
-import com.meterware.httpunit.WebForm;
-import com.meterware.httpunit.WebRequest;
-import com.meterware.httpunit.WebResponse;
+import org.hackystat.sensorshell.command.SensorDataCommand;
+import org.hackystat.sensorshell.command.AutoSendCommand;
+import org.hackystat.sensorshell.command.PingCommand;
+import org.hackystat.sensorshell.command.QuitCommand;
+import org.hackystat.utilities.logger.OneLineFormatter;
 
 /**
  * Provides "middleware" for accumulating and sending notification (sensor)
@@ -45,27 +38,13 @@ import com.meterware.httpunit.WebResponse;
  * 
  * <pre>java -jar sensorshell.jar [toolname] [sensor.properties] [no offline] [command file]</pre>
  * <p>
- * Programmatic mode is entered by creating an instance of SensorShell and invoking the 
- * doCommand method directly on it. 
- * <p>
- * Each command is implemented by a (singleton) instance of a CommandShell.
- * SensorShell is responsible for instantiating a single instance of each type
- * of CommandShell the first time it is invoked, and caching it for use in
- * processing future commands of its type. Thus, CommandShell instances can
- * preserve the history of their invocations and build state over time. For
- * example, each "add" request can update an internal list of objects for later
- * sending.
+ * Programmatic mode involves creating an instance of SensorShell, retrieving the 
+ * appropriate command instance (Ping, Add, etc.) and invoking the appropriate method.
  *
  * @author    Philip M. Johnson
- * @version   $Id: SensorShell.java,v 1.1.1.1 2005/10/20 23:56:44 johnson Exp $
  */
 public class SensorShell {
 
-  /** Tracks the last timestamp value to make sure that doCommands have a unique timestamp. */
-  private long lastTimeStamp = new Date().getTime();
-  /** An offset to adjust last timestamp when it repeats. */
-  private long lastTimeStampOffset = 0;
-  
   /** Indicates if SensorShell is running interactively and thus output should be printed. */
   private boolean isInteractive = false;
 
@@ -74,9 +53,6 @@ public class SensorShell {
 
   /** The notification shell prompt string. */
   private String prompt = ">> ";
-
-  /** The last command's result message. */
-  private String resultMessage = "";
 
   /** A string indicating the tool name invoking SensorShell, added to the log file name. */
   private String toolName = "interactive";
@@ -90,17 +66,8 @@ public class SensorShell {
   /** The input stream used to read input from the command line. */
   private BufferedReader bufferedReader = null;
 
-  /** The hackystat host. */
-  private String host;
-
-  /** The user's 12 character key. */
-  private String key;
-
   /** The sensor properties instance. */
   private SensorProperties sensorProperties; 
-
-  /** A mapping from class names to their instances. Caches the CommandShell instances. */
-  private HashMap<String, ShellCommand> cache = new HashMap<String, ShellCommand>();
 
   /** The logging instance for SensorShells. */
   private Logger logger;
@@ -113,8 +80,22 @@ public class SensorShell {
 
   /** A boolean indicating if the command file has been supplied on the command line. */
   private boolean commandFilePresent = false;
+  
+  /** The ping command. */
+  private PingCommand pingCommand;
+  
+  /** The add command. */
+  private SensorDataCommand addCommand;
+  
+  /** The send command. */
+  private SensorDataCommand sensorDataCommand;
 
-
+  /** The autosend command. */
+  private AutoSendCommand autoSendCommand;
+  
+  /** The quit command. */
+  private QuitCommand quitCommand;
+  
   /**
    * Constructs a new SensorShell instance that can be provided with
    * notification data to be sent eventually to a specific user key and host.
@@ -157,18 +138,20 @@ public class SensorShell {
       boolean enableOfflineData, File commandFile) {
     this.isInteractive = isInteractive;
     this.toolName = toolName;
-    this.host = sensorProperties.getHackystatHost();
-    this.key = sensorProperties.getKey();
     this.sensorProperties = sensorProperties;
     this.enableOfflineData = enableOfflineData;
     this.commandFile = commandFile;
     this.commandFilePresent = ((commandFile != null));
     // Create the offline directory in the same directory where sensor.properties was found.
-    OfflineManager.getInstance(sensorProperties.getSensorPropertiesDir());
+    //OfflineManager.getInstance(sensorProperties.getSensorPropertiesDir());
     initializeLogger();
+    this.pingCommand = new PingCommand(this, sensorProperties);
+    this.sensorDataCommand = new SensorDataCommand(this, sensorProperties);
+    this.addCommand = new SensorDataCommand(this, sensorProperties);
+    this.autoSendCommand = new AutoSendCommand(this, sensorProperties);
+    this.quitCommand = new QuitCommand(this, sensorProperties);
     printBanner(sensorProperties);
-    initializeShellCommands(sensorProperties);
-    initializeAutoSend(sensorProperties);
+    this.autoSendCommand.initialize();
     recoverOfflineData();
 
     // Now determine whether to read commands from the input stream or from the command file.
@@ -205,7 +188,7 @@ public class SensorShell {
    */
   private void recoverOfflineData() {
     // Return immediately if server is not available.
-    if (!isServerPingable()) {
+    if (!this.pingCommand.isPingable()) {
       this.println("Server not available; offline data not recovered.");
       return;
     }
@@ -215,25 +198,15 @@ public class SensorShell {
       return;
     }
     // Otherwise do offline data management.
-    this.println("Checking for offline data to recover.");
-    boolean isDataRecovered = OfflineManager.getInstance().recover(this);
-    if (isDataRecovered) {
-      this.println("Summary of recovered offline data:");
-      this.println(OfflineManager.getInstance().getRecoverInfoString());
-    }
-    else {
-      this.println("No offline data found.");
-    }
-  }
-
-
-  /**
-   * Returns the SensorProperties instance associated with this SensorShell.
-   *
-   * @return   The <code>SensorProperties</code> instnace.
-   */
-  public SensorProperties getSensorProperties() {
-    return this.sensorProperties;
+//    this.println("Checking for offline data to recover.");
+//    boolean isDataRecovered = OfflineManager.getInstance().recover(this);
+//    if (isDataRecovered) {
+//      this.println("Summary of recovered offline data:");
+//      this.println(OfflineManager.getInstance().getRecoverInfoString());
+//    }
+//    else {
+//      this.println("No offline data found.");
+//    }
   }
 
 
@@ -266,331 +239,96 @@ public class SensorShell {
 
 
   /**
-   * Initializes the cache of CommandShell instances with all currently defined
-   * ShellCommands.
-   *
-   * @param sensorProperties  The SensorProperties instance to be provided to
-   *      all ShellCommands.
-   */
-  private void initializeShellCommands(SensorProperties sensorProperties) {
-    // First, initialize the built-in commands.
-    String[] commands = {"Ping", "AutoSend"};
-    // "Load" is removed from defaults.
-    for (int i = 0; i < commands.length; i++) {
-      try {
-        String commandClassName = "org.hackystat.sensorshell.command." + commands[i]
-             + "ShellCommand";
-        ShellCommand shellCommand = (ShellCommand) Class.forName(commandClassName).newInstance();
-        this.cache.put(commands[i], shellCommand);
-        shellCommand.setSensorProperties(sensorProperties);
-      }
-      catch (Exception e) {
-        this.println("Failure to find built-in ShellCommand: " + commands[i]);
-      }
-    }
-    // Now, initialize the current set of Sensor Data Type extensions.
-    SdtManager manager = SdtManager.getInstance(this.logger);
-    for (SensorDataType sdt : manager.getSensorDataTypes()) {
-      try {
-        if (sdt.hasShellCommand()) {
-          Class shellCommandClass = sdt.getShellCommandClass();
-          ShellCommand shellCommand = (ShellCommand) shellCommandClass.newInstance();
-          this.cache.put(sdt.getName(), shellCommand);
-          shellCommand.setSensorProperties(sensorProperties);
-          this.println("Defined shell command: " + sdt.getName());
-        }
-      }
-      catch (Exception e) {
-        this.println("Error instantiating SDT command class " + e);
-      }
-    }
-  }
-
-
-  /**
-   * Set the autosend interval appropriately, the time that elapses between automatic sending
-   * of collected data to the server.
-   *
-   * @param sensorProperties  The sensor properties file containing autosend values.
-   */
-  private void initializeAutoSend(SensorProperties sensorProperties) {
-    String interval = sensorProperties.getAutoSendInterval();
-    if ("0".equals(interval)) {
-      this.println("AutoSend not enabled.");
-    }
-    else {
-      // Enable autosend
-      String[] args = {interval};
-      // Disable output while doing the doCommand.
-      boolean oldIsInteractive = this.isInteractive;
-      this.isInteractive = false;
-      boolean success = doCommand(new Date(), "AutoSend", Arrays.asList(args));
-      //reset to original value.
-      this.isInteractive = oldIsInteractive;
-      if (success) {
-        this.println("AutoSend enabled every " + interval + " minutes.");
-      }
-      else {
-        this.println("AutoSend failed to enable.");
-      }
-    }
-  }
-
-
-  /** Performs quit actions, such as logging the command and sending data. */
-  private void quit() {
-    // Log this command if not running interactively.
-    if (!this.isInteractive) {
-      logger.info("#> quit" + cr);
-    }
-    this.send();
-  }
-
-
-  /**
-   * Does a ping on the hackystat server and returns true if the server was
-   * accessible. A ping-able server indicates the data will be sent to it,
-   * while a non-pingable server indicates that data will be stored offline.
-   *
-   * @return   True if the server could be pinged.
-   */
-  public boolean isServerPingable() {
-    return this.isServerPingable(5000);
-  }
-
-  /**
-   * Does a ping on the hackystat server and returns true if the server was
-   * accessible. A ping-able server indicates the data will be sent to it,
-   * while a non-pingable server indicates that data will be stored offline.
-   * <p/>
-   * If the server is not reachable, or does not respond with given time frame, false will
-   * be returned.
-   *
-   * @param milliSecondsToWait Maximum seconds to wait for server response. A 0 value or negative
-   *                           value is equivalent to set time out to infinity.
-   * @return   True if the server could be pinged.
-   */
-  public boolean isServerPingable(int milliSecondsToWait) {
-    boolean result = false;
-    int waitTime = milliSecondsToWait <= 0 ? 0 : milliSecondsToWait;
-
-    PingServerWorkThread workThread = new PingServerWorkThread();
-    workThread.start();
-
-    try {
-      workThread.join(waitTime);  //block this thread until work thread dies or times out.
-    }
-    catch (InterruptedException ex) {
-      //do nothing
-    }
-
-    //if work thread is still alive, then it's time out, result = false by default.
-    if (!workThread.isAlive()) {
-      result = workThread.serverPingable;
-    }
-
-    return result;
-  }
-
-  /**
-   * Worker thread to ping the server to determine whether it's reachable or not. The original
-   * ping command is implemented as a synchronous command, a separate thread is need to
-   * implement time out feature.
-   *
-   * @author Qin ZHANG
-   * @version $Id: SensorShell.java,v 1.1.1.1 2005/10/20 23:56:44 johnson Exp $
-   */
-  private class PingServerWorkThread extends Thread {
-
-    /**
-     * This instance will only be be accessed in the parent thread after the termination of this
-     * thread, there is no need to synchronize access.
-     */
-    private boolean serverPingable = false;
-
-    /**
-     * Constructs this worker thread.
-     */
-    public PingServerWorkThread() {
-      setDaemon(true); //want VM to termine even if this thread is alive.
-    }
-
-    /**
-     * Pings the server synchronously.
-     */
-    public void run() {
-      ShellCommand pingCommand = (ShellCommand) cache.get("Ping");
-      this.serverPingable = pingCommand.send();
-    }
-  }
-
-
-  /**
-   * Invokes the send command on all currently instantiated command shell
-   * instances. Used by the AutoSend CommandShell command and by the built-in
-   * quit command. If the server could be pinged at the beginning of this
-   * operation, then the current Offline data is cleared and the send proceeds.
-   * If not pingable, then the offline data is saved for a later attempt.
-   *
-   * @return   True if all of the individual shell send commands complete
-   *      successfully.
-   */
-  public boolean send() {
-    boolean success = true;
-    // Log this command if not running interactively.
-    if (!this.isInteractive) {
-      logger.info("#> send" + cr);
-    }
-    if (isServerPingable()) {
-      OfflineManager.getInstance().clear();
-      this.println("Sending sensor data (" + DateInfo.makeShortTimestamp() + ")");
-      
-      for (String commandClassName : this.cache.keySet()) {
-        ShellCommand shellCommand = this.cache.get(commandClassName);
-        success = (shellCommand.send() && success);
-        this.println("  " + getCommandName(commandClassName) + ": " +
-            shellCommand.getResultMessage());
-      }
-    }
-    else {
-      success = false;
-      if (this.enableOfflineData) {
-        this.println("Server not available. Storing commands offline.");
-        OfflineManager.getInstance().store(this);
-      }
-      else {
-        this.println("Server not available and offline storage disabled. Data lost.");
-      }
-    }
-    this.printPrompt();
-    return success;
-  }
-
-
-  /**
-   * Returns the command name embedded in the fully qualified command class
-   * name. If problems with parsing string, then return the commandClassName
-   * unchanged.
-   *
-   * @param commandClassName  A fully qualified command class name, such as 'bar.BazShellCommand'.
-   * @return A command name, such as 'Baz'.
-   */
-  private String getCommandName(String commandClassName) {
-    try {
-      int lastDotIndex = commandClassName.lastIndexOf(".");
-      int shellCommandIndex = commandClassName.indexOf("ShellCommand");
-      return commandClassName.substring(lastDotIndex + 1, shellCommandIndex);
-    }
-    catch (Exception e) {
-      return commandClassName;
-    }
-  }
-
-
-  /**
-   * Invokes commandName with the supplied argList. Each commandName must have a
-   * corresponding ShellCommand implementation. If doCommand is invoked via
-   * SensorShell's main() method and thus in an interactive mode, then output is
-   * printed. The doCommand method can also be invoked programmatically, in
-   * which case no output is printed. The timeStamp argument indicates when this
-   * event occurred, which could be now or else sometime in the past (if offline
-   * storage was being used).
-   * <p>
-   * SensorShell.doCommand will be passed a commandName like "Activity", which might have an 
-   * argList of [add, Compilation, foo.java].
-   *
-   * @param timeStamp    A Date instance indicating the time at which this command occurred.
-   * @param commandName  A string indicating the command to be invoked.
-   * @param argList      A list of strings providing the arguments to this command.
-   * @return             True if the command succeeded.
-   */
-  public boolean doCommand(Date timeStamp, String commandName, List<String> argList) {
-    // Log the command if we're not running interactively.
-    if (!this.isInteractive) {
-      logger.info("#> " + commandName + " " + argList + cr);
-    }
-    // Find the (cached) class associated with this name; go to top of loop if class not found.
-    ShellCommand shellCommand = this.cache.get(commandName);
-    if (shellCommand == null) {
-      this.println("Command  '" + commandName + "' not found. Try again." + this.cr);
-      return false;
-    }
-    // Found the class. Now guarantee that the passed timestamp differs from the most recent one.
-    // We assume that no analyses care about small time differences of a few milliseconds.
-    long timeStampLong = timeStamp.getTime();
-
-    if (timeStampLong == this.lastTimeStamp) {
-      lastTimeStampOffset++;
-      timeStamp = new Date(this.lastTimeStamp + lastTimeStampOffset);
-    }
-    else { // Reset offset value when timestamp does not repeat.
-      lastTimeStampOffset = 0;
-    }
-    this.lastTimeStamp = timeStampLong;
-
-    // Invoke the shellCommand's doCommand with the time, args, and shell.
-    boolean success = shellCommand.doCommand(timeStamp, argList, this);
-    this.resultMessage = shellCommand.getResultMessage();
-    this.println(shellCommand.getResultMessage());
-    return success;
-  }
-  
-  /**
-   * Invokes doCommand(Date, String, List(args)). 
-   *
-   * @param timeStamp    A Date instance indicating the time at which this command occurred.
-   * @param commandName  A string indicating the command to be invoked.
-   * @param args   A String [] of arguments
-   * @return True if the command succeeded.
-   */
-//  public boolean doCommand(Date timeStamp, String commandName, String [] args) {
-//   return doCommand(timeStamp, commandName, Arrays.asList(args));
-//  }  
-  
-  /**
-   * Invokes doCommand(Date, String, List(args). 
-   *
-   * @param timeStamp    A Date instance indicating the time at which this command occurred.
-   * @param commandName  A string indicating the command to be invoked.
-   * @param args   A variable length list of Strings. Also could be a String[].
-   * @return True if the command succeeded.
-   */
-  public boolean doCommand(Date timeStamp, String commandName, String ... args) {
-   return doCommand(timeStamp, commandName, Arrays.asList(args));
-  }     
-
-
-  /**
-   * Returns the result message from the last command.
-   *
-   * @return   The result message.
-   */
-  public String getResultMessage() {
-    return this.resultMessage;
-  }
-
-
-  /**
    * Prints out initial information about the SensorShell.
    *
    * @param sensorProperties  The sensor properties file.
    */
   private void printBanner(SensorProperties sensorProperties) {
-
-    this.println("Hackystat Version: " + getVersion() + " (" + getBuildtime() + ")");
-    this.println("SensorShell started at: " + DateInfo.makeTimestamp());
+    this.println("Hackystat SensorShell Version: " + getVersion() + " (" + getBuildtime() + ")");
+    this.println("SensorShell started at: " + new Date());
+    this.println("Using Sensor Properties in: " + sensorProperties.getAbsolutePath());
     this.println("Type 'help' for a list of commands.");
     // Ping the host to determine availability.
-    String host = sensorProperties.getHackystatHost();
-    String key = sensorProperties.getKey();
-    String availability = "available and key is valid.";
-    try {
-      Notification.ping(host, key);
+    String availability = this.pingCommand.isPingable() ? 
+        "available and key is valid.":
+          "not available or key not valid.";
+    this.println("Host: " + sensorProperties.getHackystatHost() + " is " + availability);
+  }
+  
+  
+  /**
+   * Process a single input string representing a command.
+   * @param inputString A command as a String.
+   */
+  public void processInputString(String inputString) {
+    // Ignore empty commands. 
+    if ((inputString == null) || ("".equals(inputString))) {
+      return;
     }
-    catch (Exception e) {
-      availability = "not available or key not valid.";
+    // Log the command if we're not running interactively.
+    if (!this.isInteractive) {
+      logger.info("#> " + inputString + cr);
     }
-    this.println("Host: " + host + " is " + availability);
+    // Process quit command.
+    if (inputString.equals("quit")) {
+      this.getQuitCommand().quit();
+      return;
+    }
+
+    // Process help command.
+    if (inputString.equals("help")) {
+      this.printHelp();
+      return;
+    }
+
+    // Process send command.
+    if (inputString.equals("send")) {
+      this.getSensorDataCommand().send();
+      return;
+    }
+    
+    // Process ping command.
+    if (inputString.equals("ping")) {
+      boolean isPingable = this.getPingCommand().isPingable();
+      this.println("Ping " + (isPingable ? "succeeded." : "did not succeed"));
+      return;
+    }
+
+    // Process commands with arguments. 
+    StringTokenizer tokenizer = new StringTokenizer(inputString, this.delimiter);
+    int numTokens = tokenizer.countTokens();
+    // All remaining commands must have arguments. 
+    if (numTokens == 0) {
+      this.println("Error: unknown command or command requires arguments.");
+      return;
+    }
+
+    // Get the command name and any arguments. 
+    String commandName = tokenizer.nextToken();
+    ArrayList<String> argList = new ArrayList<String>();
+    while (tokenizer.hasMoreElements()) {
+      argList.add(tokenizer.nextToken());
+    }
+    
+    if (commandName.equals("add")) {
+      // For an Add command, the argument list should be a set of key-value pairs.
+      // So, build the Map of key-value pairs.
+      HashMap<String, String> keyValMap = new HashMap<String, String>();
+      for (String arg : argList) {
+        int delim = arg.indexOf('=');
+        if (delim == -1) {
+          this.println("Error: can't parse argument string for add command.");
+        }
+        keyValMap.put(arg.substring(0, delim), arg.substring(delim + 1));
+      }
+      this.getSensorDataCommand().add(keyValMap);
+      return;
+    }
+    
+    if (commandName.equals("autosend")) {
+      String interval = (argList.size() > 0) ? argList.get(0) : "";
+      this.getAutoSendCommand().initialize(interval);
+    }
   }
 
 
@@ -615,13 +353,14 @@ public class SensorShell {
    * </ul>
    * Unless four arguments are provided,
    * the shell then provides a ">>" prompt and supports interactive entry of
-   * notification data. The set of commands that can be processed by the shell
-   * are dynamically determined. There are three built-in commands:
+   * sensor data. The following commands are supported:
    * <ul>
    *   <li> "help" provides a summary of the available commands.
    *   <li> "send" sends all of the accumulated data to the server.
+   *   <li> "autosend" sets up a timer-based process that invokes send intermittently.
    *   <li> "quit" sends all of the accumulated data to the server and exits.
-   *
+   *   <li> "ping" checks to see if the host/user/password is valid. 
+   *   <li> "add" adds a single Sensor Data instance to the buffered list to send.
    * </ul>
    *
    * @param args  The command line parameters. See above for details.
@@ -634,12 +373,6 @@ public class SensorShell {
       return;
     }
     
-    // Perform verification procedures and exit if arg is -verify.
-    if ((args.length == 1) && (args[0].equalsIgnoreCase("-verify"))) {
-      SensorShell.verifyClientSide();
-      return;
-    }
-
     // Set Parameter 1 (toolname) to supplied or default value.
     String toolName = (args.length > 0) ? args[0] : "interactive";
 
@@ -671,64 +404,18 @@ public class SensorShell {
     boolean interactive = ((commandFile == null));
 
     // Now create the shell instance, supplying it with all the appropriate arguments.
-    SensorShell shell = new SensorShell(sensorProperties, interactive, toolName, offlineEnabled,
-      commandFile);
+    SensorShell shell = 
+      new SensorShell(sensorProperties, interactive, toolName, offlineEnabled, commandFile);
 
     // Start processing commands either interactively or from the command file.
-    int count = 0;
     while (true) {
       // Get the next command
       shell.printPrompt();
       String inputString = shell.readLine();
-      if (inputString == null) {
-        inputString = "";
-      }
-
-      // Quit if necessary.
+      shell.processInputString(inputString);
       if (inputString.equalsIgnoreCase("quit")) {
-        shell.quit();
         return;
       }
-
-      // Print help strings.
-      if (inputString.equalsIgnoreCase("help")) {
-        shell.printHelp();
-        continue;
-      }
-
-      // Send all the data.
-      if (inputString.equalsIgnoreCase("send")) {
-        shell.send();
-        count = 0;
-        continue;
-      }
-
-      // Otherwise it's an extended command.
-      StringTokenizer tokenizer = new StringTokenizer(inputString, shell.delimiter);
-      int numTokens = tokenizer.countTokens();
-      // Go back to start of loop if the line is empty.
-      if (numTokens == 0) {
-        continue;
-      }
-
-      // Get the command name and any additional arguments.
-      String commandName = tokenizer.nextToken();
-      ArrayList<String> argList = new ArrayList<String>();
-      while (tokenizer.hasMoreElements()) {
-        argList.add(tokenizer.nextToken());
-      }
-      // Invoke the command with a timestamp of right now.
-      shell.doCommand(new Date(), commandName, argList);
-
-      // If the commandFile is large we can run into problems reading and sending the whole
-      // thing at once. so, we break up the file.      
-      if (count >= 500) {
-        shell.send();
-        count = 0;
-        continue;
-      }
-      count++;
-      
     }
   }
 
@@ -736,133 +423,14 @@ public class SensorShell {
   /** Prints the help strings associated with all commands. */
   private void printHelp() {
     this.println("SensorShell Command Summary");
-    this.println("help" + cr + "  This message.");
-    this.println("quit" + cr + "  Exit this sensor shell and send all accumulated data.");
-    this.println("send" + cr + "  Send all accumulated data.");
-    
-    for (ShellCommand command : this.cache.values()) {
-      this.print(command.getHelpString());
-    }
-  }
-  /**
-   * Performs verification of client-side settings and its connection to the server.
-   */
-  private static void verifyClientSide() {
-    System.out.println("SensorShell Client-side Verification.");
-    System.out.println("Info:    All command line args except -debug ignored.");
-    System.out.println("Info:    No logging of this output is performed.");
-    System.out.println("Info:    Version: " + getVersion() + " (" + getBuildtime() + ")");
-
-    //  SENSOR.PROPERTIES VERIFICATION.
-    System.out.println("\n******** Verifying sensor.properties installation and settings.");
-    SensorProperties sensorProperties = new SensorProperties("Debug");
-    if (sensorProperties.isFileAvailable()) {
-      System.out.println("Success: Found sensor.properties: " + sensorProperties.getAbsolutePath());
-    } 
-    else {
-      System.out.println("Failure: Could not find sensor.properties file. Expected in: " + 
-                          sensorProperties.getAbsolutePath());
-      System.out.println("Failure: SensorShell client-side verification aborted.");
-      return;
-    }
-    // Found a sensor.properties, so print out information. 
-    System.out.println("Info:    Hackystat host is: " + sensorProperties.getHackystatHost());
-    String userKey = sensorProperties.getKey();
-    System.out.println("Info:    Your user key: '" + userKey + "'");
-    
-    String contextRoot = System.getProperty("hackystat.context.root", "hackystat");
-    System.out.println("Info:    Hackystat context root: " + contextRoot);
-    String host = sensorProperties.getHackystatHost() + contextRoot + "/controller";
-    System.out.println("Success: sensor.properties file found and host/key values obtained.");
-
-    // HOME PAGE AVAILABILITY VERIFICATION
-    System.out.println("\n******** Verifying server home page availability.");
-    System.out.println("Info:    Retrieving home page from: " + host);
-    WebConversation conversation = null;
-    WebResponse response = null;
-    try {
-      conversation = new WebConversation();
-      response = conversation.getResponse(host);
-      String homePageTitleString = "Hackystat - Site Home";
-      if (response.getText().indexOf("Bringing up hackystat home page") != -1) {
-        System.out.println("Info:    Home page not initialized. Retrying for up to 10 seconds...");
-        for (int i = 0; i < 10; i++) {
-          Thread.sleep(1000);
-          System.out.println("Info:    Retrying home page: " + host + " on " + new Date());
-          conversation = new WebConversation();
-          response = conversation.getResponse(host);
-          if (response.getText().indexOf("Bringing up hackystat home page") == -1) {
-            // get out of loop
-            break;
-          }
-        }
-      }
-      if (homePageTitleString.equals(response.getTitle())) {
-        System.out.println("Success: Retrieved server home page from: " + host);
-      }
-      else {
-        System.out.println("Failure: Couldn't get home page. Response: " + response.getText());
-        System.out.println("Failure: SensorShell client-side verification aborted.");
-        return;
-      }
-    }
-    catch (Exception e) {
-      System.out.println("Failure: Exception thrown occurred during home page retrieval: " + e);
-      e.printStackTrace();
-      System.out.println("Failure: SensorShell client-side verification aborted.");
-      return;
-    }
-    
-    // USER KEY VERIFICATION
-    System.out.println("\n******** Verifying your hackystat user key.");
-    try {
-      System.out.println("Info:    Attempting to login with key: " + userKey);
-      WebForm form = response.getFormWithID("Login");
-      WebRequest request = form.getRequest();
-      request.setParameter("Key", userKey);
-      response = conversation.getResponse(request);
-      if ("Hackystat - Analyses".equals(response.getTitle())) {
-        System.out.println("Success: Logged in with key: " + userKey);
-      }
-      else {
-        System.out.println("Failure: Unable to login with key: " + userKey);
-        System.out.println("         Returned: " + response.getText());
-        System.out.println("Failure: SensorShell client-side verification aborted.");
-        return;
-      }
-    }
-    catch (Exception e) {
-      System.out.println("Failure: Exception thrown during login attempt: " + e);
-      e.printStackTrace();
-      System.out.println("Failure: SensorShell client-side verification aborted.");
-      return;
-    }
-    
-    // SOAP VERIFICATION
-    System.out.println("\n******** Verifying Soap service.");
-    String soapUrl = sensorProperties.getHackystatHost() + contextRoot + "/servlet/rpcrouter";
-    System.out.println("Info:    Checking Soap service from: " + soapUrl);
-    try {
-      response = conversation.getResponse(soapUrl);
-      if ("SOAP RPC Router".equals(response.getTitle())) {
-        System.out.println("Success: Contacted Soap service successfully.");
-      }
-      else {
-        System.out.println("Failure: Soap service problem: " + response.getText());
-        System.out.println("Failure: SensorShell client-side verification aborted.");
-        return;        
-      }
-    }
-    catch (Exception e) {
-      System.out.println("Failure: Exception thrown during Soap retrieval: " + e);
-      e.printStackTrace();
-      System.out.println("Failure: SensorShell client-side verification aborted.");
-      return;      
-    }
-    System.out.println("\nClient-side verification appears to have succeeded.");
+    this.println(this.addCommand.getHelpString());
+    this.println(this.autoSendCommand.getHelpString());
+    this.println(this.pingCommand.getHelpString());
+    this.println(this.sensorDataCommand.getHelpString());
+    this.println(this.quitCommand.getHelpString());
   }
 
-
+ 
   /** Print out a prompt if in interactive mode. */
   private void printPrompt() {
     this.print(this.prompt);
@@ -913,16 +481,6 @@ public class SensorShell {
     }
   }
 
-
-// Looks like we can remove this method according to FindBugs.  
-//  /** Prints out a newline if in interactive mode. */
-//  private void println() {
-//    logger.info(this.cr);
-//    if (isInteractive) {
-//      System.out.println();
-//    }
-//  }
-
   /**
    * Return the current version number.
    *
@@ -939,21 +497,6 @@ public class SensorShell {
       release = "Unknown";
     }
     return release;
-  }
-
-  /**
-   * Closes sensor shell, releases handler of log file. Sensors should close 
-   * sensorshell upon finish to avoid multiple log files for the same sensor. 
-   *
-   */
-  public void close() {
-    if (this.logger != null) {
-      // Close all the open handler.
-      Handler[] handlers = this.logger.getHandlers();
-      for (int i = 0; i < handlers.length; i++) {
-        handlers[i].close();
-      }
-    }
   }
   
   /**
@@ -979,15 +522,59 @@ public class SensorShell {
    * @return The hackystat host.
    */
   public String getHost() {
-    return this.host;
+    return this.sensorProperties.getHackystatHost();
   }
   
   /**
-   * Returns the hackystat UserKey associated with this sensorshell instance. 
-   * @return The userkey.
+   * Returns the user password associated with this sensorshell instance. 
+   * @return The password
    */
-  public String getUserKey() {
-    return this.key;
+  public String getPassword() {
+    return this.sensorProperties.getPassword();
+  }
+
+  /**
+   * Returns the user email associated with this sensorshell instance. 
+   * @return The password
+   */
+  public String getEmail() {
+    return this.sensorProperties.getEmail();
+  }
+  
+  public QuitCommand getQuitCommand() {
+    return this.quitCommand;
+  }
+  
+  public AutoSendCommand getAutoSendCommand() {
+    return this.autoSendCommand;
+  }
+  
+  public SensorDataCommand getSensorDataCommand() {
+    return this.sensorDataCommand;
+  }
+  
+  public PingCommand getPingCommand() {
+    return this.pingCommand;
+  }
+  
+  public boolean isInteractive() {
+    return this.isInteractive;
+  }
+  
+  public Logger getLogger() {
+    return this.logger;
+  }
+  
+  /**
+   * Returns the SensorProperties instance associated with this SensorShell.
+   * @return The SensorProperties instnace.
+   */
+  public SensorProperties getSensorProperties() {
+    return this.sensorProperties;
+  }
+  
+  public boolean enableOfflineData() {
+    return this.enableOfflineData;
   }
 }
 

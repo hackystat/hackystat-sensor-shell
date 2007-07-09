@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry path="src" kind="src"/>
-	<classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"/>
-	<classpathentry path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4" kind="con"/>
-	<classpathentry path="bin" kind="output"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="var" path="HACKYSTAT_UTILITIES_HOME/hackystatlogger.lib.jar"/>
+	<classpathentry kind="var" path="HACKYSTAT_UTILITIES_HOME/stacktrace.lib.jar"/>
+	<classpathentry kind="var" path="SENSORBASE_HOME/sensorbase.lib.jar"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>
