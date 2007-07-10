@@ -13,19 +13,13 @@ import org.hackystat.sensorshell.SensorShell;
  */
 public class AutoSendCommand extends Command {
   
-  /** Holds the sensor data command. */
-  private SensorDataCommand sensorDataCommand;
-
   /**
    * Creates the AutoSendCommand. 
    * @param shell The sensorshell. 
    * @param properties The sensorproperties. 
-   * @param sensorDataCommand The SensorDataCommand.
    */
-  public AutoSendCommand(SensorShell shell, SensorProperties properties, 
-      SensorDataCommand sensorDataCommand) {
+  public AutoSendCommand(SensorShell shell, SensorProperties properties) {
     super(shell, properties);
-    this.sensorDataCommand = sensorDataCommand;
   }
   
   /** The timer that enables periodic sending. */
@@ -33,21 +27,19 @@ public class AutoSendCommand extends Command {
   
   /**
    * Sets the AutoSend interval from the sensor.properties file. 
-   * @return A string describing the results of the initialization.
    */
-  public String initialize() {
-    return initialize(this.properties.getProperty("HACKYSTAT_AUTOSEND_INTERVAL"));
+  public void initialize() {
+    initialize(this.properties.getAutoSendInterval());
   }
 
   /**
    * Process an AutoSend command, given a list whose first argument is the auto
    *
    * @param interval  An integer that specifies the interval in minutes for sending data.
-   * @return A string describing the results of the initialization.
    */
-  public String initialize(String interval) {
+  public void initialize(String interval) {
     // Begin by getting the number of minutes
-    int minutes;
+    int minutes = 0;
     try {
       minutes = Integer.parseInt(interval);
       if (minutes < 0) {
@@ -55,7 +47,7 @@ public class AutoSendCommand extends Command {
       }
     }
     catch (Exception e) {
-      return "AutoSend error (invalid argument: " + interval + ")" + cr + e;
+      this.shell.println("AutoSend error (invalid argument: " + interval + ")" + cr + e);
     }
     // Cancel the current timer if any.
     if (this.timer != null) {
@@ -63,13 +55,15 @@ public class AutoSendCommand extends Command {
     }
     // Don't set up a new timer if minutes value is 0.
     if (minutes == 0) {
-      return "AutoSend OK (disabled)";
+      this.shell.println("AutoSend disabled");
     }
-    // Otherwise set up a timer with the newly specified value.
-    this.timer = new Timer(true);
-    int milliseconds = minutes * 60 * 1000;
-    this.timer.schedule(new AutoSendCommandTask(sensorDataCommand), milliseconds, milliseconds);
-    return "AutoSend OK (set to " + minutes + " minutes)";
+    else {
+      // Otherwise set up a timer with the newly specified value.
+      this.timer = new Timer(true);
+      int milliseconds = minutes * 60 * 1000;
+      this.timer.schedule(new AutoSendCommandTask(shell), milliseconds, milliseconds);
+      this.shell.println("AutoSend set to " + minutes + " minutes");
+    }
   }
   
   /**
@@ -78,21 +72,22 @@ public class AutoSendCommand extends Command {
    */
   private static class AutoSendCommandTask extends TimerTask {
     
-    /** The Command used to find the send command. */
-    private SensorDataCommand sensorDataCommand;
+    /** The sensor shell. */
+    private SensorShell shell;
 
     /**
      * Creates the TimerTask.
-     * @param sensorDataCommand  The sensor data command.
+     * @param shell The sensorshell.
      */
-    public AutoSendCommandTask(SensorDataCommand sensorDataCommand) {
-      this.sensorDataCommand = sensorDataCommand;
+    public AutoSendCommandTask(SensorShell shell) {
+      this.shell = shell;
     }
 
     /** Invoked periodically by the timer in AutoSendCommand. */
     @Override
     public void run() {
-      this.sensorDataCommand.send();
+      this.shell.println("Autosending...");
+      this.shell.send();
     }
   }
 }

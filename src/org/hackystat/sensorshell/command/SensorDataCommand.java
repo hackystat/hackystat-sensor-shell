@@ -52,13 +52,19 @@ public class SensorDataCommand extends Command {
     if (this.pingCommand.isPingable()) {
       //OfflineManager.getInstance().clear();
       try {
+        if (sensorDatas.getSensorData().isEmpty()) {
+          this.shell.println("No sensor data to send.");
+          return;
+        }
         this.shell.println("About to send the following sensor data:");
         this.shell.println("<Timestamp SDT Owner Tool Resource Runtime {Properties}>");
         for (SensorData data : sensorDatas.getSensorData()) {
           this.shell.println("  " + formatSensorData(data));
-          
         }
         this.client.putSensorDataBatch(sensorDatas);
+        this.shell.println(sensorDatas.getSensorData().size() + " SensorData instances sent to " +
+            this.properties.getHackystatHost());
+        this.sensorDatas.getSensorData().clear();
       }
       catch (SensorBaseClientException e) {
         this.shell.println("Error sending data: " + e);

@@ -179,20 +179,20 @@ public class SensorProperties {
   }
   
   /**
-   * Returns the AutoSend interval for use by the SensorShell, or 0 if it was not specified. This is
-   * returned as a string since it is typically sent off to the SensorShell as a String argument.
+   * Returns the AutoSend interval for use by the SensorShell, or 10 if it was not specified. 
+   * Returned as a string since it is typically sent off to the SensorShell as a String argument.
    *
    * @return   The autosend interval.
    */
   public String getAutoSendInterval() {
-    String intervalString = sensorProps.getProperty(AUTOSEND_KEY, "0").trim();
+    String intervalString = sensorProps.getProperty(AUTOSEND_KEY, "10").trim();
     try {
       // make sure it's an integer.
       Integer.parseInt(intervalString);
       return intervalString;
     }
     catch (Exception e) {
-      return "0";
+      return "10";
     }
   }
 

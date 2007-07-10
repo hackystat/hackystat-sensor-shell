@@ -149,7 +149,7 @@ public class SensorShell {
     this.pingCommand = new PingCommand(this, sensorProperties);
     this.sensorDataCommand = new SensorDataCommand(this, sensorProperties, this.pingCommand, 
         this.client);
-    this.autoSendCommand = new AutoSendCommand(this, sensorProperties, this.sensorDataCommand);
+    this.autoSendCommand = new AutoSendCommand(this, sensorProperties);
     this.quitCommand = new QuitCommand(this, sensorProperties, this.sensorDataCommand);
     printBanner(sensorProperties);
     this.autoSendCommand.initialize();
@@ -295,7 +295,9 @@ public class SensorShell {
     // Process ping command.
     if ("ping".equals(inputString)) {
       boolean isPingable = this.pingCommand.isPingable();
-      this.println("Ping " + (isPingable ? "succeeded." : "did not succeed"));
+      this.println("Ping of host " + this.sensorProperties.getHackystatHost() + " for user " +
+          this.sensorProperties.getEmail() + 
+          (isPingable ? " succeeded." : " did not succeed"));
       return;
     }
 
@@ -428,10 +430,30 @@ public class SensorShell {
     }
   }
 
-
   /** Prints the help strings associated with all commands. */
   private void printHelp() {
-    this.println("SensorShell Command Summary");
+    String helpString = 
+      "SensorShell Command Summary " + cr
+      + "  add#<key>=<value>[#<key>=<value>]..." + cr
+      + "    Adds a new sensor data instance for subsequent sending." + cr 
+      + "    Provide fields and properties as key=value pairs separated by '#'." + cr
+      + "    Owner, Timestamp, and Runtime fields will default to the current user and time." + cr
+      + "    Example: add#Tool=Eclipse#SensorDataType=DevEvent#DevEventType=Compile" + cr 
+      + "  send" + cr
+      + "    Sends any added sensor data to the server. " + cr
+      + "    Server is pinged, and if it does not respond, then data is stored offline." + cr
+      + "    Example: send" + cr
+      + "  ping" + cr
+      + "    Pings the server and checks email/password credentials." + cr
+      + "    Example: ping" + cr
+      + "  autosend#<integer>" + cr
+      + "    Sets the interval in minutes between automatic sending of added sensor data." + cr
+      + "    Provide 0 as the integer to disable autosend." + cr
+      + "    Example: autosend#15" + cr
+      + "  quit" + cr
+      + "    Sends any remaining data and exits the sensorshell." + cr
+      + "    Example: quit" + cr;
+    this.print(helpString);
   }
 
  
