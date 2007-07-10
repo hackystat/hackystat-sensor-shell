@@ -1,30 +1,33 @@
 package org.hackystat.sensorshell.command;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.hackystat.sensorbase.client.SensorBaseClientException;
 import org.hackystat.sensorbase.resource.sensordata.Tstamp;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.Properties;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.Property;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
+import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDatas;
 import org.hackystat.sensorshell.SensorProperties;
 import org.hackystat.sensorshell.SensorShell;
 
+/**
+ * Implements the SensorData commands, of which there is an "add" and a "send" command. 
+ * @author Philip Johnson
+ */
 public class SensorDataCommand extends Command { 
+    
+  /** The list of unsent SensorData instances. */
+  private SensorDatas sensorDatas = new SensorDatas();
   
-  private List<SensorData> sensorDataList = new ArrayList<SensorData>();
-  
+  /**
+   * Creates the SensorDataCommand. 
+   * @param shell The sensorshell. 
+   * @param properties The sensorproperties. 
+   */
   public SensorDataCommand(SensorShell shell, SensorProperties properties) {
     super(shell, properties);
-  }
-
-  @Override
-  public String getHelpString() {
-    // TODO Auto-generated method stub
-    return null;
   }
   
   /**
@@ -38,7 +41,12 @@ public class SensorDataCommand extends Command {
     }
     if (this.shell.getPingCommand().isPingable()) {
       //OfflineManager.getInstance().clear();
-      this.shell.getSensorDataCommand().send();
+      try {
+        this.shell.getClient().putSensorDataBatch(sensorDatas);
+      }
+      catch (SensorBaseClientException e) {
+        this.shell.println("Error sending data: " + e);
+      }
     }
     else {
       if (this.shell.enableOfflineData()) {
@@ -51,6 +59,12 @@ public class SensorDataCommand extends Command {
     }
   }
   
+  /**
+   * Given a Map containing key-value pairs corresponding to SensorData fields and properties,
+   * constructs a SensorData instance and stores it for subsequent sending to the SensorBase.
+   * @param keyValMap The map of key-value pairs. 
+   * @throws Exception If problems occur creating the SensorData instance. 
+   */
   public void add(Map<String, String> keyValMap) throws Exception {
     // Begin by creating the sensor data instance. 
     SensorData data = new SensorData();
@@ -63,15 +77,14 @@ public class SensorDataCommand extends Command {
     data.setTool(getMap(keyValMap, "Tool", "unknown"));
     data.setProperties(new Properties());
     // Add all remaining key-val pairs to the property list. 
-    for (String key : keyValMap.keySet()) {
-      String value = keyValMap.get(key);
+    for (Map.Entry<String, String> entry : keyValMap.entrySet()) {
       Property property = new Property();
-      property.setKey(key);
-      property.setValue(value);
+      property.setKey(entry.getKey());
+      property.setValue(entry.getValue());
       data.getProperties().getProperty().add(property);
     }
     // Now that our SensorData instance is initialized, put it on the list.
-    sensorDataList.add(data);
+    sensorDatas.getSensorData().add(data);
   }
 
   /**
@@ -87,5 +100,4 @@ public class SensorDataCommand extends Command {
     keyValMap.remove(key);
     return value;
   }
-
 }

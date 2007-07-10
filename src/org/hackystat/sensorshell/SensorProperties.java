@@ -2,15 +2,16 @@ package org.hackystat.sensorshell;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Properties;
 
 /**
  * Provides access to the hackystat properties file for each sensor, and provides reasonable default
  * values when properties file is missing, cannot be read, or lacks property values. <p>
  *
- * The sensor properties file is stored in userhome/.hackystat/sensor.properties. It is a
- * user-maintained file of key=value pairs. All values are trim()'d to prevent whitespace from
- * introducing bugs. <p>
+ * The sensor properties file is stored in userhome/.hackystat/v8.sensor.properties. It is a
+ * user-maintained file of key=value pairs. <p>
  * 
  * All of the properties in sensor.properties are added to the System property instance after being
  * read from the file.  This enables other tools that interoperate with Hackystat to obtain 
@@ -22,7 +23,7 @@ import java.util.Properties;
 public class SensorProperties {
 
   /** Hackystat host. */
-  private static final String HOST_KEY = "HACKYSTAT_HOST";
+  private static final String HOST_KEY = "HACKYSTAT_SENSORBASE_HOST";
   /** User's email. */
   private static final String EMAIL_KEY = "HACKYSTAT_EMAIL";
   /** User's password. */
@@ -34,26 +35,19 @@ public class SensorProperties {
 
   /** The standard location of the sensor properties file. */
   private File sensorFile;
-  /** The sensor type creating this instance. */
-  private String sensorType = "";
+
   /** Whether the properties file exists and was successfully read. */
   private boolean fileAvailable = false;
   /** The internal properties object. */
   private Properties sensorProps = new Properties();
-  /** Indicates whether this sensor is active or not. */
-  private boolean sensorEnabled = false;
+
 
 
   /**
-   * Initializes access to the Hackystat Sensor settings stored in the user's sensor.properties
-   * file.
-   *
-   * @param sensorType  The type of sensor requesting information. For example, "JUnit", "Emacs",
-   *      etc. The string is uppercased internally so that case doesn't matter.
+   * Initializes based on the user's v8.sensor.properties file.
    */
-  public SensorProperties(String sensorType) {
-    this(sensorType.toUpperCase(), new File(System.getProperty("user.home") +
-        "/.hackystat/v8.sensor.properties"));
+  public SensorProperties() {
+    this(new File(System.getProperty("user.home") + "/.hackystat/v8.sensor.properties"));
   }
 
   /**
@@ -71,35 +65,43 @@ public class SensorProperties {
     // Add the current set of hackystat properties to the System property object.
     addToSystemProperties(sensorProps);
     this.fileAvailable = false;
-    this.sensorEnabled = false;
   }
 
   /**
    * Provides access to Hackystat Sensor settings by reading the passed file.
    *
-   * @param sensorType  The type of sensor requesting information, such as "JUnit", etc.
    * @param sensorFile  The sensor file to read.
    */
-  public SensorProperties(String sensorType, File sensorFile) {
+  public SensorProperties(File sensorFile) {
     this.sensorFile = sensorFile;
-    this.sensorType = sensorType.toUpperCase();
+    FileInputStream fileStream = null;
     try {
       if (sensorFile.exists()) {
-        sensorProps.load(new FileInputStream(sensorFile));
+        fileStream = new FileInputStream(sensorFile);
+        sensorProps.load(fileStream);
         if (sensorProps.size() > 0) {
           this.fileAvailable = true;
-          String enableKey = "ENABLE_" + this.sensorType + "_SENSOR";
-          this.sensorEnabled = sensorProps.getProperty(enableKey, "false").trim().equals("true");
           // Add the current set of hackystat properties to the System property object.
           addToSystemProperties(sensorProps);
         }
       }
     }
-    catch (Exception e) {
+    catch (FileNotFoundException e) {
       this.fileAvailable = false;
-      this.sensorEnabled = false;
+    }
+    catch (IOException e) {
+      this.fileAvailable = false;
+    }
+    finally {
+      try {
+        fileStream.close();
+      }
+      catch (Exception e) {
+        System.err.println("Error closing stream: " + e);
+      }
     }
   }
+
 
 
   /**
@@ -118,18 +120,6 @@ public class SensorProperties {
       return null;
     }
   }
-
-
-  /**
-   * Returns true if the supplied property is set to true in this sensor properties.
-   *
-   * @param sensorType  A string such as "Eclipse" or "Eclipse_UnitTest".
-   * @return            True if this property is enabled.
-   */
-  public boolean isSensorTypeEnabled(String sensorType) {
-    String enableKey = "ENABLE_" + sensorType.toUpperCase() + "_SENSOR";
-    return sensorProps.getProperty(enableKey, "false").trim().equals("true");
-  }
   
   /**
    * Returns the trimmed property value associated with the property key in 
@@ -139,19 +129,11 @@ public class SensorProperties {
    */
   public String getProperty(String key) {
     String value = sensorProps.getProperty(key);
-    return (value == null) ? value : value.trim();
+    if (value != null) {
+      value = value.trim();
+    }
+    return value;
   }
-
-
-  /**
-   * Returns true if the sensor corresponding to these properties should be used.
-   *
-   * @return   True if the sensor is enabled.
-   */
-  public boolean isSensorEnabled() {
-    return this.sensorEnabled;
-  }
-
 
   /**
    * Returns the hackystat host. Defaults to http://localhost/.

@@ -25,11 +25,16 @@
     System and Environment settings:
       Ant version:     ${ant.version}
       Checkstyle Home: ${env.CHECKSTYLE_HOME}
+      Derby Home:      ${env.DERBY_HOME}
       Emma Home:       ${env.EMMA_HOME}
       FindBugs Home:   ${env.FINDBUGS_HOME} 
       Java version:    ${java.version}
       JUnit Home:      ${env.JUNIT_HOME}
       PMD  Home:       ${env.PMD_HOME}
+      Restlet Home:    ${env.RESTLET_HOME}
+    
+      Hackystat SensorBase Home: ${env.HACKYSTAT_SENSORBASE_HOME}
+      Hackystat Utilities Home: ${env.HACKYSTAT_UTILITIES_HOME}
     
     This task fails the build unless all of the following are true:
       * System compiles without warnings or errors.
@@ -44,7 +49,7 @@
       
   <target name="verify" 
     depends="clean, compile, checkstyle.tool,  junit.tool, javadoc, findbugs.tool,
-    emma.tool,   pmd.tool, emma.echo" 
+    emma.tool, pmd.tool, emma.echo" 
     description="Invoke analyzers, fail if any errors found.">
       <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
   </target>

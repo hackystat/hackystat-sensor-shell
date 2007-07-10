@@ -28,8 +28,24 @@
   <available file="${junit.jar}" type="file" property="junit.available"/>
   <fail message="This package requires JUNIT_HOME to be defined and ${junit.jar} available" unless="junit.available"/>
 
+  <!-- Make sure that Hackystat Utilities libraries are available . --> 
+  <available file="${env.HACKYSTAT_UTILITIES_HOME}/stacktrace.lib.jar" type="file" property="hackystat.utilities.available"/>
+  <fail message="This package requires the Hackystat Utilities to be installed and HACKYSTAT_UTILITIES_HOME defined" unless="hackystat.utilities.available"/>   
+
+  <!-- Make sure that the SensorBase library is available . --> 
+  <available file="${env.HACKYSTAT_SENSORBASE_HOME}/sensorbase.lib.jar" type="file" property="hackystat.sensorbase.available"/>
+  <fail message="This package requires the Hackystat Sensorbase to be installed and HACKYSTAT_SENSORBASE_HOME defined" unless="hackystat.sensorbase.available"/>   
+  
+  <!-- Make sure that Restlet is available. --> 
+  <available file="${env.RESTLET_HOME}/lib/org.restlet.jar" type="file" property="restlet.available"/>
+  <fail message="This package requires the Restlet Framework to be downloaded and RESTLET_HOME defined" unless="restlet.available"/>
+  
+   <!-- Make sure that JavaMail is installed . --> 
+   <available file="${env.JAVAMAIL_HOME}/mail.jar" type="file" property="javamail.available"/>
+   <fail message="This package requires JavaMail 4.1 to be downloaded and JAVAMAIL_HOME defined" unless="javamail.available"/>
+  
   <!-- Basic properties for this system. --> 
-  <property name="system.name" value="hackystat-utilities" />
+  <property name="system.name" value="hackystat-sensor-shell" />
   <property name="majorVersionNumber" value="8" />
   <property name="minorVersionNumber" value="0" />
   <tstamp>
@@ -45,10 +61,21 @@
   <property name="lib.dir" location="${basedir}/lib" />
   <property name="build.dir" location="${basedir}/build" />
 
-  <!-- The compile classpath  -->
+  <!-- The compile/testing classpath  -->
   <path id="compile.classpath">
     <fileset file="${env.JUNIT_HOME}/junit-${junit.version}.jar"/>
     <fileset file="${env.FINDBUGS_HOME}/lib/annotations.jar"/> 
+    <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/stacktrace.lib.jar"/> 
+    <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/hackystatlogger.lib.jar"/> 
+    <fileset file="${env.HACKYSTAT_SENSORBASE_HOME}/sensorbase.lib.jar"/> 
+    <fileset file="${env.RESTLET_HOME}/lib/org.restlet.jar" />
+    <fileset file="${env.RESTLET_HOME}/lib/com.noelios.restlet.jar" />
+    <fileset file="${env.RESTLET_HOME}/lib/com.noelios.restlet.ext.net.jar" />
+    <!-- The remaining jar files needed only for running the JUnit tests, which run a server. -->
+    <fileset file="${env.RESTLET_HOME}/lib/com.noelios.restlet.ext.simple_3.1.jar" />
+    <fileset file="${env.RESTLET_HOME}/lib/org.simpleframework_3.1/org.simpleframework.jar" />
+    <fileset file="${env.DERBY_HOME}/lib/derby.jar" />
+    <fileset file="${env.JAVAMAIL_HOME}/mail.jar"/> 
   </path> 
 
   <target name="compile" description="Compiles the code.">
@@ -71,7 +98,6 @@
   <target name="convertLineEndings" description="Makes line endings compatible with host platform.">
     <fixcrlf srcdir="${basedir}" includes="*.build.xml"/>
   </target>
-
 </project>
 
 

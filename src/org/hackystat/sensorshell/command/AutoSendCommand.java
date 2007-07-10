@@ -6,27 +6,24 @@ import java.util.TimerTask;
 import org.hackystat.sensorshell.SensorProperties;
 import org.hackystat.sensorshell.SensorShell;
 
+/**
+ * Implements the AutoSend facility, which automatically sends all SensorData to the Sensorbase
+ * at regular intervals as specified in the sensor.properties file.  
+ * @author Philip Johnson
+ */
 public class AutoSendCommand extends Command {
 
+  /**
+   * Creates the AutoSendCommand. 
+   * @param shell The sensorshell. 
+   * @param properties The sensorproperties. 
+   */
   public AutoSendCommand(SensorShell shell, SensorProperties properties) {
     super(shell, properties);
   }
   
+  /** The timer that enables periodic sending. */
   private Timer timer = null;
-
-  /**
-   * Returns a string describing the commands available in this command shell.
-   *
-   * @return   The help string.
-   */
-  @Override
-  public String getHelpString() {
-    return
-        "AutoSend#<number>" + cr +
-        "  Sets the number of minutes between background sending of any sensor data." + cr +
-        "  Setting <number> to 0 disables autosending." + cr +
-        "  The HACKYSTAT_AUTOSEND_INTERVAL property in sensor.properties can set AutoSend." + cr;
-  }
   
   /**
    * Sets the AutoSend interval from the sensor.properties file. 
@@ -73,7 +70,8 @@ public class AutoSendCommand extends Command {
    * Inner class providing a timer-based command to invoke the send() method of the SensorShell.
    * @author Philip M. Johnson
    */
-  private class AutoSendCommandTask extends TimerTask {
+  private static class AutoSendCommandTask extends TimerTask {
+    
     /** The SensorShell used to find the send command. */
     private SensorShell shell;
 

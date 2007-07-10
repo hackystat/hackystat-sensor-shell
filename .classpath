@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="var" path="HACKYSTAT_UTILITIES_HOME/hackystatlogger.lib.jar"/>
-	<classpathentry kind="var" path="HACKYSTAT_UTILITIES_HOME/stacktrace.lib.jar"/>
-	<classpathentry kind="var" path="SENSORBASE_HOME/sensorbase.lib.jar"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry path="src" kind="src"/>
+	<classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"/>
+	<classpathentry path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4" kind="con"/>
+	<classpathentry path="HACKYSTAT_UTILITIES_HOME/hackystatlogger.lib.jar" kind="var"/>
+	<classpathentry path="HACKYSTAT_UTILITIES_HOME/stacktrace.lib.jar" kind="var"/>
+	<classpathentry path="HACKYSTAT_SENSORBASE_HOME/sensorbase.lib.jar" kind="var"/>
+	<classpathentry path="RESTLET_HOME/lib/com.noelios.restlet.jar" kind="var"/>
+	<classpathentry path="RESTLET_HOME/lib/org.restlet.jar" kind="var"/>
+	<classpathentry path="RESTLET_HOME/lib/com.noelios.restlet.ext.net.jar" kind="var"/>
+	<classpathentry path="RESTLET_HOME/lib/com.noelios.restlet.ext.simple_3.1.jar" kind="var"/>
+	<classpathentry path="RESTLET_HOME/lib/org.simpleframework_3.1/org.simpleframework.jar" kind="var"/>
+	<classpathentry path="DERBY_HOME/lib/derby.jar" kind="var"/>
+	<classpathentry path="bin" kind="output"/>
 </classpath>

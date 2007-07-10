@@ -6,16 +6,15 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
-import java.util.logging.Handler;
 import java.util.logging.Logger;
 
+import org.hackystat.sensorbase.client.SensorBaseClient;
 import org.hackystat.sensorshell.command.SensorDataCommand;
 import org.hackystat.sensorshell.command.AutoSendCommand;
 import org.hackystat.sensorshell.command.PingCommand;
@@ -84,9 +83,6 @@ public class SensorShell {
   /** The ping command. */
   private PingCommand pingCommand;
   
-  /** The add command. */
-  private SensorDataCommand addCommand;
-  
   /** The send command. */
   private SensorDataCommand sensorDataCommand;
 
@@ -95,6 +91,9 @@ public class SensorShell {
   
   /** The quit command. */
   private QuitCommand quitCommand;
+  
+  /** The sensorbaseclient instance used to communicate with the sensorbase. */
+  private SensorBaseClient client;
   
   /**
    * Constructs a new SensorShell instance that can be provided with
@@ -142,12 +141,13 @@ public class SensorShell {
     this.enableOfflineData = enableOfflineData;
     this.commandFile = commandFile;
     this.commandFilePresent = ((commandFile != null));
+    this.client = new SensorBaseClient(sensorProperties.getHackystatHost(), 
+        sensorProperties.getEmail(), sensorProperties.getPassword());
     // Create the offline directory in the same directory where sensor.properties was found.
     //OfflineManager.getInstance(sensorProperties.getSensorPropertiesDir());
     initializeLogger();
     this.pingCommand = new PingCommand(this, sensorProperties);
     this.sensorDataCommand = new SensorDataCommand(this, sensorProperties);
-    this.addCommand = new SensorDataCommand(this, sensorProperties);
     this.autoSendCommand = new AutoSendCommand(this, sensorProperties);
     this.quitCommand = new QuitCommand(this, sensorProperties);
     printBanner(sensorProperties);
@@ -244,15 +244,19 @@ public class SensorShell {
    * @param sensorProperties  The sensor properties file.
    */
   private void printBanner(SensorProperties sensorProperties) {
-    this.println("Hackystat SensorShell Version: " + getVersion() + " (" + getBuildtime() + ")");
+    this.println("Hackystat SensorShell Version: " + getVersion());
     this.println("SensorShell started at: " + new Date());
     this.println("Using Sensor Properties in: " + sensorProperties.getAbsolutePath());
     this.println("Type 'help' for a list of commands.");
     // Ping the host to determine availability.
-    String availability = this.pingCommand.isPingable() ? 
-        "available and key is valid.":
-          "not available or key not valid.";
+    String host = sensorProperties.getHackystatHost();
+    String email = sensorProperties.getEmail();
+    String password = sensorProperties.getPassword();
+    String availability = SensorBaseClient.isHost(host) ? "available." : "not available";
     this.println("Host: " + sensorProperties.getHackystatHost() + " is " + availability);
+    String authorized = SensorBaseClient.isRegistered(host, email, password) ? 
+        " authorized " : " not authorized ";
+    this.println("User " + email + " is" + authorized + "to login at this host.");
   }
   
   
@@ -260,35 +264,35 @@ public class SensorShell {
    * Process a single input string representing a command.
    * @param inputString A command as a String.
    */
-  public void processInputString(String inputString) {
+  private void processInputString(String inputString) {
     // Ignore empty commands. 
     if ((inputString == null) || ("".equals(inputString))) {
       return;
     }
     // Log the command if we're not running interactively.
     if (!this.isInteractive) {
-      logger.info("#> " + inputString + cr);
+      logger.info("#> " + inputString);
     }
     // Process quit command.
-    if (inputString.equals("quit")) {
+    if ("quit".equals(inputString)) {
       this.getQuitCommand().quit();
       return;
     }
 
     // Process help command.
-    if (inputString.equals("help")) {
+    if ("help".equals(inputString)) {
       this.printHelp();
       return;
     }
 
     // Process send command.
-    if (inputString.equals("send")) {
+    if ("send".equals(inputString)) {
       this.getSensorDataCommand().send();
       return;
     }
     
     // Process ping command.
-    if (inputString.equals("ping")) {
+    if ("ping".equals(inputString)) {
       boolean isPingable = this.getPingCommand().isPingable();
       this.println("Ping " + (isPingable ? "succeeded." : "did not succeed"));
       return;
@@ -310,10 +314,10 @@ public class SensorShell {
       argList.add(tokenizer.nextToken());
     }
     
-    if (commandName.equals("add")) {
+    if ("add".equals(commandName)) {
       // For an Add command, the argument list should be a set of key-value pairs.
       // So, build the Map of key-value pairs.
-      HashMap<String, String> keyValMap = new HashMap<String, String>();
+      Map<String, String> keyValMap = new HashMap<String, String>();
       for (String arg : argList) {
         int delim = arg.indexOf('=');
         if (delim == -1) {
@@ -321,12 +325,17 @@ public class SensorShell {
         }
         keyValMap.put(arg.substring(0, delim), arg.substring(delim + 1));
       }
-      this.getSensorDataCommand().add(keyValMap);
+      try {
+        this.getSensorDataCommand().add(keyValMap);
+      }
+      catch (Exception e) {
+        this.println("Error: Can't parse the Timestamp or Runtime arguments.");
+      }
       return;
     }
     
-    if (commandName.equals("autosend")) {
-      String interval = (argList.size() > 0) ? argList.get(0) : "";
+    if ("autosend".equals(commandName)) {
+      String interval = (argList.isEmpty()) ? "" : argList.get(0);
       this.getAutoSendCommand().initialize(interval);
     }
   }
@@ -378,8 +387,7 @@ public class SensorShell {
 
     // Set Parameter 2 (sensor properties file) to supplied or default value. Exit if can't find it.
     SensorProperties sensorProperties = (args.length >= 2) ?
-        new SensorProperties("Shell", new File(args[1])) :
-        new SensorProperties("Shell");
+        new SensorProperties(new File(args[1])) : new SensorProperties();
     if (!sensorProperties.isFileAvailable()) {
       System.out.println("Could not find sensor.properties file. ");
       System.out.println("Expected in: " + sensorProperties.getAbsolutePath());
@@ -423,11 +431,6 @@ public class SensorShell {
   /** Prints the help strings associated with all commands. */
   private void printHelp() {
     this.println("SensorShell Command Summary");
-    this.println(this.addCommand.getHelpString());
-    this.println(this.autoSendCommand.getHelpString());
-    this.println(this.pingCommand.getHelpString());
-    this.println(this.sensorDataCommand.getHelpString());
-    this.println(this.quitCommand.getHelpString());
   }
 
  
@@ -446,7 +449,7 @@ public class SensorShell {
   private String readLine() {
     try {
       String line = this.bufferedReader.readLine();
-      logger.info(line + cr);
+      logger.info(line);
       return (line == null) ? "" : line;
     }
     catch (IOException e) {
@@ -461,8 +464,8 @@ public class SensorShell {
    * 
    * @param line  The line to be printed.
    */
-  public void println(String line) {
-    logger.info(line + cr);
+  public final void println(String line) {
+    logger.info(line);
     if (isInteractive) {
       System.out.println(line);
     }
@@ -470,7 +473,7 @@ public class SensorShell {
 
 
   /**
-   * Prints out the line without newline if in interactive mode, and always logs the line.
+   * Prints out the line without newline if in interactive mode.
    *
    * @param line  The line to be printed.
    */
@@ -486,35 +489,16 @@ public class SensorShell {
    *
    * @return The version number, or "Unknown" if could not be determined.
    */
-  private static String getVersion() {
+  private String getVersion() {
     String release;
     try {
-      Package thisPackage = Class.forName("org.hackystat.sensorshell.SensorShell")
-                            .getPackage();
-      release = thisPackage.getSpecificationVersion();
+      Package thisPackage = Class.forName("org.hackystat.sensorshell.SensorShell").getPackage();
+      release = thisPackage.getImplementationVersion();
     }
     catch (Exception e) {
       release = "Unknown";
     }
     return release;
-  }
-  
-  /**
-   * Return the current build time.
-   *
-   * @return   The buildtime value, or "Unknown" if could not be determined.
-   */
-  private static String getBuildtime() {
-    String build;
-    try {
-      Package thisPackage = 
-        Class.forName("org.hackystat.sensorshell.SensorShell").getPackage();
-      build = thisPackage.getImplementationVersion();
-    }
-    catch (Exception e) {
-      build = "Unknown";
-    }
-    return build;
   }
   
   /**
@@ -541,26 +525,50 @@ public class SensorShell {
     return this.sensorProperties.getEmail();
   }
   
+  /**
+   * Returns the Quit command.
+   * @return The Quit command.
+   */
   public QuitCommand getQuitCommand() {
     return this.quitCommand;
   }
   
+  /**
+   * Returns the AutoSend command. 
+   * @return The AutoSend command.
+   */
   public AutoSendCommand getAutoSendCommand() {
     return this.autoSendCommand;
   }
   
+  /**
+   * Returns the SensorData command.
+   * @return The SensorData command.
+   */
   public SensorDataCommand getSensorDataCommand() {
     return this.sensorDataCommand;
   }
   
+  /**
+   * Returns the Ping command. 
+   * @return The Ping command. 
+   */
   public PingCommand getPingCommand() {
     return this.pingCommand;
   }
   
+  /**
+   * Returns true if this sensorshell is being run interactively from the command line.
+   * @return True if sensorshell is interactive. 
+   */
   public boolean isInteractive() {
     return this.isInteractive;
   }
   
+  /**
+   * Returns the Logger associated with this sensorshell.
+   * @return The Logger. 
+   */
   public Logger getLogger() {
     return this.logger;
   }
@@ -573,8 +581,45 @@ public class SensorShell {
     return this.sensorProperties;
   }
   
+  /**
+   * Returns true if offline data saving is enabled. 
+   * @return True if offline data is enabled. 
+   */
   public boolean enableOfflineData() {
     return this.enableOfflineData;
+  }
+  
+  /**
+   * Returns the SensorBaseClient associated with this SensorShell.
+   * @return The SensorBaseClient. 
+   */
+  public SensorBaseClient getClient() {
+    return this.client;
+  }
+  
+  /**
+   * Converts the values in the KeyValMap to a SensorData instance and adds it to the shell.
+   * This is the easiest way to add sensor data.
+   * The Owner will default to the hackystat user in the sensor.properties file.
+   * The Timestamp and Runtime will default to the current time.  
+   * @param keyValMap The map of key-value pairs. 
+   * @throws Exception If the Map cannot be translated into SensorData, typically because a 
+   * value was passed for Timestamp or Runtime that could not be parsed into XMLGregorianCalendar. 
+   */
+  public void add(Map<String, String> keyValMap) throws Exception {
+    this.getSensorDataCommand().add(keyValMap);
+  }
+  
+  /**
+   * Sends any accumulated SensorData instances to the Server. 
+   */
+  public void send() {
+    this.getSensorDataCommand().send();
+  }
+  
+  /** Shuts down this SensorShell, sending any unsent data and closing log files.  */
+  public void quit() {
+    this.getQuitCommand().quit();
   }
 }
 

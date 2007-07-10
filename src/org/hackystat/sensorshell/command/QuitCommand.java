@@ -5,18 +5,22 @@ import java.util.logging.Handler;
 import org.hackystat.sensorshell.SensorProperties;
 import org.hackystat.sensorshell.SensorShell;
 
+/**
+ * Implements the Quit command, which sends any buffered data and closes the loggers. 
+ * @author Philip Johnson
+ */
 public class QuitCommand extends Command {
   
+  /**
+   * Creates the QuitCommand. 
+   * @param shell The sensorshell. 
+   * @param properties The sensorproperties. 
+   */
   public QuitCommand(SensorShell shell, SensorProperties properties) {
     super(shell, properties);
   }
-
-  @Override
-  /** {@inheritDoc} */
-  public String getHelpString() {
-    return "Provides a help message.";
-  }
   
+  /** Quits the shell. Sends all data and closes the loggers. */
   public void quit() {
     // Log this command if not running interactively.
     if (!this.shell.isInteractive()) {
@@ -33,5 +37,4 @@ public class QuitCommand extends Command {
     }
     this.shell.println("Quitting.");
   }
-
 }
