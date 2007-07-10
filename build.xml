@@ -44,6 +44,11 @@
    <available file="${env.JAVAMAIL_HOME}/mail.jar" type="file" property="javamail.available"/>
    <fail message="This package requires JavaMail 4.1 to be downloaded and JAVAMAIL_HOME defined" unless="javamail.available"/>
   
+   <!-- Make sure that the JAXB library is available . --> 
+   <!-- only needed under Java 5, but we'll make it required anyway. -->   
+   <available file="${env.JAXB_HOME}/lib/jaxb-xjc.jar" type="file" property="jaxb.available"/>
+   <fail message="This package requires JAXB to be installed and JAXB_HOME defined" unless="jaxb.available"/>
+        
   <!-- Basic properties for this system. --> 
   <property name="system.name" value="hackystat-sensor-shell" />
   <property name="majorVersionNumber" value="8" />
@@ -76,6 +81,11 @@
     <fileset file="${env.RESTLET_HOME}/lib/org.simpleframework_3.1/org.simpleframework.jar" />
     <fileset file="${env.DERBY_HOME}/lib/derby.jar" />
     <fileset file="${env.JAVAMAIL_HOME}/mail.jar"/> 
+    <!-- These jar files only needed in a Java 5 environment, but won't hurt in Java 6 --> 
+    <fileset file="${env.JAXB_HOME}/lib/activation.jar"/> 
+    <fileset file="${env.JAXB_HOME}/lib/jaxb-api.jar"/> 
+    <fileset file="${env.JAXB_HOME}/lib/jaxb-impl.jar"/> 
+    <fileset file="${env.JAXB_HOME}/lib/jsr173_1.0_api.jar"/>  
   </path> 
 
   <target name="compile" description="Compiles the code.">

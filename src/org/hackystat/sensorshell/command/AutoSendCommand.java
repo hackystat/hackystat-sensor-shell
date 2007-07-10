@@ -12,14 +12,20 @@ import org.hackystat.sensorshell.SensorShell;
  * @author Philip Johnson
  */
 public class AutoSendCommand extends Command {
+  
+  /** Holds the sensor data command. */
+  private SensorDataCommand sensorDataCommand;
 
   /**
    * Creates the AutoSendCommand. 
    * @param shell The sensorshell. 
    * @param properties The sensorproperties. 
+   * @param sensorDataCommand The SensorDataCommand.
    */
-  public AutoSendCommand(SensorShell shell, SensorProperties properties) {
+  public AutoSendCommand(SensorShell shell, SensorProperties properties, 
+      SensorDataCommand sensorDataCommand) {
     super(shell, properties);
+    this.sensorDataCommand = sensorDataCommand;
   }
   
   /** The timer that enables periodic sending. */
@@ -62,7 +68,7 @@ public class AutoSendCommand extends Command {
     // Otherwise set up a timer with the newly specified value.
     this.timer = new Timer(true);
     int milliseconds = minutes * 60 * 1000;
-    this.timer.schedule(new AutoSendCommandTask(shell), milliseconds, milliseconds);
+    this.timer.schedule(new AutoSendCommandTask(sensorDataCommand), milliseconds, milliseconds);
     return "AutoSend OK (set to " + minutes + " minutes)";
   }
   
@@ -72,21 +78,21 @@ public class AutoSendCommand extends Command {
    */
   private static class AutoSendCommandTask extends TimerTask {
     
-    /** The SensorShell used to find the send command. */
-    private SensorShell shell;
+    /** The Command used to find the send command. */
+    private SensorDataCommand sensorDataCommand;
 
     /**
      * Creates the TimerTask.
-     * @param shell  The notification shell.
+     * @param sensorDataCommand  The sensor data command.
      */
-    public AutoSendCommandTask(SensorShell shell) {
-      this.shell = shell;
+    public AutoSendCommandTask(SensorDataCommand sensorDataCommand) {
+      this.sensorDataCommand = sensorDataCommand;
     }
 
     /** Invoked periodically by the timer in AutoSendCommand. */
     @Override
     public void run() {
-      this.shell.getSensorDataCommand().send();
+      this.sensorDataCommand.send();
     }
   }
 }

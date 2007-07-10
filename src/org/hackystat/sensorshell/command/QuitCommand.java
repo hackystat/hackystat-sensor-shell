@@ -11,13 +11,19 @@ import org.hackystat.sensorshell.SensorShell;
  */
 public class QuitCommand extends Command {
   
+  /** Holds the sensor data command for sending data. */
+  private SensorDataCommand sensorDataCommand;
+  
   /**
    * Creates the QuitCommand. 
    * @param shell The sensorshell. 
-   * @param properties The sensorproperties. 
+   * @param properties The sensorproperties.
+   * @param sensorDataCommand The SensorDataCommand. 
    */
-  public QuitCommand(SensorShell shell, SensorProperties properties) {
+  public QuitCommand(SensorShell shell, SensorProperties properties, 
+      SensorDataCommand sensorDataCommand) {
     super(shell, properties);
+    this.sensorDataCommand = sensorDataCommand;
   }
   
   /** Quits the shell. Sends all data and closes the loggers. */
@@ -26,7 +32,7 @@ public class QuitCommand extends Command {
     if (!this.shell.isInteractive()) {
       this.shell.getLogger().info("#> quit" + cr);
     }
-    this.shell.getSensorDataCommand().send();
+    this.sensorDataCommand.send();
     // Now close all loggers. 
     if (this.shell.getLogger() != null) {
       // Close all the open handler.

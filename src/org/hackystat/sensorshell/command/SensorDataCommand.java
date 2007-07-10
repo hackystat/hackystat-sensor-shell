@@ -3,6 +3,7 @@ package org.hackystat.sensorshell.command;
 import java.util.Map;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.hackystat.sensorbase.client.SensorBaseClient;
 import org.hackystat.sensorbase.client.SensorBaseClientException;
 import org.hackystat.sensorbase.resource.sensordata.Tstamp;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.Properties;
@@ -20,14 +21,23 @@ public class SensorDataCommand extends Command {
     
   /** The list of unsent SensorData instances. */
   private SensorDatas sensorDatas = new SensorDatas();
+  /** The Ping Command. */
+  private PingCommand pingCommand;
+  /** The sensorbase client. */
+  private SensorBaseClient client;
   
   /**
    * Creates the SensorDataCommand. 
    * @param shell The sensorshell. 
-   * @param properties The sensorproperties. 
+   * @param properties The sensorproperties.
+   * @param pingCommand The Ping Command. 
+   * @param client The SensorBase client.
    */
-  public SensorDataCommand(SensorShell shell, SensorProperties properties) {
+  public SensorDataCommand(SensorShell shell, SensorProperties properties, 
+      PingCommand pingCommand, SensorBaseClient client) {
     super(shell, properties);
+    this.pingCommand = pingCommand;
+    this.client = client;
   }
   
   /**
@@ -39,10 +49,16 @@ public class SensorDataCommand extends Command {
     if (!this.shell.isInteractive()) {
       this.shell.getLogger().info("#> send" + cr);
     }
-    if (this.shell.getPingCommand().isPingable()) {
+    if (this.pingCommand.isPingable()) {
       //OfflineManager.getInstance().clear();
       try {
-        this.shell.getClient().putSensorDataBatch(sensorDatas);
+        this.shell.println("About to send the following sensor data:");
+        this.shell.println("<Timestamp SDT Owner Tool Resource Runtime {Properties}>");
+        for (SensorData data : sensorDatas.getSensorData()) {
+          this.shell.println("  " + formatSensorData(data));
+          
+        }
+        this.client.putSensorDataBatch(sensorDatas);
       }
       catch (SensorBaseClientException e) {
         this.shell.println("Error sending data: " + e);
@@ -60,6 +76,36 @@ public class SensorDataCommand extends Command {
   }
   
   /**
+   * Returns the data instance in a formatted string.
+   * @param data The sensor data instance. 
+   * @return A string displaying the instance.
+   */
+  private String formatSensorData(SensorData data) {
+    StringBuffer buffer = new StringBuffer(75);
+    buffer.append('<');
+    buffer.append(data.getTimestamp());
+    buffer.append(' ');
+    buffer.append(data.getSensorDataType());
+    buffer.append(' ');
+    buffer.append(data.getOwner());
+    buffer.append(' ');
+    buffer.append(data.getTool());
+    buffer.append(' ');
+    buffer.append(data.getResource());
+    buffer.append(' ');
+    buffer.append(data.getRuntime());
+    buffer.append(' ');
+    for (Property property : data.getProperties().getProperty()) {
+      buffer.append(property.getKey());
+      buffer.append('=');
+      buffer.append(property.getValue());
+      buffer.append(' ');
+    }
+    buffer.append('>');
+    return buffer.toString();
+  }
+  
+  /**
    * Given a Map containing key-value pairs corresponding to SensorData fields and properties,
    * constructs a SensorData instance and stores it for subsequent sending to the SensorBase.
    * @param keyValMap The map of key-value pairs. 
@@ -69,7 +115,7 @@ public class SensorDataCommand extends Command {
     // Begin by creating the sensor data instance. 
     SensorData data = new SensorData();
     XMLGregorianCalendar tstamp = Tstamp.makeTimestamp();
-    data.setOwner(getMap(keyValMap, "Owner", this.shell.getEmail()));
+    data.setOwner(getMap(keyValMap, "Owner", this.properties.getEmail()));
     data.setResource(getMap(keyValMap, "Resource", ""));
     data.setRuntime(Tstamp.makeTimestamp(getMap(keyValMap, "Runtime", tstamp.toString())));
     data.setSensorDataType(getMap(keyValMap, "SensorDataType", ""));
@@ -85,6 +131,8 @@ public class SensorDataCommand extends Command {
     }
     // Now that our SensorData instance is initialized, put it on the list.
     sensorDatas.getSensorData().add(data);
+    this.shell.println("Adding: " + formatSensorData(data));
+    
   }
 
   /**

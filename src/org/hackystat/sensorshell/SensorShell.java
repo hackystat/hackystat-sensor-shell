@@ -72,7 +72,7 @@ public class SensorShell {
   private Logger logger;
 
   /** The logging formatter that simply spits out the message string unchanged. */
-  private Formatter oneLineFormatter = new OneLineFormatter(false);
+  private Formatter oneLineFormatter = new OneLineFormatter(false, false);
 
   /** The file of commands, if provided on the command line. */
   private File commandFile = null;
@@ -147,9 +147,10 @@ public class SensorShell {
     //OfflineManager.getInstance(sensorProperties.getSensorPropertiesDir());
     initializeLogger();
     this.pingCommand = new PingCommand(this, sensorProperties);
-    this.sensorDataCommand = new SensorDataCommand(this, sensorProperties);
-    this.autoSendCommand = new AutoSendCommand(this, sensorProperties);
-    this.quitCommand = new QuitCommand(this, sensorProperties);
+    this.sensorDataCommand = new SensorDataCommand(this, sensorProperties, this.pingCommand, 
+        this.client);
+    this.autoSendCommand = new AutoSendCommand(this, sensorProperties, this.sensorDataCommand);
+    this.quitCommand = new QuitCommand(this, sensorProperties, this.sensorDataCommand);
     printBanner(sensorProperties);
     this.autoSendCommand.initialize();
     recoverOfflineData();
@@ -275,7 +276,7 @@ public class SensorShell {
     }
     // Process quit command.
     if ("quit".equals(inputString)) {
-      this.getQuitCommand().quit();
+      this.quitCommand.quit();
       return;
     }
 
@@ -287,13 +288,13 @@ public class SensorShell {
 
     // Process send command.
     if ("send".equals(inputString)) {
-      this.getSensorDataCommand().send();
+      this.sensorDataCommand.send();
       return;
     }
     
     // Process ping command.
     if ("ping".equals(inputString)) {
-      boolean isPingable = this.getPingCommand().isPingable();
+      boolean isPingable = this.pingCommand.isPingable();
       this.println("Ping " + (isPingable ? "succeeded." : "did not succeed"));
       return;
     }
@@ -326,7 +327,7 @@ public class SensorShell {
         keyValMap.put(arg.substring(0, delim), arg.substring(delim + 1));
       }
       try {
-        this.getSensorDataCommand().add(keyValMap);
+        this.sensorDataCommand.add(keyValMap);
       }
       catch (Exception e) {
         this.println("Error: Can't parse the Timestamp or Runtime arguments.");
@@ -336,7 +337,7 @@ public class SensorShell {
     
     if ("autosend".equals(commandName)) {
       String interval = (argList.isEmpty()) ? "" : argList.get(0);
-      this.getAutoSendCommand().initialize(interval);
+      this.autoSendCommand.initialize(interval);
     }
   }
 
@@ -465,9 +466,9 @@ public class SensorShell {
    * @param line  The line to be printed.
    */
   public final void println(String line) {
-    logger.info(line);
+    logger.info(line + cr);
     if (isInteractive) {
-      System.out.println(line);
+      System.out.print(line + cr);
     }
   }
 
@@ -502,62 +503,6 @@ public class SensorShell {
   }
   
   /**
-   * Returns the hackystat host associated with this sensorshell instance.
-   * @return The hackystat host.
-   */
-  public String getHost() {
-    return this.sensorProperties.getHackystatHost();
-  }
-  
-  /**
-   * Returns the user password associated with this sensorshell instance. 
-   * @return The password
-   */
-  public String getPassword() {
-    return this.sensorProperties.getPassword();
-  }
-
-  /**
-   * Returns the user email associated with this sensorshell instance. 
-   * @return The password
-   */
-  public String getEmail() {
-    return this.sensorProperties.getEmail();
-  }
-  
-  /**
-   * Returns the Quit command.
-   * @return The Quit command.
-   */
-  public QuitCommand getQuitCommand() {
-    return this.quitCommand;
-  }
-  
-  /**
-   * Returns the AutoSend command. 
-   * @return The AutoSend command.
-   */
-  public AutoSendCommand getAutoSendCommand() {
-    return this.autoSendCommand;
-  }
-  
-  /**
-   * Returns the SensorData command.
-   * @return The SensorData command.
-   */
-  public SensorDataCommand getSensorDataCommand() {
-    return this.sensorDataCommand;
-  }
-  
-  /**
-   * Returns the Ping command. 
-   * @return The Ping command. 
-   */
-  public PingCommand getPingCommand() {
-    return this.pingCommand;
-  }
-  
-  /**
    * Returns true if this sensorshell is being run interactively from the command line.
    * @return True if sensorshell is interactive. 
    */
@@ -573,13 +518,6 @@ public class SensorShell {
     return this.logger;
   }
   
-  /**
-   * Returns the SensorProperties instance associated with this SensorShell.
-   * @return The SensorProperties instnace.
-   */
-  public SensorProperties getSensorProperties() {
-    return this.sensorProperties;
-  }
   
   /**
    * Returns true if offline data saving is enabled. 
@@ -587,14 +525,6 @@ public class SensorShell {
    */
   public boolean enableOfflineData() {
     return this.enableOfflineData;
-  }
-  
-  /**
-   * Returns the SensorBaseClient associated with this SensorShell.
-   * @return The SensorBaseClient. 
-   */
-  public SensorBaseClient getClient() {
-    return this.client;
   }
   
   /**
@@ -607,19 +537,19 @@ public class SensorShell {
    * value was passed for Timestamp or Runtime that could not be parsed into XMLGregorianCalendar. 
    */
   public void add(Map<String, String> keyValMap) throws Exception {
-    this.getSensorDataCommand().add(keyValMap);
+    this.sensorDataCommand.add(keyValMap);
   }
   
   /**
    * Sends any accumulated SensorData instances to the Server. 
    */
   public void send() {
-    this.getSensorDataCommand().send();
+    this.sensorDataCommand.send();
   }
   
   /** Shuts down this SensorShell, sending any unsent data and closing log files.  */
   public void quit() {
-    this.getQuitCommand().quit();
+    this.quitCommand.quit();
   }
 }
 
