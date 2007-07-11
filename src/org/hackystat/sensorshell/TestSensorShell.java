@@ -57,6 +57,8 @@ public class TestSensorShell {
     // Now add it to the SensorShell and send it to the server. 
     shell.add(keyValMap);
     shell.send();
+    shell.ping();
+    shell.setAutoSend(1);
     shell.quit();
     
     // Now retrieve it from the server using a SensorBaseClient.
