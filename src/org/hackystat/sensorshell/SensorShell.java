@@ -573,5 +573,21 @@ public class SensorShell {
   public void quit() {
     this.quitCommand.quit();
   }
+  
+  /**
+   * Returns true if the host can be pinged and the email/password combination is valid.
+   * @return True if the host can be pinged and the user credentials are valid.
+   */
+  public boolean ping() {
+    return this.pingCommand.isPingable();
+  }
+
+  /**
+   * Sets the autosend interval to minutes.  If minutes is 0, then autosending is disabled.
+   * @param minutes The interval in minutes for autosending. 
+   */
+  public void setAutoSend(int minutes) {
+    this.autoSendCommand.initialize(minutes);
+  }
 }
 

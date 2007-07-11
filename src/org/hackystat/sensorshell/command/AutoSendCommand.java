@@ -49,6 +49,14 @@ public class AutoSendCommand extends Command {
     catch (Exception e) {
       this.shell.println("AutoSend error (invalid argument: " + interval + ")" + cr + e);
     }
+    initialize(minutes);
+  }
+  
+  /**
+   * Initializes the autosend to the number of specified minutes. If 0, then autosend is disabled. 
+   * @param minutes The minutes. 
+   */
+  public void initialize(int minutes) {
     // Cancel the current timer if any.
     if (this.timer != null) {
       this.timer.cancel();

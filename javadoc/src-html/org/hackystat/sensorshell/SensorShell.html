@@ -576,8 +576,24 @@
 <FONT color="green">573</FONT>      public void quit() {<a name="line.573"></a>
 <FONT color="green">574</FONT>        this.quitCommand.quit();<a name="line.574"></a>
 <FONT color="green">575</FONT>      }<a name="line.575"></a>
-<FONT color="green">576</FONT>    }<a name="line.576"></a>
-<FONT color="green">577</FONT>    <a name="line.577"></a>
+<FONT color="green">576</FONT>      <a name="line.576"></a>
+<FONT color="green">577</FONT>      /**<a name="line.577"></a>
+<FONT color="green">578</FONT>       * Returns true if the host can be pinged and the email/password combination is valid.<a name="line.578"></a>
+<FONT color="green">579</FONT>       * @return True if the host can be pinged and the user credentials are valid.<a name="line.579"></a>
+<FONT color="green">580</FONT>       */<a name="line.580"></a>
+<FONT color="green">581</FONT>      public boolean ping() {<a name="line.581"></a>
+<FONT color="green">582</FONT>        return this.pingCommand.isPingable();<a name="line.582"></a>
+<FONT color="green">583</FONT>      }<a name="line.583"></a>
+<FONT color="green">584</FONT>    <a name="line.584"></a>
+<FONT color="green">585</FONT>      /**<a name="line.585"></a>
+<FONT color="green">586</FONT>       * Sets the autosend interval to minutes.  If minutes is 0, then autosending is disabled.<a name="line.586"></a>
+<FONT color="green">587</FONT>       * @param minutes The interval in minutes for autosending. <a name="line.587"></a>
+<FONT color="green">588</FONT>       */<a name="line.588"></a>
+<FONT color="green">589</FONT>      public void setAutoSend(int minutes) {<a name="line.589"></a>
+<FONT color="green">590</FONT>        this.autoSendCommand.initialize(minutes);<a name="line.590"></a>
+<FONT color="green">591</FONT>      }<a name="line.591"></a>
+<FONT color="green">592</FONT>    }<a name="line.592"></a>
+<FONT color="green">593</FONT>    <a name="line.593"></a>
 
 
 
