@@ -12,5 +12,6 @@
 	<classpathentry path="RESTLET_HOME/lib/com.noelios.restlet.ext.simple_3.1.jar" kind="var"/>
 	<classpathentry path="RESTLET_HOME/lib/org.simpleframework_3.1/org.simpleframework.jar" kind="var"/>
 	<classpathentry path="DERBY_HOME/lib/derby.jar" kind="var"/>
+	<classpathentry path="JAVAMAIL_HOME/mail.jar" kind="var"/>
 	<classpathentry path="bin" kind="output"/>
 </classpath>

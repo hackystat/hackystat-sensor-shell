@@ -10,7 +10,10 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.hackystat.sensorbase.client.SensorBaseClient;
 import org.hackystat.sensorbase.resource.sensordata.Tstamp;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
+import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDataIndex;
+import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDataRef;
 import org.hackystat.sensorbase.server.Server;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -36,6 +39,22 @@ public class TestSensorShell {
   }
   
   /**
+   * Gets rid of the sent sensor data and the user. 
+   * @throws Exception If problems occur setting up the server. 
+   */
+  @AfterClass public static void teardownServer() throws Exception {
+    // Now delete all data sent by this user.
+    SensorBaseClient client = new SensorBaseClient(host, user, user);
+    // First, delete all sensor data sent by this user. 
+    SensorDataIndex index = client.getSensorDataIndex(user);
+    for (SensorDataRef ref : index.getSensorDataRef()) {
+      client.deleteSensorData(user, ref.getTimestamp());
+    }
+    // Now delete the user too.
+    client.deleteUser(user);
+  }
+  
+  /**
    * Tests that the SensorShell can send data to the Server and this data can be retrieved.
    * @throws Exception If problems occur. 
    */
@@ -56,7 +75,8 @@ public class TestSensorShell {
     
     // Now add it to the SensorShell and send it to the server. 
     shell.add(keyValMap);
-    shell.send();
+    int numSent = shell.send();
+    assertEquals("Checking numSent", 1, numSent);
     shell.ping();
     shell.setAutoSend(1);
     shell.quit();
@@ -66,9 +86,36 @@ public class TestSensorShell {
     // Now, get the data, dude. 
     SensorData data = client.getSensorData(user, tstamp);
     assertEquals("Checking data", tool, data.getTool());
-    // Now delete this data and the user for good measure.  
-    client.deleteSensorData(user, tstamp);
-    client.deleteUser(user);
+  }
+  
+  /**
+   * Tests that statechange works correctly. 
+   * @throws Exception If problems occur.
+   */
+  @Test public void testStateChange () throws Exception {
+    // First, start up a SensorShell.
+    SensorProperties properties = new SensorProperties(host, user, user);
+    // Create a SensorShell that is non-interactive, logging as "Test", and no offline storage. 
+    SensorShell shell = new SensorShell(properties, true, "Test", false);
+    
+    // Now construct a key-val map representing a SensorData instance. 
+    Map<String, String> keyValMap = new HashMap<String, String>();
+    XMLGregorianCalendar tstamp = Tstamp.makeTimestamp();
+    keyValMap.put("Timestamp", tstamp.toString());
+    String tool = "Eclipse";
+    keyValMap.put("Tool", tool);
+    keyValMap.put("SensorDataType", "DevEvent");
+    keyValMap.put("DevEvent-Type", "Compile");
+    keyValMap.put("Resource", "file://foo.java");
+    
+    // Now test to see that StateChange works correctly.
+    shell.statechange(100, keyValMap);  // should create an add.
+    shell.statechange(100, keyValMap);  // should not create an add.
+    shell.statechange(200, keyValMap); // should create an add.
+    keyValMap.put("Resource", "file://bar.java");
+    shell.statechange(200, keyValMap); // should create an add.
+    int numSensorData = shell.send();
+    assertEquals("Checking numSensorData", 3, numSensorData);
   }
 
 }

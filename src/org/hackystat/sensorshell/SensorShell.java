@@ -337,6 +337,36 @@ public class SensorShell {
       return;
     }
     
+    if ("statechange".equals(commandName)) {
+      String resourceCheckSumString = argList.get(0);
+      int resourceCheckSum = 0;
+      try {
+        resourceCheckSum = Integer.parseInt(resourceCheckSumString);
+      }
+      catch (Exception e) {
+        this.println("Error: Can't parse the checksum into an integer.");
+        return;
+      }
+      argList.remove(0);
+      // Now do almost the same as for an add command. 
+      // Build the Map of key-value pairs.
+      Map<String, String> keyValMap = new HashMap<String, String>();
+      for (String arg : argList) {
+        int delim = arg.indexOf('=');
+        if (delim == -1) {
+          this.println("Error: can't parse argument string for statechange command.");
+        }
+        keyValMap.put(arg.substring(0, delim), arg.substring(delim + 1));
+      }
+      try {
+        this.sensorDataCommand.statechange(resourceCheckSum, keyValMap);
+      }
+      catch (Exception e) {
+        this.println("Error: Can't parse the Timestamp or Runtime arguments.");
+      }
+      return;
+    }
+    
     if ("autosend".equals(commandName)) {
       String interval = (argList.isEmpty()) ? "" : argList.get(0);
       this.autoSendCommand.initialize(interval);
@@ -563,10 +593,11 @@ public class SensorShell {
   }
   
   /**
-   * Sends any accumulated SensorData instances to the Server. 
+   * Sends any accumulated SensorData instances to the Server.
+   * @return The number of sensor data instances that were sent.  
    */
-  public void send() {
-    this.sensorDataCommand.send();
+  public int send() {
+    return this.sensorDataCommand.send();
   }
   
   /** Shuts down this SensorShell, sending any unsent data and closing log files.  */
@@ -588,6 +619,29 @@ public class SensorShell {
    */
   public void setAutoSend(int minutes) {
     this.autoSendCommand.initialize(minutes);
+  }
+  
+  /**
+   * Implements the "StateChange" algorithm.  The goal of StateChange is to add a new SensorData
+   * instance for sending to the SensorBase only when "something has changed" in the tool (which
+   * is typically an interactive editor or IDE). This method is designed to be used in conjunction
+   * with a timer-based process in the sensor client.  The timer-based process should wake up 
+   * at regular intervals, determine the currently "active" resource (typically a file), and 
+   * compute a "checksum" for that resource representing its state. (This checksum is typically
+   * the size of the resource in bytes or characters.) Having obtained those two values, the 
+   * sensor client can then create a keyValMap as if it were going to do a regular Add command,
+   * and invoke this method with it as well as with the resourceCheckSum.  This method keeps
+   * track of the last Resource and last ResourceCheckSum provided to it, and if either has
+   * changed, it will automatically invoke the Add command, passing the keyValMap to it. 
+   * <p>
+   * Thus, if an editor is running but the user is out at lunch, repeated invocations of the 
+   * StateChange method will not result in any new data being sent to the server.  
+   * @param resourceCheckSum An integer representing the state of the Resource. 
+   * @param keyValMap A map of key-value pairs representing sensor data fields and properties. 
+   * @throws Exception If problems occur during the Add (if the Add actually occurs.)
+   */
+  public void statechange(int resourceCheckSum, Map<String, String> keyValMap) throws Exception {
+    this.sensorDataCommand.statechange(resourceCheckSum, keyValMap);
   }
 }
 
