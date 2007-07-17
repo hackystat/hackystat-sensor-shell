@@ -480,6 +480,16 @@ public class SensorShell {
       + "    Sets the interval in minutes between automatic sending of added sensor data." + cr
       + "    Provide 0 as the integer to disable autosend." + cr
       + "    Example: autosend#15" + cr
+      + "  statechange#<ResourceCheckSum>#<key>=<value>[#<key>=<value>]..." + cr
+      + "    Generates an 'add' command when the 'state' has changed." + cr
+      + "    ResourceCheckSum is an integer that represents the current state of the Resource." + cr
+      + "    This command compares ResourceCheckSum and the Resource field value to the values" + cr
+      + "    saved from the last call to statechange.  If either have changed, indicating that" + cr
+      + "    the state has changed, then the key-value pairs are passed to the Add command." + cr
+      + "    This command facilitates the implementation of timer-based sensor processes that" + cr
+      + "    wake up periodically and emit statechange commands, with the knowledge that if " + cr
+      + "    the user has not been active, these statechange commands will not result in" + cr
+      + "    actual sensor data being sent to the server." + cr
       + "  quit" + cr
       + "    Sends any remaining data and exits the sensorshell." + cr
       + "    Example: quit" + cr;
