@@ -29,7 +29,7 @@ public class SensorDataCommand extends Command {
   /** Holds the Resource value from the last StateChange event. */
   private String lastStateChangeResource = "";
   /** Holds the bufferSize value from the last StateChange event. */
-  private int lastStateChangeResourceCheckSum = 0; 
+  private long lastStateChangeResourceCheckSum = 0; 
   
   /**
    * Creates the SensorDataCommand. 
@@ -170,7 +170,7 @@ public class SensorDataCommand extends Command {
    * @param keyValMap The map of key-value pairs. 
    * @throws Exception If problems occur while invoking the 'add' command. 
    */
-  public void statechange(int resourceCheckSum, Map<String, String> keyValMap) throws Exception {
+  public void statechange(long resourceCheckSum, Map<String, String> keyValMap) throws Exception {
     // Get the Resource attribute, default it to "" if not found.
     String resource = (keyValMap.get(RESOURCE) == null) ? "" : keyValMap.get(RESOURCE);
     // Do an add if the resource or buffer size has changed.

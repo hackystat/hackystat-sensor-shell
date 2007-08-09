@@ -109,11 +109,11 @@ public class TestSensorShell {
     keyValMap.put("Resource", "file://foo.java");
     
     // Now test to see that StateChange works correctly.
-    shell.statechange(100, keyValMap);  // should create an add.
-    shell.statechange(100, keyValMap);  // should not create an add.
-    shell.statechange(200, keyValMap); // should create an add.
+    shell.statechange(100L, keyValMap);  // should create an add.
+    shell.statechange(100L, keyValMap);  // should not create an add.
+    shell.statechange(200L, keyValMap); // should create an add.
     keyValMap.put("Resource", "file://bar.java");
-    shell.statechange(200, keyValMap); // should create an add.
+    shell.statechange(200L, keyValMap); // should create an add.
     int numSensorData = shell.send();
     assertEquals("Checking numSensorData", 3, numSensorData);
   }

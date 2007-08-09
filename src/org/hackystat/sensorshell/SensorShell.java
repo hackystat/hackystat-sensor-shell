@@ -650,7 +650,7 @@ public class SensorShell {
    * @param keyValMap A map of key-value pairs representing sensor data fields and properties. 
    * @throws Exception If problems occur during the Add (if the Add actually occurs.)
    */
-  public void statechange(int resourceCheckSum, Map<String, String> keyValMap) throws Exception {
+  public void statechange(long resourceCheckSum, Map<String, String> keyValMap) throws Exception {
     this.sensorDataCommand.statechange(resourceCheckSum, keyValMap);
   }
 }
