@@ -8,7 +8,7 @@ import java.util.Map;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.hackystat.sensorbase.client.SensorBaseClient;
-import org.hackystat.sensorbase.resource.sensordata.Tstamp;
+import org.hackystat.utilities.tstamp.Tstamp;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDataIndex;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDataRef;
