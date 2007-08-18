@@ -53,10 +53,9 @@ public class SensorProperties {
   /**
    * Creates a "minimal" sensor properties file usable for test case purposes. Needed by SensorShell
    * which must be passed a SensorProperties object containing a host, email, and password.
-   *
-   * @param host  The hackystat host.
-   * @param email   The user's email.
-   * @param password   The user's password.
+   * @param host The hackystat host.
+   * @param email The user's email.
+   * @param password The user's password.
    */
   public SensorProperties(String host, String email, String password) {
     sensorProps.setProperty(SensorProperties.HOST_KEY, host);
@@ -68,13 +67,18 @@ public class SensorProperties {
   }
 
   /**
-   * Provides access to Hackystat Sensor settings by reading the passed file.
-   *
-   * @param sensorFile  The sensor file to read.
+   * Provides access to Hackystat Sensor settings by reading specified sensor properties file. 
+   * If the specified does not exist, a SensorProperties file is still constructed however, the 
+   * instance will have limited capabilities.  
+   * @param sensorFile The sensor file to read.
    */
   public SensorProperties(File sensorFile) {
     this.sensorFile = sensorFile;
     FileInputStream fileStream = null;
+    if (!sensorFile.exists()) {
+      this.fileAvailable = false;
+      return;
+    }
     try {
       if (sensorFile.exists()) {
         fileStream = new FileInputStream(sensorFile);
