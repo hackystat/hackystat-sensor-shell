@@ -7,18 +7,19 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
- * Provides access to the hackystat properties file for each sensor, and provides reasonable default
- * values when properties file is missing, cannot be read, or lacks property values. <p>
+ * Provides access to the hackystat properties file for each sensor, and provides reasonable 
+ * default values when properties file lacks property values. <p>
  *
- * The sensor properties file is stored in userhome/.hackystat/v8.sensor.properties. It is a
- * user-maintained file of key=value pairs. <p>
+ * The creation of a SensorProperties instance requires a valid sensor properties file. The sensor 
+ * properties file is stored in userhome/.hackystat/v8.sensor.properties. It is a user-maintained
+ * file of key=value pairs. <p>
  * 
- * All of the properties in sensor.properties are added to the System property instance after being
- * read from the file.  This enables other tools that interoperate with Hackystat to obtain 
+ * All of the properties in v8.sensor.properties are added to the System property instance after 
+ * being read from the file. This enables other tools that interoperate with Hackystat to obtain 
  * settings from the System instance and/or environments to configure System property settings
  * (such as for SSL) simply by adding entries to the properties file. 
  *
- * @author    Philip M. Johnson
+ * @author Philip M. Johnson, Aaron A. Kagawa
  */
 public class SensorProperties {
 
@@ -41,60 +42,57 @@ public class SensorProperties {
   /** The internal properties object. */
   private Properties sensorProps = new Properties();
 
-
-
   /**
    * Initializes based on the user's v8.sensor.properties file.
+   * @throws SensorPropertiesException If the SensorProperties instance cannot be 
+   * instantiated. 
    */
-  public SensorProperties() {
+  public SensorProperties() throws SensorPropertiesException {
     this(new File(System.getProperty("user.home") + "/.hackystat/v8.sensor.properties"));
   }
 
   /**
-   * Creates a "minimal" sensor properties file usable for test case purposes. Needed by SensorShell
-   * which must be passed a SensorProperties object containing a host, email, and password.
-   * @param host The hackystat host.
-   * @param email The user's email.
-   * @param password The user's password.
-   */
-  public SensorProperties(String host, String email, String password) {
-    sensorProps.setProperty(SensorProperties.HOST_KEY, host);
-    sensorProps.setProperty(SensorProperties.EMAIL_KEY, email);
-    sensorProps.setProperty(SensorProperties.PASSWORD_KEY, password);
-    // Add the current set of hackystat properties to the System property object.
-    addToSystemProperties(sensorProps);
-    this.fileAvailable = false;
-  }
-
-  /**
    * Provides access to Hackystat Sensor settings by reading specified sensor properties file. 
-   * If the specified does not exist, a SensorProperties file is still constructed however, the 
-   * instance will have limited capabilities.  
    * @param sensorFile The sensor file to read.
+   * @throws SensorPropertiesException If the SensorProperties instance cannot be 
+   * instantiated. 
    */
-  public SensorProperties(File sensorFile) {
+  public SensorProperties(File sensorFile) throws SensorPropertiesException {
+    // validation of the sensor file
+    if (sensorFile == null) {
+      throw new SensorPropertiesException("Invalid sensor properties file");
+    }
+    if (!sensorFile.exists()) {
+      throw new SensorPropertiesException("Sensor properties file does not exist at "
+          + sensorFile.getAbsolutePath());
+    }
+    if (!sensorFile.isFile()) {
+      throw new SensorPropertiesException("Sensor properties must be a file.");
+    }
+    if (!sensorFile.canRead()) {
+      throw new SensorPropertiesException("Unable to read the sensor properties file at "
+          + sensorFile.getAbsolutePath());
+    }
+
+    // the sensor file should be valid at this point, whether there is anything is not know yet.
     this.sensorFile = sensorFile;
     FileInputStream fileStream = null;
-    if (!sensorFile.exists()) {
-      this.fileAvailable = false;
-      return;
-    }
     try {
-      if (sensorFile.exists()) {
-        fileStream = new FileInputStream(sensorFile);
-        sensorProps.load(fileStream);
-        if (sensorProps.size() > 0) {
-          this.fileAvailable = true;
-          // Add the current set of hackystat properties to the System property object.
-          addToSystemProperties(sensorProps);
-        }
+      fileStream = new FileInputStream(this.sensorFile);
+      this.sensorProps.load(fileStream);
+      if (this.sensorProps.size() > 0) {
+        this.fileAvailable = true;
+        // Add the current set of hackystat properties to the System property object.
+        this.addToSystemProperties(this.sensorProps);
       }
     }
     catch (FileNotFoundException e) {
-      this.fileAvailable = false;
+      throw new SensorPropertiesException("Sensor properties file does not exist at "
+          + sensorFile.getAbsolutePath());
     }
     catch (IOException e) {
-      this.fileAvailable = false;
+      throw new SensorPropertiesException("Unable to read the sensor properties file at "
+          + sensorFile.getAbsolutePath());
     }
     finally {
       try {
@@ -106,19 +104,33 @@ public class SensorProperties {
     }
   }
 
-
-
+  /**
+   * Creates a "minimal" sensor properties file usable for test case purposes. Needed by SensorShell
+   * which must be passed a SensorProperties object containing a host, email, and password.
+   * @param host The hackystat host.
+   * @param email The user's email.
+   * @param password The user's password.
+   */
+  public SensorProperties(String host, String email, String password) {
+    this.sensorProps.setProperty(SensorProperties.HOST_KEY, host);
+    this.sensorProps.setProperty(SensorProperties.EMAIL_KEY, email);
+    this.sensorProps.setProperty(SensorProperties.PASSWORD_KEY, password);
+    // Add the current set of hackystat properties to the System property object.
+    this.addToSystemProperties(this.sensorProps);
+    this.fileAvailable = false;
+  }
+  
   /**
    * Returns the directory in which the sensor.properties file is located (if it exists). This is
    * normally the .hackystat directory. If this SensorProperties instance was created without a
    * sensor.properties file, or if for some other reason the sensor.properties file cannot be found,
    * then this method returns null.
    *
-   * @return   A File instance indicating a directory, or null.
+   * @return A File instance indicating a directory, or null.
    */
   public File getSensorPropertiesDir() {
-    if ((sensorFile != null) && (sensorFile.exists())) {
-      return sensorFile.getParentFile();
+    if ((this.sensorFile != null) && (this.sensorFile.exists())) {
+      return this.sensorFile.getParentFile();
     }
     else {
       return null;
@@ -126,13 +138,14 @@ public class SensorProperties {
   }
   
   /**
-   * Returns the trimmed property value associated with the property key in 
-   * this sensor.properties file.
+   * Returns the trimmed property value associated with the property key in this 
+   * v8.sensor.properties file. In most cases, it is recommended that clients use the access 
+   * methods like <code>getHackystatHost()</code>, because these methods provide default values.
    * @param key The parameter key.
    * @return The trimmed property value associated with this property key, or null if not found.
    */
   public String getProperty(String key) {
-    String value = sensorProps.getProperty(key);
+    String value = this.sensorProps.getProperty(key);
     if (value != null) {
       value = value.trim();
     }
@@ -141,11 +154,10 @@ public class SensorProperties {
 
   /**
    * Returns the hackystat host. Defaults to http://localhost/.
-   *
-   * @return   The hackystat host.
+   * @return The hackystat host.
    */
   public String getHackystatHost() {
-    String host = sensorProps.getProperty(HOST_KEY, "http://localhost/").trim(); 
+    String host = this.sensorProps.getProperty(HOST_KEY, "http://localhost/").trim(); 
     if (!host.endsWith("/")) {
       host = host + "/";
     }
@@ -156,8 +168,7 @@ public class SensorProperties {
   /**
    * Returns the absolute path to the properties file, or the empty string if the file is not
    * available.
-   *
-   * @return   The absolutePath value or the empty string.
+   * @return The absolutePath value or the empty string.
    */
   public String getAbsolutePath() {
     return (this.sensorFile == null) ? "" : this.sensorFile.getAbsolutePath();
@@ -166,30 +177,27 @@ public class SensorProperties {
 
   /**
    * Returns the password for this user. Defaults to "ChangeThis"
-   *
    * @return The user password.
    */
   public String getPassword() {
-    return sensorProps.getProperty(PASSWORD_KEY, "ChangeThis").trim();
+    return this.sensorProps.getProperty(PASSWORD_KEY, "ChangeThis").trim();
   }
 
   /**
    * Returns the email for this user. Defaults to "ChangeThis@changethis.com"
-   *
    * @return The user email.
    */
   public String getEmail() {
-    return sensorProps.getProperty(EMAIL_KEY, "ChangeThis@changethis.com").trim();
+    return this.sensorProps.getProperty(EMAIL_KEY, "ChangeThis@changethis.com").trim();
   }
   
   /**
    * Returns the AutoSend interval for use by the SensorShell, or 10 if it was not specified. 
    * Returned as a string since it is typically sent off to the SensorShell as a String argument.
-   *
-   * @return   The autosend interval.
+   * @return The autosend interval.
    */
   public String getAutoSendInterval() {
-    String intervalString = sensorProps.getProperty(AUTOSEND_KEY, "10").trim();
+    String intervalString = this.sensorProps.getProperty(AUTOSEND_KEY, "10").trim();
     try {
       // make sure it's an integer.
       Integer.parseInt(intervalString);
@@ -202,12 +210,11 @@ public class SensorProperties {
 
   /**
    * Returns the StateChange interval for use by sensors, or 30 if it was not specified. The
-   * stateChange interval must be greater than 0.
-   *
-   * @return   The state change interval in seconds.
+   * stateChange interval must be greater than 0, otherwise 30 is returned. 
+   * @return The state change interval in seconds.
    */
   public int getStateChangeInterval() {
-    String intervalString = sensorProps.getProperty(STATECHANGE_KEY, "60").trim();
+    String intervalString = this.sensorProps.getProperty(STATECHANGE_KEY, "30").trim();
     try {
       int interval = Integer.parseInt(intervalString);
       return (interval > 0) ? interval : 30;
@@ -220,14 +227,12 @@ public class SensorProperties {
 
   /**
    * Returns true if the sensor properties file was found and read successfully.
-   *
-   * @return   True if file was found and readable.
+   * @return True if file was found and readable.
    */
   public boolean isFileAvailable() {
     return this.fileAvailable;
   }
 
-  
   /**
    * Updates the System properties object with the contents of the passed Hackystat
    * properties instance.  This method is declared static so that it can be invoked

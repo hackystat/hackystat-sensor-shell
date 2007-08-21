@@ -419,11 +419,13 @@ public class SensorShell {
     String toolName = (args.length > 0) ? args[0] : "interactive";
 
     // Set Parameter 2 (sensor properties file) to supplied or default value. Exit if can't find it.
-    SensorProperties sensorProperties = (args.length >= 2) ?
-        new SensorProperties(new File(args[1])) : new SensorProperties();
-    if (!sensorProperties.isFileAvailable()) {
-      System.out.println("Could not find sensor.properties file. ");
-      System.out.println("Expected in: " + sensorProperties.getAbsolutePath());
+    SensorProperties sensorProperties = null;
+    try {
+      sensorProperties = (args.length >= 2) ?
+          new SensorProperties(new File(args[1])) : new SensorProperties();
+    }
+    catch (SensorPropertiesException e) {
+      System.out.println(e.getMessage());
       System.out.println("Exiting...");
       return;
     }
