@@ -63,11 +63,13 @@ public class SensorDataCommand extends Command {
           this.shell.println("No sensor data to send.");
           return 0;
         }
-        this.shell.println("About to send the following sensor data:");
-        this.shell.println("<Timestamp SDT Owner Tool Resource Runtime {Properties}>");
-        for (SensorData data : sensorDatas.getSensorData()) {
-          this.shell.println("  " + formatSensorData(data));
-        }
+        // Was in for debugging purposes, no longer needed given SensorDataViewer.
+        // Also creates scalability problems when sending large amounts of sensor data. 
+        //this.shell.println("About to send the following sensor data:");
+        //this.shell.println("<Timestamp SDT Owner Tool Resource Runtime {Properties}>");
+        //for (SensorData data : sensorDatas.getSensorData()) {
+        //  this.shell.println("  " + formatSensorData(data));
+        //}
         this.client.putSensorDataBatch(sensorDatas);
         this.shell.println(sensorDatas.getSensorData().size() + " SensorData instances sent to " +
             this.properties.getHackystatHost());

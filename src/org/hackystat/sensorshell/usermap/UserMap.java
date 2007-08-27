@@ -175,7 +175,10 @@ class UserMap {
    */
   boolean hasUser(String tool, String toolAccount) {
     // Lowercase the tool if possible.
-    String lowercaseTool = (tool == null) ? tool : tool.toLowerCase();
+    if (tool == null) {
+      return false;
+    }
+    String lowercaseTool = tool.toLowerCase();
     if (this.userMappings.containsKey(tool)) {
       Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(lowercaseTool);
       return toolMapping.containsKey(toolAccount);
