@@ -1,0 +1,36 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- Primitive attributes -->
+  <xs:attribute name="tool" type="xs:string" />
+  <xs:attribute name="toolaccount" type="xs:string" />
+  <xs:attribute name="user" type="xs:string" />
+  <xs:attribute name="password" type="xs:string" />
+  <xs:attribute name="sensorbase" type="xs:anyURI" />
+  
+  <!-- Complex elements -->
+  <xs:element name="user">
+    <xs:complexType>
+      <xs:attribute ref="toolaccount" />
+      <xs:attribute ref="user" />
+      <xs:attribute ref="password" />
+      <xs:attribute ref="sensorbase" />
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="usermap">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="user" maxOccurs="unbounded" />
+      </xs:sequence>
+      <xs:attribute ref="tool" />
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="usermaps">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="usermap" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+</xs:schema>

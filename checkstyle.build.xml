@@ -20,7 +20,7 @@
     <mkdir dir="${checkstyle.dir}"/>
     <checkstyle config="${basedir}/lib/checkstyle/hackystat.checkstyle.xml"
                 failOnViolation="${checkstyle.failOnViolation}" >
-      <fileset dir="${src.dir}" includes="**/*.java" />
+      <fileset dir="${src.dir}" includes="**/*.java" excludes="**/jaxb/**" />
       <formatter type="plain"/>
       <formatter type="xml" tofile="${checkstyle.dir}/checkstyle.xml"/>
       <classpath>

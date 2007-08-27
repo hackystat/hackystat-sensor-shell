@@ -1,0 +1,6 @@
+<usermaps> 
+  <usermap tool="test"> 
+    <user toolaccount="dummyaccount" user="test@hackystat.org" password="test@hackystat.org" 
+      sensorbase="http://localhost/"/> 
+  </usermap>
+</usermaps>

@@ -20,9 +20,10 @@
         <pathelement location="${build.dir}/classes" />
         <path refid="compile.classpath"/>
       </classpath>
+    	<sysproperty key="usermaptestfile" value="${basedir}/testdata/usermap/test.usermaps.xml"/>
       <formatter type="xml" />
       <batchtest todir="${junit.dir}">
-        <fileset dir="${src.dir}" includes="**/Test*.java"/>
+        <fileset dir="${src.dir}" includes="**/Test*.java" excludes="**/jaxb/**"/>
       </batchtest>
     </junit>
   </target>  
