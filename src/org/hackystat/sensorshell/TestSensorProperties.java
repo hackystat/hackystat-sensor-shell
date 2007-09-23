@@ -35,7 +35,8 @@ public class TestSensorProperties {
         properties.getEmail());
     assertEquals("Checking password", TestSensorProperties.user, 
         properties.getPassword());
-    assertEquals("Checking auto send interval", "10", properties.getAutoSendInterval());
+    assertEquals("Checking auto send time interval", "10", properties.getAutoSendTimeInterval());
+    assertEquals("Checking auto send buffer size", "250", properties.getAutoSendBufferSize());
     assertEquals("Checking state change interval", 30, properties.getStateChangeInterval());
     
     //note that there are a few untestable pieces of code. for example, it is impossible to 

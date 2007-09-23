@@ -29,7 +29,9 @@ public class SensorDataCommand extends Command {
   /** Holds the Resource value from the last StateChange event. */
   private String lastStateChangeResource = "";
   /** Holds the bufferSize value from the last StateChange event. */
-  private long lastStateChangeResourceCheckSum = 0; 
+  private long lastStateChangeResourceCheckSum = 0;
+  /** The maximum number of sensor data instances to buffer locally before sending. */
+  private int maxBufferSize = 250;
   
   /**
    * Creates the SensorDataCommand. 
@@ -63,13 +65,6 @@ public class SensorDataCommand extends Command {
           this.shell.println("No sensor data to send.");
           return 0;
         }
-        // Was in for debugging purposes, no longer needed given SensorDataViewer.
-        // Also creates scalability problems when sending large amounts of sensor data. 
-        //this.shell.println("About to send the following sensor data:");
-        //this.shell.println("<Timestamp SDT Owner Tool Resource Runtime {Properties}>");
-        //for (SensorData data : sensorDatas.getSensorData()) {
-        //  this.shell.println("  " + formatSensorData(data));
-        //}
         this.client.putSensorDataBatch(sensorDatas);
         this.shell.println(sensorDatas.getSensorData().size() + " SensorData instances sent to " +
             this.properties.getHackystatHost());
@@ -85,7 +80,7 @@ public class SensorDataCommand extends Command {
       if (this.shell.enableOfflineData()) {
         this.shell.println("Server not available. Storing commands offline.");
         numDataSent = 0;
-        //OfflineManager.getInstance().store(this);
+        this.shell.getOfflineManager().store(this.sensorDatas);
       }
       else {
         this.shell.println("Server not available and offline storage disabled. Data lost.");
@@ -93,6 +88,14 @@ public class SensorDataCommand extends Command {
       }
     }
     return numDataSent;
+  }
+  
+  /**
+   * Sets the maximum buffer size for sensor data before automatically invoking send. 
+   * @param maxBufferSize The maximum buffer size. 
+   */
+  public void setBufferSize(int maxBufferSize) {
+    this.maxBufferSize = maxBufferSize;
   }
   
   /**
@@ -124,6 +127,7 @@ public class SensorDataCommand extends Command {
     buffer.append('>');
     return buffer.toString();
   }
+ 
   
   /**
    * Given a Map containing key-value pairs corresponding to SensorData fields and properties,
@@ -152,10 +156,22 @@ public class SensorDataCommand extends Command {
         data.getProperties().getProperty().add(property);
       }
     }
-    // Now that our SensorData instance is initialized, put it on the list.
+    add(data);
+  }
+  
+  /**
+   * Adds the SensorData instance, invoking send if the max buffer size has been exceeded.
+   * @param data The SensorData instance to be added.
+   */
+  public void add(SensorData data) {
     sensorDatas.getSensorData().add(data);
     this.shell.println("Adding: " + formatSensorData(data));
     
+    // If that makes the buffer size too big, then send this data. 
+    if (sensorDatas.getSensorData().size() > this.maxBufferSize) {
+      this.shell.println("Invoking send() due to buffer size > " + this.maxBufferSize);
+      this.send();
+    }
   }
   
   /**

@@ -12,9 +12,11 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.hackystat.sensorbase.client.SensorBaseClient;
+import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
 import org.hackystat.sensorshell.command.SensorDataCommand;
 import org.hackystat.sensorshell.command.AutoSendCommand;
 import org.hackystat.sensorshell.command.PingCommand;
@@ -95,6 +97,9 @@ public class SensorShell {
   /** The sensorbaseclient instance used to communicate with the sensorbase. */
   private SensorBaseClient client;
   
+  /** The OfflineManager used to recover data. */
+  private OfflineManager offlineManager;
+  
   /**
    * Constructs a new SensorShell instance that can be provided with
    * notification data to be sent eventually to a specific user key and host.
@@ -153,7 +158,6 @@ public class SensorShell {
     this.quitCommand = new QuitCommand(this, sensorProperties, this.sensorDataCommand);
     printBanner(sensorProperties);
     this.autoSendCommand.initialize();
-    recoverOfflineData();
 
     // Now determine whether to read commands from the input stream or from the command file.
     try {
@@ -164,6 +168,16 @@ public class SensorShell {
     catch (IOException e) {
       this.logger.info(cr);
     }
+    this.offlineManager = new OfflineManager(this);
+    recoverOfflineData();
+  }
+  
+  /**
+   * Returns the offline manager associated with this instance. 
+   * @return The offline manager. 
+   */
+  public OfflineManager getOfflineManager() {
+    return this.offlineManager;
   }
 
 
@@ -199,15 +213,8 @@ public class SensorShell {
       return;
     }
     // Otherwise do offline data management.
-//    this.println("Checking for offline data to recover.");
-//    boolean isDataRecovered = OfflineManager.getInstance().recover(this);
-//    if (isDataRecovered) {
-//      this.println("Summary of recovered offline data:");
-//      this.println(OfflineManager.getInstance().getRecoverInfoString());
-//    }
-//    else {
-//      this.println("No offline data found.");
-//    }
+    this.println("Checking for offline data to recover.");
+    this.offlineManager.recover();
   }
 
 
@@ -236,6 +243,23 @@ public class SensorShell {
     catch (Exception e) {
       System.out.println("Error initializing SensorShell logger:\n" + e);
     }
+  }
+  
+  /**
+   * Sets the logging level to be used for this logger.
+   * If the passed string cannot be parsed into a Level, then INFO is set by default.
+   * @param level The new Level.
+   */
+  public synchronized void setLoggingLevel(String level) {
+    Level newLevel = Level.INFO;
+    try {
+      newLevel = Level.parse(level);
+    }
+    catch (Exception e) {
+      logger.info("Couldn't set Logging level to: " + level);
+    }
+    logger.setLevel(newLevel);
+    logger.getHandlers()[0].setLevel(newLevel);
   }
 
 
@@ -367,10 +391,20 @@ public class SensorShell {
       return;
     }
     
-    if ("autosend".equals(commandName)) {
+    if ("setAutoSendTimeInterval".equals(commandName)) {
       String interval = (argList.isEmpty()) ? "" : argList.get(0);
-      this.autoSendCommand.initialize(interval);
+      this.autoSendCommand.setTimeInterval(interval);
+      return;
     }
+    
+    if ("setAutoSendBufferSize".equals(commandName)) {
+      String bufferSize = (argList.isEmpty()) ? "" : argList.get(0);
+      this.autoSendCommand.setBufferSize(bufferSize);
+      return;
+    }
+
+    // Otherwise we don't understand.
+    this.println("Invalid command entered and ignored. Type 'help' for help.");
   }
 
 
@@ -399,7 +433,8 @@ public class SensorShell {
    * <ul>
    *   <li> "help" provides a summary of the available commands.
    *   <li> "send" sends all of the accumulated data to the server.
-   *   <li> "autosend" sets up a timer-based process that invokes send intermittently.
+   *   <li> "setAutoSendTimeInterval" specifies the number of minutes between auto sending.
+   *   <li> "setAutoSendBufferSize" specifies the maximum number of local entries before sending.
    *   <li> "quit" sends all of the accumulated data to the server and exits.
    *   <li> "ping" checks to see if the host/user/password is valid. 
    *   <li> "add" adds a single Sensor Data instance to the buffered list to send.
@@ -478,10 +513,13 @@ public class SensorShell {
       + "  ping" + cr
       + "    Pings the server and checks email/password credentials." + cr
       + "    Example: ping" + cr
-      + "  autosend#<integer>" + cr
+      + "  setAutoSendTimeInterval#<integer>" + cr
       + "    Sets the interval in minutes between automatic sending of added sensor data." + cr
-      + "    Provide 0 as the integer to disable autosend." + cr
-      + "    Example: autosend#15" + cr
+      + "    Provide 0 as the integer to disable autosend. Fractional values to 0.1 minutes OK" + cr
+      + "    Example: setAutoSendTimeInterval#15" + cr
+      + "  setAutoSendBufferSize#<integer>" + cr
+      + "    Sets the maximum size of the local buffer before sending" + cr
+      + "    Example: setAutoSendBufferSize#250" + cr
       + "  statechange#<ResourceCheckSum>#<key>=<value>[#<key>=<value>]..." + cr
       + "    Generates an 'add' command when the 'state' has changed." + cr
       + "    ResourceCheckSum is an integer that represents the current state of the Resource." + cr
@@ -529,7 +567,7 @@ public class SensorShell {
    * 
    * @param line  The line to be printed.
    */
-  public final void println(String line) {
+  public final synchronized void println(String line) {
     logger.info(line + cr);
     if (isInteractive) {
       System.out.print(line + cr);
@@ -570,7 +608,7 @@ public class SensorShell {
    * Returns true if this sensorshell is being run interactively from the command line.
    * @return True if sensorshell is interactive. 
    */
-  public boolean isInteractive() {
+  public synchronized boolean isInteractive() {
     return this.isInteractive;
   }
   
@@ -578,7 +616,7 @@ public class SensorShell {
    * Returns the Logger associated with this sensorshell.
    * @return The Logger. 
    */
-  public Logger getLogger() {
+  public synchronized Logger getLogger() {
     return this.logger;
   }
   
@@ -587,7 +625,7 @@ public class SensorShell {
    * Returns true if offline data saving is enabled. 
    * @return True if offline data is enabled. 
    */
-  public boolean enableOfflineData() {
+  public synchronized boolean enableOfflineData() {
     return this.enableOfflineData;
   }
   
@@ -600,20 +638,29 @@ public class SensorShell {
    * @throws Exception If the Map cannot be translated into SensorData, typically because a 
    * value was passed for Timestamp or Runtime that could not be parsed into XMLGregorianCalendar. 
    */
-  public void add(Map<String, String> keyValMap) throws Exception {
+  public synchronized void add(Map<String, String> keyValMap) throws Exception {
     this.sensorDataCommand.add(keyValMap);
+  }
+  
+  /**
+   * Adds the SensorData instance to the shell. 
+   * This is generally used only by the OfflineManager to resend previously stored entries. 
+   * @param sensorData The sensordata instance. 
+   */
+  public synchronized void add(SensorData sensorData) {
+    this.sensorDataCommand.add(sensorData);
   }
   
   /**
    * Sends any accumulated SensorData instances to the Server.
    * @return The number of sensor data instances that were sent.  
    */
-  public int send() {
+  public synchronized int send() {
     return this.sensorDataCommand.send();
   }
   
   /** Shuts down this SensorShell, sending any unsent data and closing log files.  */
-  public void quit() {
+  public synchronized void quit() {
     this.quitCommand.quit();
   }
   
@@ -621,7 +668,7 @@ public class SensorShell {
    * Returns true if the host can be pinged and the email/password combination is valid.
    * @return True if the host can be pinged and the user credentials are valid.
    */
-  public boolean ping() {
+  public synchronized boolean ping() {
     return this.pingCommand.isPingable();
   }
 
@@ -629,8 +676,16 @@ public class SensorShell {
    * Sets the autosend interval to minutes.  If minutes is 0, then autosending is disabled.
    * @param minutes The interval in minutes for autosending. 
    */
-  public void setAutoSend(int minutes) {
-    this.autoSendCommand.initialize(minutes);
+  public synchronized void setAutoSendTimeInterval(double minutes) {
+    this.autoSendCommand.setTimeInterval(minutes);
+  }
+  
+  /**
+   * Sets the maximum number of sensor data entries to be buffered locally before invoking send. 
+   * @param bufferSize The maximum buffer size. 
+   */
+  public synchronized void setAutoSendBufferSize(int bufferSize) {
+    this.sensorDataCommand.setBufferSize(bufferSize);
   }
   
   /**
@@ -652,7 +707,8 @@ public class SensorShell {
    * @param keyValMap A map of key-value pairs representing sensor data fields and properties. 
    * @throws Exception If problems occur during the Add (if the Add actually occurs.)
    */
-  public void statechange(long resourceCheckSum, Map<String, String> keyValMap) throws Exception {
+  public synchronized void statechange(long resourceCheckSum, Map<String, String> keyValMap) 
+  throws Exception {
     this.sensorDataCommand.statechange(resourceCheckSum, keyValMap);
   }
 }

@@ -29,8 +29,10 @@ public class SensorProperties {
   private static final String EMAIL_KEY = "HACKYSTAT_EMAIL";
   /** User's password. */
   private static final String PASSWORD_KEY = "HACKYSTAT_PASSWORD";
-  /** Auto send interval.  */
-  private static final String AUTOSEND_KEY = "HACKYSTAT_AUTOSEND_INTERVAL";
+  /** Auto send time interval.  */
+  private static final String AUTOSEND_TIME_INTERVAL_KEY = "HACKYSTAT_AUTOSEND_TIME_INTERVAL";
+  /** Auto send buffer size.  */
+  private static final String AUTOSEND_BUFFER_SIZE_KEY = "HACKYSTAT_AUTOSEND_TIME_INTERVAL";
   /** State change interval. */
   private static final String STATECHANGE_KEY = "HACKYSTAT_STATE_CHANGE_INTERVAL";
 
@@ -192,12 +194,12 @@ public class SensorProperties {
   }
   
   /**
-   * Returns the AutoSend interval for use by the SensorShell, or 10 if it was not specified. 
+   * Returns the AutoSend time interval for use by the SensorShell, or 10 if it was not specified. 
    * Returned as a string since it is typically sent off to the SensorShell as a String argument.
    * @return The autosend interval.
    */
-  public String getAutoSendInterval() {
-    String intervalString = this.sensorProps.getProperty(AUTOSEND_KEY, "10").trim();
+  public String getAutoSendTimeInterval() {
+    String intervalString = this.sensorProps.getProperty(AUTOSEND_TIME_INTERVAL_KEY, "10").trim();
     try {
       // make sure it's an integer.
       Integer.parseInt(intervalString);
@@ -205,6 +207,23 @@ public class SensorProperties {
     }
     catch (Exception e) {
       return "10";
+    }
+  }
+
+  /**
+   * Returns the AutoSend buffer size for use by the SensorShell, or 250 if it was not specified.
+   * Returned as a string since it is typically sent off to the SensorShell as a String argument.
+   * @return The autosend buffer size.
+   */
+  public String getAutoSendBufferSize() {
+    String intervalString = this.sensorProps.getProperty(AUTOSEND_BUFFER_SIZE_KEY, "250").trim();
+    try {
+      // make sure it's an integer.
+      Integer.parseInt(intervalString);
+      return intervalString;
+    }
+    catch (Exception e) {
+      return "250";
     }
   }
 

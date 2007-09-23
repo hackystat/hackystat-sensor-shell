@@ -26,51 +26,53 @@ public class AutoSendCommand extends Command {
   private Timer timer = null;
   
   /**
-   * Sets the AutoSend interval from the sensor.properties file. 
+   * Sets the AutoSend time interval and buffer size from the sensor.properties file. 
    */
   public void initialize() {
-    initialize(this.properties.getAutoSendInterval());
+    setTimeInterval(this.properties.getAutoSendTimeInterval());
+    setBufferSize(this.properties.getAutoSendBufferSize());
   }
 
   /**
-   * Process an AutoSend command, given a list whose first argument is the auto
+   * Process an AutoSendTimeInterval command, given a list whose first argument is the auto send
    *
    * @param interval  An integer that specifies the interval in minutes for sending data.
    */
-  public void initialize(String interval) {
+  public void setTimeInterval(String interval) {
     // Begin by getting the number of minutes
-    int minutes = 0;
+    double minutes = 0;
     try {
-      minutes = Integer.parseInt(interval);
+      minutes = Double.parseDouble(interval);
       if (minutes < 0) {
-        throw new IllegalArgumentException("Minutes must be a non-negative integer.");
+        throw new IllegalArgumentException("Minutes must be a non-negative double.");
       }
     }
     catch (Exception e) {
       this.shell.println("AutoSend error (invalid argument: " + interval + ")" + cr + e);
     }
-    initialize(minutes);
+    setTimeInterval(minutes);
   }
   
   /**
-   * Initializes the autosend to the number of specified minutes. If 0, then autosend is disabled. 
+   * Initializes the autosend time interval to the number of specified minutes. 
+   * If 0, then autosend is disabled. 
    * @param minutes The minutes. 
    */
-  public void initialize(int minutes) {
+  public void setTimeInterval(double minutes) {
     // Cancel the current timer if any.
     if (this.timer != null) {
       this.timer.cancel();
     }
-    // Don't set up a new timer if minutes value is 0.
-    if (minutes == 0) {
-      this.shell.println("AutoSend disabled");
+    // Don't set up a new timer if minutes value is close to 0.
+    if (minutes < 0.009) {
+      this.shell.println("AutoSend disabled.");
     }
     else {
       // Otherwise set up a timer with the newly specified value.
       this.timer = new Timer(true);
-      int milliseconds = minutes * 60 * 1000;
+      int milliseconds = (int) (minutes * 60 * 1000);
       this.timer.schedule(new AutoSendCommandTask(shell), milliseconds, milliseconds);
-      this.shell.println("AutoSend set to " + minutes + " minutes");
+      this.shell.println("AutoSend time interval set to " + (int) (minutes * 60) + " seconds");
     }
   }
   
@@ -97,5 +99,34 @@ public class AutoSendCommand extends Command {
       this.shell.println("Autosending...");
       this.shell.send();
     }
+  }
+  
+  /**
+   * Process an AutoSendBufferSize command, given a string containing the max buffer size. 
+   * @param buffSizeString  An integer that specifies the maximum buffer size before sending data. 
+   */
+  public void setBufferSize(String buffSizeString) {
+    // Begin by getting the buffer size. 
+    int bufferSize = 0;
+    try {
+      bufferSize = Integer.parseInt(buffSizeString);
+      if (bufferSize < 0) {
+        throw new IllegalArgumentException("BufferSize must be a non-negative integer.");
+      }
+    }
+    catch (Exception e) {
+      this.shell.println("AutoSend error (invalid argument: " + buffSizeString + ")" + cr + e);
+    }
+    setBufferSize(bufferSize);
+  }
+  
+  /**
+   * Initializes the autosend buffer size to the number indicating the maximum buffer size
+   * before invoking a send command.
+   * @param bufferSize The buffer size. 
+   */
+  public void setBufferSize(int bufferSize) {
+    this.shell.setAutoSendBufferSize(bufferSize);
+    this.shell.println("AutoSend buffer size set to " + bufferSize + " entries");
   }
 }

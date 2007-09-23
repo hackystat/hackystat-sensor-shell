@@ -78,7 +78,8 @@ public class TestSensorShell {
     int numSent = shell.send();
     assertEquals("Checking numSent", 1, numSent);
     shell.ping();
-    shell.setAutoSend(1);
+    shell.setAutoSendTimeInterval(1);
+    shell.setLoggingLevel("OFF");
     shell.quit();
     
     // Now retrieve it from the server using a SensorBaseClient.
