@@ -29,79 +29,110 @@
 <FONT color="green">026</FONT>      private Timer timer = null;<a name="line.26"></a>
 <FONT color="green">027</FONT>      <a name="line.27"></a>
 <FONT color="green">028</FONT>      /**<a name="line.28"></a>
-<FONT color="green">029</FONT>       * Sets the AutoSend interval from the sensor.properties file. <a name="line.29"></a>
+<FONT color="green">029</FONT>       * Sets the AutoSend time interval and buffer size from the sensor.properties file. <a name="line.29"></a>
 <FONT color="green">030</FONT>       */<a name="line.30"></a>
 <FONT color="green">031</FONT>      public void initialize() {<a name="line.31"></a>
-<FONT color="green">032</FONT>        initialize(this.properties.getAutoSendInterval());<a name="line.32"></a>
-<FONT color="green">033</FONT>      }<a name="line.33"></a>
-<FONT color="green">034</FONT>    <a name="line.34"></a>
-<FONT color="green">035</FONT>      /**<a name="line.35"></a>
-<FONT color="green">036</FONT>       * Process an AutoSend command, given a list whose first argument is the auto<a name="line.36"></a>
-<FONT color="green">037</FONT>       *<a name="line.37"></a>
-<FONT color="green">038</FONT>       * @param interval  An integer that specifies the interval in minutes for sending data.<a name="line.38"></a>
-<FONT color="green">039</FONT>       */<a name="line.39"></a>
-<FONT color="green">040</FONT>      public void initialize(String interval) {<a name="line.40"></a>
-<FONT color="green">041</FONT>        // Begin by getting the number of minutes<a name="line.41"></a>
-<FONT color="green">042</FONT>        int minutes = 0;<a name="line.42"></a>
-<FONT color="green">043</FONT>        try {<a name="line.43"></a>
-<FONT color="green">044</FONT>          minutes = Integer.parseInt(interval);<a name="line.44"></a>
-<FONT color="green">045</FONT>          if (minutes &lt; 0) {<a name="line.45"></a>
-<FONT color="green">046</FONT>            throw new IllegalArgumentException("Minutes must be a non-negative integer.");<a name="line.46"></a>
-<FONT color="green">047</FONT>          }<a name="line.47"></a>
-<FONT color="green">048</FONT>        }<a name="line.48"></a>
-<FONT color="green">049</FONT>        catch (Exception e) {<a name="line.49"></a>
-<FONT color="green">050</FONT>          this.shell.println("AutoSend error (invalid argument: " + interval + ")" + cr + e);<a name="line.50"></a>
-<FONT color="green">051</FONT>        }<a name="line.51"></a>
-<FONT color="green">052</FONT>        initialize(minutes);<a name="line.52"></a>
-<FONT color="green">053</FONT>      }<a name="line.53"></a>
-<FONT color="green">054</FONT>      <a name="line.54"></a>
-<FONT color="green">055</FONT>      /**<a name="line.55"></a>
-<FONT color="green">056</FONT>       * Initializes the autosend to the number of specified minutes. If 0, then autosend is disabled. <a name="line.56"></a>
-<FONT color="green">057</FONT>       * @param minutes The minutes. <a name="line.57"></a>
-<FONT color="green">058</FONT>       */<a name="line.58"></a>
-<FONT color="green">059</FONT>      public void initialize(int minutes) {<a name="line.59"></a>
-<FONT color="green">060</FONT>        // Cancel the current timer if any.<a name="line.60"></a>
-<FONT color="green">061</FONT>        if (this.timer != null) {<a name="line.61"></a>
-<FONT color="green">062</FONT>          this.timer.cancel();<a name="line.62"></a>
-<FONT color="green">063</FONT>        }<a name="line.63"></a>
-<FONT color="green">064</FONT>        // Don't set up a new timer if minutes value is 0.<a name="line.64"></a>
-<FONT color="green">065</FONT>        if (minutes == 0) {<a name="line.65"></a>
-<FONT color="green">066</FONT>          this.shell.println("AutoSend disabled");<a name="line.66"></a>
-<FONT color="green">067</FONT>        }<a name="line.67"></a>
-<FONT color="green">068</FONT>        else {<a name="line.68"></a>
-<FONT color="green">069</FONT>          // Otherwise set up a timer with the newly specified value.<a name="line.69"></a>
-<FONT color="green">070</FONT>          this.timer = new Timer(true);<a name="line.70"></a>
-<FONT color="green">071</FONT>          int milliseconds = minutes * 60 * 1000;<a name="line.71"></a>
-<FONT color="green">072</FONT>          this.timer.schedule(new AutoSendCommandTask(shell), milliseconds, milliseconds);<a name="line.72"></a>
-<FONT color="green">073</FONT>          this.shell.println("AutoSend set to " + minutes + " minutes");<a name="line.73"></a>
-<FONT color="green">074</FONT>        }<a name="line.74"></a>
-<FONT color="green">075</FONT>      }<a name="line.75"></a>
-<FONT color="green">076</FONT>      <a name="line.76"></a>
-<FONT color="green">077</FONT>      /**<a name="line.77"></a>
-<FONT color="green">078</FONT>       * Inner class providing a timer-based command to invoke the send() method of the SensorShell.<a name="line.78"></a>
-<FONT color="green">079</FONT>       * @author Philip M. Johnson<a name="line.79"></a>
-<FONT color="green">080</FONT>       */<a name="line.80"></a>
-<FONT color="green">081</FONT>      private static class AutoSendCommandTask extends TimerTask {<a name="line.81"></a>
-<FONT color="green">082</FONT>        <a name="line.82"></a>
-<FONT color="green">083</FONT>        /** The sensor shell. */<a name="line.83"></a>
-<FONT color="green">084</FONT>        private SensorShell shell;<a name="line.84"></a>
-<FONT color="green">085</FONT>    <a name="line.85"></a>
-<FONT color="green">086</FONT>        /**<a name="line.86"></a>
-<FONT color="green">087</FONT>         * Creates the TimerTask.<a name="line.87"></a>
-<FONT color="green">088</FONT>         * @param shell The sensorshell.<a name="line.88"></a>
-<FONT color="green">089</FONT>         */<a name="line.89"></a>
-<FONT color="green">090</FONT>        public AutoSendCommandTask(SensorShell shell) {<a name="line.90"></a>
-<FONT color="green">091</FONT>          this.shell = shell;<a name="line.91"></a>
-<FONT color="green">092</FONT>        }<a name="line.92"></a>
-<FONT color="green">093</FONT>    <a name="line.93"></a>
-<FONT color="green">094</FONT>        /** Invoked periodically by the timer in AutoSendCommand. */<a name="line.94"></a>
-<FONT color="green">095</FONT>        @Override<a name="line.95"></a>
-<FONT color="green">096</FONT>        public void run() {<a name="line.96"></a>
-<FONT color="green">097</FONT>          this.shell.println("Autosending...");<a name="line.97"></a>
-<FONT color="green">098</FONT>          this.shell.send();<a name="line.98"></a>
-<FONT color="green">099</FONT>        }<a name="line.99"></a>
-<FONT color="green">100</FONT>      }<a name="line.100"></a>
-<FONT color="green">101</FONT>    }<a name="line.101"></a>
+<FONT color="green">032</FONT>        setTimeInterval(this.properties.getAutoSendTimeInterval());<a name="line.32"></a>
+<FONT color="green">033</FONT>        setBufferSize(this.properties.getAutoSendBufferSize());<a name="line.33"></a>
+<FONT color="green">034</FONT>      }<a name="line.34"></a>
+<FONT color="green">035</FONT>    <a name="line.35"></a>
+<FONT color="green">036</FONT>      /**<a name="line.36"></a>
+<FONT color="green">037</FONT>       * Process an AutoSendTimeInterval command, given a list whose first argument is the auto send<a name="line.37"></a>
+<FONT color="green">038</FONT>       *<a name="line.38"></a>
+<FONT color="green">039</FONT>       * @param interval  An integer that specifies the interval in minutes for sending data.<a name="line.39"></a>
+<FONT color="green">040</FONT>       */<a name="line.40"></a>
+<FONT color="green">041</FONT>      public void setTimeInterval(String interval) {<a name="line.41"></a>
+<FONT color="green">042</FONT>        // Begin by getting the number of minutes<a name="line.42"></a>
+<FONT color="green">043</FONT>        double minutes = 0;<a name="line.43"></a>
+<FONT color="green">044</FONT>        try {<a name="line.44"></a>
+<FONT color="green">045</FONT>          minutes = Double.parseDouble(interval);<a name="line.45"></a>
+<FONT color="green">046</FONT>          if (minutes &lt; 0) {<a name="line.46"></a>
+<FONT color="green">047</FONT>            throw new IllegalArgumentException("Minutes must be a non-negative double.");<a name="line.47"></a>
+<FONT color="green">048</FONT>          }<a name="line.48"></a>
+<FONT color="green">049</FONT>        }<a name="line.49"></a>
+<FONT color="green">050</FONT>        catch (Exception e) {<a name="line.50"></a>
+<FONT color="green">051</FONT>          this.shell.println("AutoSend error (invalid argument: " + interval + ")" + cr + e);<a name="line.51"></a>
+<FONT color="green">052</FONT>        }<a name="line.52"></a>
+<FONT color="green">053</FONT>        setTimeInterval(minutes);<a name="line.53"></a>
+<FONT color="green">054</FONT>      }<a name="line.54"></a>
+<FONT color="green">055</FONT>      <a name="line.55"></a>
+<FONT color="green">056</FONT>      /**<a name="line.56"></a>
+<FONT color="green">057</FONT>       * Initializes the autosend time interval to the number of specified minutes. <a name="line.57"></a>
+<FONT color="green">058</FONT>       * If 0, then autosend is disabled. <a name="line.58"></a>
+<FONT color="green">059</FONT>       * @param minutes The minutes. <a name="line.59"></a>
+<FONT color="green">060</FONT>       */<a name="line.60"></a>
+<FONT color="green">061</FONT>      public void setTimeInterval(double minutes) {<a name="line.61"></a>
+<FONT color="green">062</FONT>        // Cancel the current timer if any.<a name="line.62"></a>
+<FONT color="green">063</FONT>        if (this.timer != null) {<a name="line.63"></a>
+<FONT color="green">064</FONT>          this.timer.cancel();<a name="line.64"></a>
+<FONT color="green">065</FONT>        }<a name="line.65"></a>
+<FONT color="green">066</FONT>        // Don't set up a new timer if minutes value is close to 0.<a name="line.66"></a>
+<FONT color="green">067</FONT>        if (minutes &lt; 0.009) {<a name="line.67"></a>
+<FONT color="green">068</FONT>          this.shell.println("AutoSend disabled.");<a name="line.68"></a>
+<FONT color="green">069</FONT>        }<a name="line.69"></a>
+<FONT color="green">070</FONT>        else {<a name="line.70"></a>
+<FONT color="green">071</FONT>          // Otherwise set up a timer with the newly specified value.<a name="line.71"></a>
+<FONT color="green">072</FONT>          this.timer = new Timer(true);<a name="line.72"></a>
+<FONT color="green">073</FONT>          int milliseconds = (int) (minutes * 60 * 1000);<a name="line.73"></a>
+<FONT color="green">074</FONT>          this.timer.schedule(new AutoSendCommandTask(shell), milliseconds, milliseconds);<a name="line.74"></a>
+<FONT color="green">075</FONT>          this.shell.println("AutoSend time interval set to " + (int) (minutes * 60) + " seconds");<a name="line.75"></a>
+<FONT color="green">076</FONT>        }<a name="line.76"></a>
+<FONT color="green">077</FONT>      }<a name="line.77"></a>
+<FONT color="green">078</FONT>      <a name="line.78"></a>
+<FONT color="green">079</FONT>      /**<a name="line.79"></a>
+<FONT color="green">080</FONT>       * Inner class providing a timer-based command to invoke the send() method of the SensorShell.<a name="line.80"></a>
+<FONT color="green">081</FONT>       * @author Philip M. Johnson<a name="line.81"></a>
+<FONT color="green">082</FONT>       */<a name="line.82"></a>
+<FONT color="green">083</FONT>      private static class AutoSendCommandTask extends TimerTask {<a name="line.83"></a>
+<FONT color="green">084</FONT>        <a name="line.84"></a>
+<FONT color="green">085</FONT>        /** The sensor shell. */<a name="line.85"></a>
+<FONT color="green">086</FONT>        private SensorShell shell;<a name="line.86"></a>
+<FONT color="green">087</FONT>    <a name="line.87"></a>
+<FONT color="green">088</FONT>        /**<a name="line.88"></a>
+<FONT color="green">089</FONT>         * Creates the TimerTask.<a name="line.89"></a>
+<FONT color="green">090</FONT>         * @param shell The sensorshell.<a name="line.90"></a>
+<FONT color="green">091</FONT>         */<a name="line.91"></a>
+<FONT color="green">092</FONT>        public AutoSendCommandTask(SensorShell shell) {<a name="line.92"></a>
+<FONT color="green">093</FONT>          this.shell = shell;<a name="line.93"></a>
+<FONT color="green">094</FONT>        }<a name="line.94"></a>
+<FONT color="green">095</FONT>    <a name="line.95"></a>
+<FONT color="green">096</FONT>        /** Invoked periodically by the timer in AutoSendCommand. */<a name="line.96"></a>
+<FONT color="green">097</FONT>        @Override<a name="line.97"></a>
+<FONT color="green">098</FONT>        public void run() {<a name="line.98"></a>
+<FONT color="green">099</FONT>          this.shell.println("Autosending...");<a name="line.99"></a>
+<FONT color="green">100</FONT>          this.shell.send();<a name="line.100"></a>
+<FONT color="green">101</FONT>        }<a name="line.101"></a>
+<FONT color="green">102</FONT>      }<a name="line.102"></a>
+<FONT color="green">103</FONT>      <a name="line.103"></a>
+<FONT color="green">104</FONT>      /**<a name="line.104"></a>
+<FONT color="green">105</FONT>       * Process an AutoSendBufferSize command, given a string containing the max buffer size. <a name="line.105"></a>
+<FONT color="green">106</FONT>       * @param buffSizeString  An integer that specifies the maximum buffer size before sending data. <a name="line.106"></a>
+<FONT color="green">107</FONT>       */<a name="line.107"></a>
+<FONT color="green">108</FONT>      public void setBufferSize(String buffSizeString) {<a name="line.108"></a>
+<FONT color="green">109</FONT>        // Begin by getting the buffer size. <a name="line.109"></a>
+<FONT color="green">110</FONT>        int bufferSize = 0;<a name="line.110"></a>
+<FONT color="green">111</FONT>        try {<a name="line.111"></a>
+<FONT color="green">112</FONT>          bufferSize = Integer.parseInt(buffSizeString);<a name="line.112"></a>
+<FONT color="green">113</FONT>          if (bufferSize &lt; 0) {<a name="line.113"></a>
+<FONT color="green">114</FONT>            throw new IllegalArgumentException("BufferSize must be a non-negative integer.");<a name="line.114"></a>
+<FONT color="green">115</FONT>          }<a name="line.115"></a>
+<FONT color="green">116</FONT>        }<a name="line.116"></a>
+<FONT color="green">117</FONT>        catch (Exception e) {<a name="line.117"></a>
+<FONT color="green">118</FONT>          this.shell.println("AutoSend error (invalid argument: " + buffSizeString + ")" + cr + e);<a name="line.118"></a>
+<FONT color="green">119</FONT>        }<a name="line.119"></a>
+<FONT color="green">120</FONT>        setBufferSize(bufferSize);<a name="line.120"></a>
+<FONT color="green">121</FONT>      }<a name="line.121"></a>
+<FONT color="green">122</FONT>      <a name="line.122"></a>
+<FONT color="green">123</FONT>      /**<a name="line.123"></a>
+<FONT color="green">124</FONT>       * Initializes the autosend buffer size to the number indicating the maximum buffer size<a name="line.124"></a>
+<FONT color="green">125</FONT>       * before invoking a send command.<a name="line.125"></a>
+<FONT color="green">126</FONT>       * @param bufferSize The buffer size. <a name="line.126"></a>
+<FONT color="green">127</FONT>       */<a name="line.127"></a>
+<FONT color="green">128</FONT>      public void setBufferSize(int bufferSize) {<a name="line.128"></a>
+<FONT color="green">129</FONT>        this.shell.setAutoSendBufferSize(bufferSize);<a name="line.129"></a>
+<FONT color="green">130</FONT>        this.shell.println("AutoSend buffer size set to " + bufferSize + " entries");<a name="line.130"></a>
+<FONT color="green">131</FONT>      }<a name="line.131"></a>
+<FONT color="green">132</FONT>    }<a name="line.132"></a>
 
 
 

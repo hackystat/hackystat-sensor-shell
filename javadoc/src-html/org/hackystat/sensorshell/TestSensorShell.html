@@ -11,7 +11,7 @@
 <FONT color="green">008</FONT>    import javax.xml.datatype.XMLGregorianCalendar;<a name="line.8"></a>
 <FONT color="green">009</FONT>    <a name="line.9"></a>
 <FONT color="green">010</FONT>    import org.hackystat.sensorbase.client.SensorBaseClient;<a name="line.10"></a>
-<FONT color="green">011</FONT>    import org.hackystat.sensorbase.resource.sensordata.Tstamp;<a name="line.11"></a>
+<FONT color="green">011</FONT>    import org.hackystat.utilities.tstamp.Tstamp;<a name="line.11"></a>
 <FONT color="green">012</FONT>    import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;<a name="line.12"></a>
 <FONT color="green">013</FONT>    import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDataIndex;<a name="line.13"></a>
 <FONT color="green">014</FONT>    import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDataRef;<a name="line.14"></a>
@@ -81,47 +81,48 @@
 <FONT color="green">078</FONT>        int numSent = shell.send();<a name="line.78"></a>
 <FONT color="green">079</FONT>        assertEquals("Checking numSent", 1, numSent);<a name="line.79"></a>
 <FONT color="green">080</FONT>        shell.ping();<a name="line.80"></a>
-<FONT color="green">081</FONT>        shell.setAutoSend(1);<a name="line.81"></a>
-<FONT color="green">082</FONT>        shell.quit();<a name="line.82"></a>
-<FONT color="green">083</FONT>        <a name="line.83"></a>
-<FONT color="green">084</FONT>        // Now retrieve it from the server using a SensorBaseClient.<a name="line.84"></a>
-<FONT color="green">085</FONT>        SensorBaseClient client = new SensorBaseClient(host, user, user);<a name="line.85"></a>
-<FONT color="green">086</FONT>        // Now, get the data, dude. <a name="line.86"></a>
-<FONT color="green">087</FONT>        SensorData data = client.getSensorData(user, tstamp);<a name="line.87"></a>
-<FONT color="green">088</FONT>        assertEquals("Checking data", tool, data.getTool());<a name="line.88"></a>
-<FONT color="green">089</FONT>      }<a name="line.89"></a>
-<FONT color="green">090</FONT>      <a name="line.90"></a>
-<FONT color="green">091</FONT>      /**<a name="line.91"></a>
-<FONT color="green">092</FONT>       * Tests that statechange works correctly. <a name="line.92"></a>
-<FONT color="green">093</FONT>       * @throws Exception If problems occur.<a name="line.93"></a>
-<FONT color="green">094</FONT>       */<a name="line.94"></a>
-<FONT color="green">095</FONT>      @Test public void testStateChange () throws Exception {<a name="line.95"></a>
-<FONT color="green">096</FONT>        // First, start up a SensorShell.<a name="line.96"></a>
-<FONT color="green">097</FONT>        SensorProperties properties = new SensorProperties(host, user, user);<a name="line.97"></a>
-<FONT color="green">098</FONT>        // Create a SensorShell that is non-interactive, logging as "Test", and no offline storage. <a name="line.98"></a>
-<FONT color="green">099</FONT>        SensorShell shell = new SensorShell(properties, true, "Test", false);<a name="line.99"></a>
-<FONT color="green">100</FONT>        <a name="line.100"></a>
-<FONT color="green">101</FONT>        // Now construct a key-val map representing a SensorData instance. <a name="line.101"></a>
-<FONT color="green">102</FONT>        Map&lt;String, String&gt; keyValMap = new HashMap&lt;String, String&gt;();<a name="line.102"></a>
-<FONT color="green">103</FONT>        XMLGregorianCalendar tstamp = Tstamp.makeTimestamp();<a name="line.103"></a>
-<FONT color="green">104</FONT>        keyValMap.put("Timestamp", tstamp.toString());<a name="line.104"></a>
-<FONT color="green">105</FONT>        String tool = "Eclipse";<a name="line.105"></a>
-<FONT color="green">106</FONT>        keyValMap.put("Tool", tool);<a name="line.106"></a>
-<FONT color="green">107</FONT>        keyValMap.put("SensorDataType", "DevEvent");<a name="line.107"></a>
-<FONT color="green">108</FONT>        keyValMap.put("DevEvent-Type", "Compile");<a name="line.108"></a>
-<FONT color="green">109</FONT>        keyValMap.put("Resource", "file://foo.java");<a name="line.109"></a>
-<FONT color="green">110</FONT>        <a name="line.110"></a>
-<FONT color="green">111</FONT>        // Now test to see that StateChange works correctly.<a name="line.111"></a>
-<FONT color="green">112</FONT>        shell.statechange(100L, keyValMap);  // should create an add.<a name="line.112"></a>
-<FONT color="green">113</FONT>        shell.statechange(100L, keyValMap);  // should not create an add.<a name="line.113"></a>
-<FONT color="green">114</FONT>        shell.statechange(200L, keyValMap); // should create an add.<a name="line.114"></a>
-<FONT color="green">115</FONT>        keyValMap.put("Resource", "file://bar.java");<a name="line.115"></a>
-<FONT color="green">116</FONT>        shell.statechange(200L, keyValMap); // should create an add.<a name="line.116"></a>
-<FONT color="green">117</FONT>        int numSensorData = shell.send();<a name="line.117"></a>
-<FONT color="green">118</FONT>        assertEquals("Checking numSensorData", 3, numSensorData);<a name="line.118"></a>
-<FONT color="green">119</FONT>      }<a name="line.119"></a>
-<FONT color="green">120</FONT>    <a name="line.120"></a>
-<FONT color="green">121</FONT>    }<a name="line.121"></a>
+<FONT color="green">081</FONT>        shell.setAutoSendTimeInterval(1);<a name="line.81"></a>
+<FONT color="green">082</FONT>        shell.setLoggingLevel("OFF");<a name="line.82"></a>
+<FONT color="green">083</FONT>        shell.quit();<a name="line.83"></a>
+<FONT color="green">084</FONT>        <a name="line.84"></a>
+<FONT color="green">085</FONT>        // Now retrieve it from the server using a SensorBaseClient.<a name="line.85"></a>
+<FONT color="green">086</FONT>        SensorBaseClient client = new SensorBaseClient(host, user, user);<a name="line.86"></a>
+<FONT color="green">087</FONT>        // Now, get the data, dude. <a name="line.87"></a>
+<FONT color="green">088</FONT>        SensorData data = client.getSensorData(user, tstamp);<a name="line.88"></a>
+<FONT color="green">089</FONT>        assertEquals("Checking data", tool, data.getTool());<a name="line.89"></a>
+<FONT color="green">090</FONT>      }<a name="line.90"></a>
+<FONT color="green">091</FONT>      <a name="line.91"></a>
+<FONT color="green">092</FONT>      /**<a name="line.92"></a>
+<FONT color="green">093</FONT>       * Tests that statechange works correctly. <a name="line.93"></a>
+<FONT color="green">094</FONT>       * @throws Exception If problems occur.<a name="line.94"></a>
+<FONT color="green">095</FONT>       */<a name="line.95"></a>
+<FONT color="green">096</FONT>      @Test public void testStateChange () throws Exception {<a name="line.96"></a>
+<FONT color="green">097</FONT>        // First, start up a SensorShell.<a name="line.97"></a>
+<FONT color="green">098</FONT>        SensorProperties properties = new SensorProperties(host, user, user);<a name="line.98"></a>
+<FONT color="green">099</FONT>        // Create a SensorShell that is non-interactive, logging as "Test", and no offline storage. <a name="line.99"></a>
+<FONT color="green">100</FONT>        SensorShell shell = new SensorShell(properties, true, "Test", false);<a name="line.100"></a>
+<FONT color="green">101</FONT>        <a name="line.101"></a>
+<FONT color="green">102</FONT>        // Now construct a key-val map representing a SensorData instance. <a name="line.102"></a>
+<FONT color="green">103</FONT>        Map&lt;String, String&gt; keyValMap = new HashMap&lt;String, String&gt;();<a name="line.103"></a>
+<FONT color="green">104</FONT>        XMLGregorianCalendar tstamp = Tstamp.makeTimestamp();<a name="line.104"></a>
+<FONT color="green">105</FONT>        keyValMap.put("Timestamp", tstamp.toString());<a name="line.105"></a>
+<FONT color="green">106</FONT>        String tool = "Eclipse";<a name="line.106"></a>
+<FONT color="green">107</FONT>        keyValMap.put("Tool", tool);<a name="line.107"></a>
+<FONT color="green">108</FONT>        keyValMap.put("SensorDataType", "DevEvent");<a name="line.108"></a>
+<FONT color="green">109</FONT>        keyValMap.put("DevEvent-Type", "Compile");<a name="line.109"></a>
+<FONT color="green">110</FONT>        keyValMap.put("Resource", "file://foo.java");<a name="line.110"></a>
+<FONT color="green">111</FONT>        <a name="line.111"></a>
+<FONT color="green">112</FONT>        // Now test to see that StateChange works correctly.<a name="line.112"></a>
+<FONT color="green">113</FONT>        shell.statechange(100L, keyValMap);  // should create an add.<a name="line.113"></a>
+<FONT color="green">114</FONT>        shell.statechange(100L, keyValMap);  // should not create an add.<a name="line.114"></a>
+<FONT color="green">115</FONT>        shell.statechange(200L, keyValMap); // should create an add.<a name="line.115"></a>
+<FONT color="green">116</FONT>        keyValMap.put("Resource", "file://bar.java");<a name="line.116"></a>
+<FONT color="green">117</FONT>        shell.statechange(200L, keyValMap); // should create an add.<a name="line.117"></a>
+<FONT color="green">118</FONT>        int numSensorData = shell.send();<a name="line.118"></a>
+<FONT color="green">119</FONT>        assertEquals("Checking numSensorData", 3, numSensorData);<a name="line.119"></a>
+<FONT color="green">120</FONT>      }<a name="line.120"></a>
+<FONT color="green">121</FONT>    <a name="line.121"></a>
+<FONT color="green">122</FONT>    }<a name="line.122"></a>
 
 
 

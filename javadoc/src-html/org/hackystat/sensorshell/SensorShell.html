@@ -15,649 +15,707 @@
 <FONT color="green">012</FONT>    import java.util.StringTokenizer;<a name="line.12"></a>
 <FONT color="green">013</FONT>    import java.util.logging.FileHandler;<a name="line.13"></a>
 <FONT color="green">014</FONT>    import java.util.logging.Formatter;<a name="line.14"></a>
-<FONT color="green">015</FONT>    import java.util.logging.Logger;<a name="line.15"></a>
-<FONT color="green">016</FONT>    <a name="line.16"></a>
-<FONT color="green">017</FONT>    import org.hackystat.sensorbase.client.SensorBaseClient;<a name="line.17"></a>
-<FONT color="green">018</FONT>    import org.hackystat.sensorshell.command.SensorDataCommand;<a name="line.18"></a>
-<FONT color="green">019</FONT>    import org.hackystat.sensorshell.command.AutoSendCommand;<a name="line.19"></a>
-<FONT color="green">020</FONT>    import org.hackystat.sensorshell.command.PingCommand;<a name="line.20"></a>
-<FONT color="green">021</FONT>    import org.hackystat.sensorshell.command.QuitCommand;<a name="line.21"></a>
-<FONT color="green">022</FONT>    import org.hackystat.utilities.logger.OneLineFormatter;<a name="line.22"></a>
-<FONT color="green">023</FONT>    <a name="line.23"></a>
-<FONT color="green">024</FONT>    /**<a name="line.24"></a>
-<FONT color="green">025</FONT>     * Provides "middleware" for accumulating and sending notification (sensor)<a name="line.25"></a>
-<FONT color="green">026</FONT>     * data to Hackystat. SensorShell has two modes of interaction: command line and<a name="line.26"></a>
-<FONT color="green">027</FONT>     * programmatic. <a name="line.27"></a>
-<FONT color="green">028</FONT>     * &lt;p&gt; <a name="line.28"></a>
-<FONT color="green">029</FONT>     * Command line mode is entered by invoking the main() method, and<a name="line.29"></a>
-<FONT color="green">030</FONT>     * is intended to be used as a kind of subshell to which commands to add and<a name="line.30"></a>
-<FONT color="green">031</FONT>     * send notification data of various types can be sent. The SensorShell can be invoked<a name="line.31"></a>
-<FONT color="green">032</FONT>     * without any additional arguments as follows:<a name="line.32"></a>
-<FONT color="green">033</FONT>     * <a name="line.33"></a>
-<FONT color="green">034</FONT>     * &lt;pre&gt;java -jar sensorshell.jar&lt;/pre&gt;<a name="line.34"></a>
+<FONT color="green">015</FONT>    import java.util.logging.Level;<a name="line.15"></a>
+<FONT color="green">016</FONT>    import java.util.logging.Logger;<a name="line.16"></a>
+<FONT color="green">017</FONT>    <a name="line.17"></a>
+<FONT color="green">018</FONT>    import org.hackystat.sensorbase.client.SensorBaseClient;<a name="line.18"></a>
+<FONT color="green">019</FONT>    import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;<a name="line.19"></a>
+<FONT color="green">020</FONT>    import org.hackystat.sensorshell.command.SensorDataCommand;<a name="line.20"></a>
+<FONT color="green">021</FONT>    import org.hackystat.sensorshell.command.AutoSendCommand;<a name="line.21"></a>
+<FONT color="green">022</FONT>    import org.hackystat.sensorshell.command.PingCommand;<a name="line.22"></a>
+<FONT color="green">023</FONT>    import org.hackystat.sensorshell.command.QuitCommand;<a name="line.23"></a>
+<FONT color="green">024</FONT>    import org.hackystat.utilities.logger.OneLineFormatter;<a name="line.24"></a>
+<FONT color="green">025</FONT>    <a name="line.25"></a>
+<FONT color="green">026</FONT>    /**<a name="line.26"></a>
+<FONT color="green">027</FONT>     * Provides "middleware" for accumulating and sending notification (sensor)<a name="line.27"></a>
+<FONT color="green">028</FONT>     * data to Hackystat. SensorShell has two modes of interaction: command line and<a name="line.28"></a>
+<FONT color="green">029</FONT>     * programmatic. <a name="line.29"></a>
+<FONT color="green">030</FONT>     * &lt;p&gt; <a name="line.30"></a>
+<FONT color="green">031</FONT>     * Command line mode is entered by invoking the main() method, and<a name="line.31"></a>
+<FONT color="green">032</FONT>     * is intended to be used as a kind of subshell to which commands to add and<a name="line.32"></a>
+<FONT color="green">033</FONT>     * send notification data of various types can be sent. The SensorShell can be invoked<a name="line.33"></a>
+<FONT color="green">034</FONT>     * without any additional arguments as follows:<a name="line.34"></a>
 <FONT color="green">035</FONT>     * <a name="line.35"></a>
-<FONT color="green">036</FONT>     * Or you can invoke it with one, two, three, or four additional arguments:<a name="line.36"></a>
+<FONT color="green">036</FONT>     * &lt;pre&gt;java -jar sensorshell.jar&lt;/pre&gt;<a name="line.36"></a>
 <FONT color="green">037</FONT>     * <a name="line.37"></a>
-<FONT color="green">038</FONT>     * &lt;pre&gt;java -jar sensorshell.jar [toolname] [sensor.properties] [no offline] [command file]&lt;/pre&gt;<a name="line.38"></a>
-<FONT color="green">039</FONT>     * &lt;p&gt;<a name="line.39"></a>
-<FONT color="green">040</FONT>     * Programmatic mode involves creating an instance of SensorShell, retrieving the <a name="line.40"></a>
-<FONT color="green">041</FONT>     * appropriate command instance (Ping, Add, etc.) and invoking the appropriate method.<a name="line.41"></a>
-<FONT color="green">042</FONT>     *<a name="line.42"></a>
-<FONT color="green">043</FONT>     * @author    Philip M. Johnson<a name="line.43"></a>
-<FONT color="green">044</FONT>     */<a name="line.44"></a>
-<FONT color="green">045</FONT>    public class SensorShell {<a name="line.45"></a>
-<FONT color="green">046</FONT>    <a name="line.46"></a>
-<FONT color="green">047</FONT>      /** Indicates if SensorShell is running interactively and thus output should be printed. */<a name="line.47"></a>
-<FONT color="green">048</FONT>      private boolean isInteractive = false;<a name="line.48"></a>
-<FONT color="green">049</FONT>    <a name="line.49"></a>
-<FONT color="green">050</FONT>      /** Indicates if offline data should be stored and/or recovered by this shell. */<a name="line.50"></a>
-<FONT color="green">051</FONT>      private boolean enableOfflineData = true;<a name="line.51"></a>
-<FONT color="green">052</FONT>    <a name="line.52"></a>
-<FONT color="green">053</FONT>      /** The notification shell prompt string. */<a name="line.53"></a>
-<FONT color="green">054</FONT>      private String prompt = "&gt;&gt; ";<a name="line.54"></a>
-<FONT color="green">055</FONT>    <a name="line.55"></a>
-<FONT color="green">056</FONT>      /** A string indicating the tool name invoking SensorShell, added to the log file name. */<a name="line.56"></a>
-<FONT color="green">057</FONT>      private String toolName = "interactive";<a name="line.57"></a>
-<FONT color="green">058</FONT>    <a name="line.58"></a>
-<FONT color="green">059</FONT>      /** The delimiter for entry fields. */<a name="line.59"></a>
-<FONT color="green">060</FONT>      private String delimiter = "#";<a name="line.60"></a>
-<FONT color="green">061</FONT>    <a name="line.61"></a>
-<FONT color="green">062</FONT>      /** The line separator (carriage return character(s)). */<a name="line.62"></a>
-<FONT color="green">063</FONT>      private String cr = System.getProperty("line.separator");<a name="line.63"></a>
-<FONT color="green">064</FONT>    <a name="line.64"></a>
-<FONT color="green">065</FONT>      /** The input stream used to read input from the command line. */<a name="line.65"></a>
-<FONT color="green">066</FONT>      private BufferedReader bufferedReader = null;<a name="line.66"></a>
-<FONT color="green">067</FONT>    <a name="line.67"></a>
-<FONT color="green">068</FONT>      /** The sensor properties instance. */<a name="line.68"></a>
-<FONT color="green">069</FONT>      private SensorProperties sensorProperties; <a name="line.69"></a>
-<FONT color="green">070</FONT>    <a name="line.70"></a>
-<FONT color="green">071</FONT>      /** The logging instance for SensorShells. */<a name="line.71"></a>
-<FONT color="green">072</FONT>      private Logger logger;<a name="line.72"></a>
-<FONT color="green">073</FONT>    <a name="line.73"></a>
-<FONT color="green">074</FONT>      /** The logging formatter that simply spits out the message string unchanged. */<a name="line.74"></a>
-<FONT color="green">075</FONT>      private Formatter oneLineFormatter = new OneLineFormatter(false, false);<a name="line.75"></a>
-<FONT color="green">076</FONT>    <a name="line.76"></a>
-<FONT color="green">077</FONT>      /** The file of commands, if provided on the command line. */<a name="line.77"></a>
-<FONT color="green">078</FONT>      private File commandFile = null;<a name="line.78"></a>
-<FONT color="green">079</FONT>    <a name="line.79"></a>
-<FONT color="green">080</FONT>      /** A boolean indicating if the command file has been supplied on the command line. */<a name="line.80"></a>
-<FONT color="green">081</FONT>      private boolean commandFilePresent = false;<a name="line.81"></a>
-<FONT color="green">082</FONT>      <a name="line.82"></a>
-<FONT color="green">083</FONT>      /** The ping command. */<a name="line.83"></a>
-<FONT color="green">084</FONT>      private PingCommand pingCommand;<a name="line.84"></a>
-<FONT color="green">085</FONT>      <a name="line.85"></a>
-<FONT color="green">086</FONT>      /** The send command. */<a name="line.86"></a>
-<FONT color="green">087</FONT>      private SensorDataCommand sensorDataCommand;<a name="line.87"></a>
-<FONT color="green">088</FONT>    <a name="line.88"></a>
-<FONT color="green">089</FONT>      /** The autosend command. */<a name="line.89"></a>
-<FONT color="green">090</FONT>      private AutoSendCommand autoSendCommand;<a name="line.90"></a>
-<FONT color="green">091</FONT>      <a name="line.91"></a>
-<FONT color="green">092</FONT>      /** The quit command. */<a name="line.92"></a>
-<FONT color="green">093</FONT>      private QuitCommand quitCommand;<a name="line.93"></a>
-<FONT color="green">094</FONT>      <a name="line.94"></a>
-<FONT color="green">095</FONT>      /** The sensorbaseclient instance used to communicate with the sensorbase. */<a name="line.95"></a>
-<FONT color="green">096</FONT>      private SensorBaseClient client;<a name="line.96"></a>
-<FONT color="green">097</FONT>      <a name="line.97"></a>
-<FONT color="green">098</FONT>      /**<a name="line.98"></a>
-<FONT color="green">099</FONT>       * Constructs a new SensorShell instance that can be provided with<a name="line.99"></a>
-<FONT color="green">100</FONT>       * notification data to be sent eventually to a specific user key and host.<a name="line.100"></a>
-<FONT color="green">101</FONT>       * The toolName field in the log file name is set to "interactive" if the tool<a name="line.101"></a>
-<FONT color="green">102</FONT>       * is invoked interactively and "tool" if it is invoked programmatically.<a name="line.102"></a>
-<FONT color="green">103</FONT>       *<a name="line.103"></a>
-<FONT color="green">104</FONT>       * @param sensorProperties  The sensor properties instance for this run.<a name="line.104"></a>
-<FONT color="green">105</FONT>       * @param isInteractive     Whether this SensorShell is being interactively invoked or not.<a name="line.105"></a>
-<FONT color="green">106</FONT>       */<a name="line.106"></a>
-<FONT color="green">107</FONT>      public SensorShell(SensorProperties sensorProperties, boolean isInteractive) {<a name="line.107"></a>
-<FONT color="green">108</FONT>        this(sensorProperties, isInteractive, (isInteractive) ? "interactive" : "tool", true, null);<a name="line.108"></a>
-<FONT color="green">109</FONT>      }<a name="line.109"></a>
-<FONT color="green">110</FONT>    <a name="line.110"></a>
-<FONT color="green">111</FONT>    <a name="line.111"></a>
-<FONT color="green">112</FONT>      /**<a name="line.112"></a>
-<FONT color="green">113</FONT>       * Constructs a new SensorShell instance that can be provided with<a name="line.113"></a>
-<FONT color="green">114</FONT>       * notification data to be sent eventually to a specific user key and host.<a name="line.114"></a>
-<FONT color="green">115</FONT>       *<a name="line.115"></a>
-<FONT color="green">116</FONT>       * @param sensorProperties  The sensor properties instance for this run.<a name="line.116"></a>
-<FONT color="green">117</FONT>       * @param isInteractive     Whether this SensorShell is being interactively invoked or not.<a name="line.117"></a>
-<FONT color="green">118</FONT>       * @param toolName          Indicates the invoking tool that is added to the log file name.<a name="line.118"></a>
-<FONT color="green">119</FONT>       */<a name="line.119"></a>
-<FONT color="green">120</FONT>      public SensorShell(SensorProperties sensorProperties, boolean isInteractive, String toolName) {<a name="line.120"></a>
-<FONT color="green">121</FONT>        this(sensorProperties, isInteractive, toolName, true, null);<a name="line.121"></a>
-<FONT color="green">122</FONT>      }<a name="line.122"></a>
-<FONT color="green">123</FONT>    <a name="line.123"></a>
-<FONT color="green">124</FONT>    <a name="line.124"></a>
-<FONT color="green">125</FONT>      /**<a name="line.125"></a>
-<FONT color="green">126</FONT>       * Constructs a new SensorShell instance that can be provided with<a name="line.126"></a>
-<FONT color="green">127</FONT>       * notification data to be sent eventually to a specific user key and host.<a name="line.127"></a>
-<FONT color="green">128</FONT>       * (For testing purposes only, you may want to disable offline data recovery.)<a name="line.128"></a>
-<FONT color="green">129</FONT>       *<a name="line.129"></a>
-<FONT color="green">130</FONT>       * @param sensorProperties   The sensor properties instance for this run.<a name="line.130"></a>
-<FONT color="green">131</FONT>       * @param isInteractive      Whether this SensorShell is being interactively invoked or not.<a name="line.131"></a>
-<FONT color="green">132</FONT>       * @param toolName           The invoking tool that is added to the log file name.<a name="line.132"></a>
-<FONT color="green">133</FONT>       * @param enableOfflineData  A boolean indicating whether to recover and/or store offline data.<a name="line.133"></a>
-<FONT color="green">134</FONT>       * @param commandFile        A file containing shell commands, or null if none provided.<a name="line.134"></a>
-<FONT color="green">135</FONT>       */<a name="line.135"></a>
-<FONT color="green">136</FONT>      public SensorShell(SensorProperties sensorProperties, boolean isInteractive, String toolName,<a name="line.136"></a>
-<FONT color="green">137</FONT>          boolean enableOfflineData, File commandFile) {<a name="line.137"></a>
-<FONT color="green">138</FONT>        this.isInteractive = isInteractive;<a name="line.138"></a>
-<FONT color="green">139</FONT>        this.toolName = toolName;<a name="line.139"></a>
-<FONT color="green">140</FONT>        this.sensorProperties = sensorProperties;<a name="line.140"></a>
-<FONT color="green">141</FONT>        this.enableOfflineData = enableOfflineData;<a name="line.141"></a>
-<FONT color="green">142</FONT>        this.commandFile = commandFile;<a name="line.142"></a>
-<FONT color="green">143</FONT>        this.commandFilePresent = ((commandFile != null));<a name="line.143"></a>
-<FONT color="green">144</FONT>        this.client = new SensorBaseClient(sensorProperties.getHackystatHost(), <a name="line.144"></a>
-<FONT color="green">145</FONT>            sensorProperties.getEmail(), sensorProperties.getPassword());<a name="line.145"></a>
-<FONT color="green">146</FONT>        // Create the offline directory in the same directory where sensor.properties was found.<a name="line.146"></a>
-<FONT color="green">147</FONT>        //OfflineManager.getInstance(sensorProperties.getSensorPropertiesDir());<a name="line.147"></a>
-<FONT color="green">148</FONT>        initializeLogger();<a name="line.148"></a>
-<FONT color="green">149</FONT>        this.pingCommand = new PingCommand(this, sensorProperties);<a name="line.149"></a>
-<FONT color="green">150</FONT>        this.sensorDataCommand = new SensorDataCommand(this, sensorProperties, this.pingCommand, <a name="line.150"></a>
-<FONT color="green">151</FONT>            this.client);<a name="line.151"></a>
-<FONT color="green">152</FONT>        this.autoSendCommand = new AutoSendCommand(this, sensorProperties);<a name="line.152"></a>
-<FONT color="green">153</FONT>        this.quitCommand = new QuitCommand(this, sensorProperties, this.sensorDataCommand);<a name="line.153"></a>
-<FONT color="green">154</FONT>        printBanner(sensorProperties);<a name="line.154"></a>
-<FONT color="green">155</FONT>        this.autoSendCommand.initialize();<a name="line.155"></a>
-<FONT color="green">156</FONT>        recoverOfflineData();<a name="line.156"></a>
-<FONT color="green">157</FONT>    <a name="line.157"></a>
-<FONT color="green">158</FONT>        // Now determine whether to read commands from the input stream or from the command file.<a name="line.158"></a>
-<FONT color="green">159</FONT>        try {<a name="line.159"></a>
-<FONT color="green">160</FONT>          this.bufferedReader = (commandFilePresent) ?<a name="line.160"></a>
-<FONT color="green">161</FONT>            new BufferedReader(new FileReader(this.commandFile)) :<a name="line.161"></a>
-<FONT color="green">162</FONT>            new BufferedReader(new InputStreamReader(System.in));<a name="line.162"></a>
-<FONT color="green">163</FONT>        }<a name="line.163"></a>
-<FONT color="green">164</FONT>        catch (IOException e) {<a name="line.164"></a>
-<FONT color="green">165</FONT>          this.logger.info(cr);<a name="line.165"></a>
-<FONT color="green">166</FONT>        }<a name="line.166"></a>
-<FONT color="green">167</FONT>      }<a name="line.167"></a>
-<FONT color="green">168</FONT>    <a name="line.168"></a>
-<FONT color="green">169</FONT>    <a name="line.169"></a>
-<FONT color="green">170</FONT>      /**<a name="line.170"></a>
-<FONT color="green">171</FONT>       * Constructs a new SensorShell instance that can be provided with<a name="line.171"></a>
-<FONT color="green">172</FONT>       * notification data to be sent eventually to a specific user key and host.<a name="line.172"></a>
-<FONT color="green">173</FONT>       * (For testing purposes only, you may want to disable offline data recovery.)<a name="line.173"></a>
-<FONT color="green">174</FONT>       *<a name="line.174"></a>
-<FONT color="green">175</FONT>       * @param sensorProperties   The sensor properties instance for this run.<a name="line.175"></a>
-<FONT color="green">176</FONT>       * @param isInteractive      Whether this SensorShell is being interactively invoked or not.<a name="line.176"></a>
-<FONT color="green">177</FONT>       * @param toolName           The invoking tool that is added to the log file name.<a name="line.177"></a>
-<FONT color="green">178</FONT>       * @param enableOfflineData  A boolean indicating whether to recover and/or store offline data.<a name="line.178"></a>
-<FONT color="green">179</FONT>       */<a name="line.179"></a>
-<FONT color="green">180</FONT>      public SensorShell(SensorProperties sensorProperties, boolean isInteractive, String toolName,<a name="line.180"></a>
-<FONT color="green">181</FONT>          boolean enableOfflineData) {<a name="line.181"></a>
-<FONT color="green">182</FONT>        this(sensorProperties, isInteractive, toolName, enableOfflineData, null);<a name="line.182"></a>
-<FONT color="green">183</FONT>      }<a name="line.183"></a>
-<FONT color="green">184</FONT>    <a name="line.184"></a>
-<FONT color="green">185</FONT>    <a name="line.185"></a>
-<FONT color="green">186</FONT>      /**<a name="line.186"></a>
-<FONT color="green">187</FONT>       * Looks for offline data and recovers any that is found if offline data<a name="line.187"></a>
-<FONT color="green">188</FONT>       * management is enabled and if the server is currently pingable.<a name="line.188"></a>
-<FONT color="green">189</FONT>       */<a name="line.189"></a>
-<FONT color="green">190</FONT>      private void recoverOfflineData() {<a name="line.190"></a>
-<FONT color="green">191</FONT>        // Return immediately if server is not available.<a name="line.191"></a>
-<FONT color="green">192</FONT>        if (!this.pingCommand.isPingable()) {<a name="line.192"></a>
-<FONT color="green">193</FONT>          this.println("Server not available; offline data not recovered.");<a name="line.193"></a>
-<FONT color="green">194</FONT>          return;<a name="line.194"></a>
-<FONT color="green">195</FONT>        }<a name="line.195"></a>
-<FONT color="green">196</FONT>        // Return immediately if the SensorShell was instantiated with offline data disabled.<a name="line.196"></a>
-<FONT color="green">197</FONT>        if (!this.enableOfflineData) {<a name="line.197"></a>
-<FONT color="green">198</FONT>          this.println("Offline data management disabled.");<a name="line.198"></a>
-<FONT color="green">199</FONT>          return;<a name="line.199"></a>
-<FONT color="green">200</FONT>        }<a name="line.200"></a>
-<FONT color="green">201</FONT>        // Otherwise do offline data management.<a name="line.201"></a>
-<FONT color="green">202</FONT>    //    this.println("Checking for offline data to recover.");<a name="line.202"></a>
-<FONT color="green">203</FONT>    //    boolean isDataRecovered = OfflineManager.getInstance().recover(this);<a name="line.203"></a>
-<FONT color="green">204</FONT>    //    if (isDataRecovered) {<a name="line.204"></a>
-<FONT color="green">205</FONT>    //      this.println("Summary of recovered offline data:");<a name="line.205"></a>
-<FONT color="green">206</FONT>    //      this.println(OfflineManager.getInstance().getRecoverInfoString());<a name="line.206"></a>
-<FONT color="green">207</FONT>    //    }<a name="line.207"></a>
-<FONT color="green">208</FONT>    //    else {<a name="line.208"></a>
-<FONT color="green">209</FONT>    //      this.println("No offline data found.");<a name="line.209"></a>
-<FONT color="green">210</FONT>    //    }<a name="line.210"></a>
-<FONT color="green">211</FONT>      }<a name="line.211"></a>
-<FONT color="green">212</FONT>    <a name="line.212"></a>
-<FONT color="green">213</FONT>    <a name="line.213"></a>
-<FONT color="green">214</FONT>      /**<a name="line.214"></a>
-<FONT color="green">215</FONT>       * Initializes SensorShell logging. All client input is recorded to a log file<a name="line.215"></a>
-<FONT color="green">216</FONT>       * in .hackystat/logs/.<a name="line.216"></a>
-<FONT color="green">217</FONT>       */<a name="line.217"></a>
-<FONT color="green">218</FONT>      private void initializeLogger() {<a name="line.218"></a>
-<FONT color="green">219</FONT>        try {<a name="line.219"></a>
-<FONT color="green">220</FONT>          // First, create the logs directory, using the same location as sensor.properties if possible.<a name="line.220"></a>
-<FONT color="green">221</FONT>          File logDir = (sensorProperties.getSensorPropertiesDir() == null) ?<a name="line.221"></a>
-<FONT color="green">222</FONT>              new File(System.getProperty("user.home") + "/.hackystat/logs") :<a name="line.222"></a>
-<FONT color="green">223</FONT>              new File(sensorProperties.getSensorPropertiesDir(), "/logs");<a name="line.223"></a>
-<FONT color="green">224</FONT>          logDir.mkdirs();<a name="line.224"></a>
-<FONT color="green">225</FONT>    <a name="line.225"></a>
-<FONT color="green">226</FONT>          // Now set up logging to a file in that directory.<a name="line.226"></a>
-<FONT color="green">227</FONT>          this.logger = Logger.getLogger("hackystat.client.cli.SensorShell");<a name="line.227"></a>
-<FONT color="green">228</FONT>          this.logger.setUseParentHandlers(false);<a name="line.228"></a>
-<FONT color="green">229</FONT>          String fileName = logDir.getAbsolutePath() + "/" + this.toolName + ".%u.log";<a name="line.229"></a>
-<FONT color="green">230</FONT>          FileHandler handler = new FileHandler(fileName, 500000, 1, true);<a name="line.230"></a>
-<FONT color="green">231</FONT>          handler.setFormatter(this.oneLineFormatter);<a name="line.231"></a>
-<FONT color="green">232</FONT>          this.logger.addHandler(handler);<a name="line.232"></a>
-<FONT color="green">233</FONT>          // Add a couple of newlines to the log file to distinguish new shell sessions.<a name="line.233"></a>
-<FONT color="green">234</FONT>          logger.info(cr + cr);<a name="line.234"></a>
-<FONT color="green">235</FONT>        }<a name="line.235"></a>
-<FONT color="green">236</FONT>        catch (Exception e) {<a name="line.236"></a>
-<FONT color="green">237</FONT>          System.out.println("Error initializing SensorShell logger:\n" + e);<a name="line.237"></a>
-<FONT color="green">238</FONT>        }<a name="line.238"></a>
-<FONT color="green">239</FONT>      }<a name="line.239"></a>
-<FONT color="green">240</FONT>    <a name="line.240"></a>
-<FONT color="green">241</FONT>    <a name="line.241"></a>
-<FONT color="green">242</FONT>      /**<a name="line.242"></a>
-<FONT color="green">243</FONT>       * Prints out initial information about the SensorShell.<a name="line.243"></a>
-<FONT color="green">244</FONT>       *<a name="line.244"></a>
-<FONT color="green">245</FONT>       * @param sensorProperties  The sensor properties file.<a name="line.245"></a>
-<FONT color="green">246</FONT>       */<a name="line.246"></a>
-<FONT color="green">247</FONT>      private void printBanner(SensorProperties sensorProperties) {<a name="line.247"></a>
-<FONT color="green">248</FONT>        this.println("Hackystat SensorShell Version: " + getVersion());<a name="line.248"></a>
-<FONT color="green">249</FONT>        this.println("SensorShell started at: " + new Date());<a name="line.249"></a>
-<FONT color="green">250</FONT>        this.println("Using Sensor Properties in: " + sensorProperties.getAbsolutePath());<a name="line.250"></a>
-<FONT color="green">251</FONT>        this.println("Type 'help' for a list of commands.");<a name="line.251"></a>
-<FONT color="green">252</FONT>        // Ping the host to determine availability.<a name="line.252"></a>
-<FONT color="green">253</FONT>        String host = sensorProperties.getHackystatHost();<a name="line.253"></a>
-<FONT color="green">254</FONT>        String email = sensorProperties.getEmail();<a name="line.254"></a>
-<FONT color="green">255</FONT>        String password = sensorProperties.getPassword();<a name="line.255"></a>
-<FONT color="green">256</FONT>        String availability = SensorBaseClient.isHost(host) ? "available." : "not available";<a name="line.256"></a>
-<FONT color="green">257</FONT>        this.println("Host: " + sensorProperties.getHackystatHost() + " is " + availability);<a name="line.257"></a>
-<FONT color="green">258</FONT>        String authorized = SensorBaseClient.isRegistered(host, email, password) ? <a name="line.258"></a>
-<FONT color="green">259</FONT>            " authorized " : " not authorized ";<a name="line.259"></a>
-<FONT color="green">260</FONT>        this.println("User " + email + " is" + authorized + "to login at this host.");<a name="line.260"></a>
-<FONT color="green">261</FONT>      }<a name="line.261"></a>
-<FONT color="green">262</FONT>      <a name="line.262"></a>
-<FONT color="green">263</FONT>      <a name="line.263"></a>
-<FONT color="green">264</FONT>      /**<a name="line.264"></a>
-<FONT color="green">265</FONT>       * Process a single input string representing a command.<a name="line.265"></a>
-<FONT color="green">266</FONT>       * @param inputString A command as a String.<a name="line.266"></a>
-<FONT color="green">267</FONT>       */<a name="line.267"></a>
-<FONT color="green">268</FONT>      private void processInputString(String inputString) {<a name="line.268"></a>
-<FONT color="green">269</FONT>        // Ignore empty commands. <a name="line.269"></a>
-<FONT color="green">270</FONT>        if ((inputString == null) || ("".equals(inputString))) {<a name="line.270"></a>
-<FONT color="green">271</FONT>          return;<a name="line.271"></a>
-<FONT color="green">272</FONT>        }<a name="line.272"></a>
-<FONT color="green">273</FONT>        // Log the command if we're not running interactively.<a name="line.273"></a>
-<FONT color="green">274</FONT>        if (!this.isInteractive) {<a name="line.274"></a>
-<FONT color="green">275</FONT>          logger.info("#&gt; " + inputString);<a name="line.275"></a>
-<FONT color="green">276</FONT>        }<a name="line.276"></a>
-<FONT color="green">277</FONT>        // Process quit command.<a name="line.277"></a>
-<FONT color="green">278</FONT>        if ("quit".equals(inputString)) {<a name="line.278"></a>
-<FONT color="green">279</FONT>          this.quitCommand.quit();<a name="line.279"></a>
-<FONT color="green">280</FONT>          return;<a name="line.280"></a>
-<FONT color="green">281</FONT>        }<a name="line.281"></a>
-<FONT color="green">282</FONT>    <a name="line.282"></a>
-<FONT color="green">283</FONT>        // Process help command.<a name="line.283"></a>
-<FONT color="green">284</FONT>        if ("help".equals(inputString)) {<a name="line.284"></a>
-<FONT color="green">285</FONT>          this.printHelp();<a name="line.285"></a>
-<FONT color="green">286</FONT>          return;<a name="line.286"></a>
-<FONT color="green">287</FONT>        }<a name="line.287"></a>
-<FONT color="green">288</FONT>    <a name="line.288"></a>
-<FONT color="green">289</FONT>        // Process send command.<a name="line.289"></a>
-<FONT color="green">290</FONT>        if ("send".equals(inputString)) {<a name="line.290"></a>
-<FONT color="green">291</FONT>          this.sensorDataCommand.send();<a name="line.291"></a>
-<FONT color="green">292</FONT>          return;<a name="line.292"></a>
-<FONT color="green">293</FONT>        }<a name="line.293"></a>
-<FONT color="green">294</FONT>        <a name="line.294"></a>
-<FONT color="green">295</FONT>        // Process ping command.<a name="line.295"></a>
-<FONT color="green">296</FONT>        if ("ping".equals(inputString)) {<a name="line.296"></a>
-<FONT color="green">297</FONT>          boolean isPingable = this.pingCommand.isPingable();<a name="line.297"></a>
-<FONT color="green">298</FONT>          this.println("Ping of host " + this.sensorProperties.getHackystatHost() + " for user " +<a name="line.298"></a>
-<FONT color="green">299</FONT>              this.sensorProperties.getEmail() + <a name="line.299"></a>
-<FONT color="green">300</FONT>              (isPingable ? " succeeded." : " did not succeed"));<a name="line.300"></a>
-<FONT color="green">301</FONT>          return;<a name="line.301"></a>
-<FONT color="green">302</FONT>        }<a name="line.302"></a>
-<FONT color="green">303</FONT>    <a name="line.303"></a>
-<FONT color="green">304</FONT>        // Process commands with arguments. <a name="line.304"></a>
-<FONT color="green">305</FONT>        StringTokenizer tokenizer = new StringTokenizer(inputString, this.delimiter);<a name="line.305"></a>
-<FONT color="green">306</FONT>        int numTokens = tokenizer.countTokens();<a name="line.306"></a>
-<FONT color="green">307</FONT>        // All remaining commands must have arguments. <a name="line.307"></a>
-<FONT color="green">308</FONT>        if (numTokens == 0) {<a name="line.308"></a>
-<FONT color="green">309</FONT>          this.println("Error: unknown command or command requires arguments.");<a name="line.309"></a>
+<FONT color="green">038</FONT>     * Or you can invoke it with one, two, three, or four additional arguments:<a name="line.38"></a>
+<FONT color="green">039</FONT>     * <a name="line.39"></a>
+<FONT color="green">040</FONT>     * &lt;pre&gt;java -jar sensorshell.jar [toolname] [sensor.properties] [no offline] [command file]&lt;/pre&gt;<a name="line.40"></a>
+<FONT color="green">041</FONT>     * &lt;p&gt;<a name="line.41"></a>
+<FONT color="green">042</FONT>     * Programmatic mode involves creating an instance of SensorShell, retrieving the <a name="line.42"></a>
+<FONT color="green">043</FONT>     * appropriate command instance (Ping, Add, etc.) and invoking the appropriate method.<a name="line.43"></a>
+<FONT color="green">044</FONT>     *<a name="line.44"></a>
+<FONT color="green">045</FONT>     * @author    Philip M. Johnson<a name="line.45"></a>
+<FONT color="green">046</FONT>     */<a name="line.46"></a>
+<FONT color="green">047</FONT>    public class SensorShell {<a name="line.47"></a>
+<FONT color="green">048</FONT>    <a name="line.48"></a>
+<FONT color="green">049</FONT>      /** Indicates if SensorShell is running interactively and thus output should be printed. */<a name="line.49"></a>
+<FONT color="green">050</FONT>      private boolean isInteractive = false;<a name="line.50"></a>
+<FONT color="green">051</FONT>    <a name="line.51"></a>
+<FONT color="green">052</FONT>      /** Indicates if offline data should be stored and/or recovered by this shell. */<a name="line.52"></a>
+<FONT color="green">053</FONT>      private boolean enableOfflineData = true;<a name="line.53"></a>
+<FONT color="green">054</FONT>    <a name="line.54"></a>
+<FONT color="green">055</FONT>      /** The notification shell prompt string. */<a name="line.55"></a>
+<FONT color="green">056</FONT>      private String prompt = "&gt;&gt; ";<a name="line.56"></a>
+<FONT color="green">057</FONT>    <a name="line.57"></a>
+<FONT color="green">058</FONT>      /** A string indicating the tool name invoking SensorShell, added to the log file name. */<a name="line.58"></a>
+<FONT color="green">059</FONT>      private String toolName = "interactive";<a name="line.59"></a>
+<FONT color="green">060</FONT>    <a name="line.60"></a>
+<FONT color="green">061</FONT>      /** The delimiter for entry fields. */<a name="line.61"></a>
+<FONT color="green">062</FONT>      private String delimiter = "#";<a name="line.62"></a>
+<FONT color="green">063</FONT>    <a name="line.63"></a>
+<FONT color="green">064</FONT>      /** The line separator (carriage return character(s)). */<a name="line.64"></a>
+<FONT color="green">065</FONT>      private String cr = System.getProperty("line.separator");<a name="line.65"></a>
+<FONT color="green">066</FONT>    <a name="line.66"></a>
+<FONT color="green">067</FONT>      /** The input stream used to read input from the command line. */<a name="line.67"></a>
+<FONT color="green">068</FONT>      private BufferedReader bufferedReader = null;<a name="line.68"></a>
+<FONT color="green">069</FONT>    <a name="line.69"></a>
+<FONT color="green">070</FONT>      /** The sensor properties instance. */<a name="line.70"></a>
+<FONT color="green">071</FONT>      private SensorProperties sensorProperties; <a name="line.71"></a>
+<FONT color="green">072</FONT>    <a name="line.72"></a>
+<FONT color="green">073</FONT>      /** The logging instance for SensorShells. */<a name="line.73"></a>
+<FONT color="green">074</FONT>      private Logger logger;<a name="line.74"></a>
+<FONT color="green">075</FONT>    <a name="line.75"></a>
+<FONT color="green">076</FONT>      /** The logging formatter that simply spits out the message string unchanged. */<a name="line.76"></a>
+<FONT color="green">077</FONT>      private Formatter oneLineFormatter = new OneLineFormatter(false, false);<a name="line.77"></a>
+<FONT color="green">078</FONT>    <a name="line.78"></a>
+<FONT color="green">079</FONT>      /** The file of commands, if provided on the command line. */<a name="line.79"></a>
+<FONT color="green">080</FONT>      private File commandFile = null;<a name="line.80"></a>
+<FONT color="green">081</FONT>    <a name="line.81"></a>
+<FONT color="green">082</FONT>      /** A boolean indicating if the command file has been supplied on the command line. */<a name="line.82"></a>
+<FONT color="green">083</FONT>      private boolean commandFilePresent = false;<a name="line.83"></a>
+<FONT color="green">084</FONT>      <a name="line.84"></a>
+<FONT color="green">085</FONT>      /** The ping command. */<a name="line.85"></a>
+<FONT color="green">086</FONT>      private PingCommand pingCommand;<a name="line.86"></a>
+<FONT color="green">087</FONT>      <a name="line.87"></a>
+<FONT color="green">088</FONT>      /** The send command. */<a name="line.88"></a>
+<FONT color="green">089</FONT>      private SensorDataCommand sensorDataCommand;<a name="line.89"></a>
+<FONT color="green">090</FONT>    <a name="line.90"></a>
+<FONT color="green">091</FONT>      /** The autosend command. */<a name="line.91"></a>
+<FONT color="green">092</FONT>      private AutoSendCommand autoSendCommand;<a name="line.92"></a>
+<FONT color="green">093</FONT>      <a name="line.93"></a>
+<FONT color="green">094</FONT>      /** The quit command. */<a name="line.94"></a>
+<FONT color="green">095</FONT>      private QuitCommand quitCommand;<a name="line.95"></a>
+<FONT color="green">096</FONT>      <a name="line.96"></a>
+<FONT color="green">097</FONT>      /** The sensorbaseclient instance used to communicate with the sensorbase. */<a name="line.97"></a>
+<FONT color="green">098</FONT>      private SensorBaseClient client;<a name="line.98"></a>
+<FONT color="green">099</FONT>      <a name="line.99"></a>
+<FONT color="green">100</FONT>      /** The OfflineManager used to recover data. */<a name="line.100"></a>
+<FONT color="green">101</FONT>      private OfflineManager offlineManager;<a name="line.101"></a>
+<FONT color="green">102</FONT>      <a name="line.102"></a>
+<FONT color="green">103</FONT>      /**<a name="line.103"></a>
+<FONT color="green">104</FONT>       * Constructs a new SensorShell instance that can be provided with<a name="line.104"></a>
+<FONT color="green">105</FONT>       * notification data to be sent eventually to a specific user key and host.<a name="line.105"></a>
+<FONT color="green">106</FONT>       * The toolName field in the log file name is set to "interactive" if the tool<a name="line.106"></a>
+<FONT color="green">107</FONT>       * is invoked interactively and "tool" if it is invoked programmatically.<a name="line.107"></a>
+<FONT color="green">108</FONT>       *<a name="line.108"></a>
+<FONT color="green">109</FONT>       * @param sensorProperties  The sensor properties instance for this run.<a name="line.109"></a>
+<FONT color="green">110</FONT>       * @param isInteractive     Whether this SensorShell is being interactively invoked or not.<a name="line.110"></a>
+<FONT color="green">111</FONT>       */<a name="line.111"></a>
+<FONT color="green">112</FONT>      public SensorShell(SensorProperties sensorProperties, boolean isInteractive) {<a name="line.112"></a>
+<FONT color="green">113</FONT>        this(sensorProperties, isInteractive, (isInteractive) ? "interactive" : "tool", true, null);<a name="line.113"></a>
+<FONT color="green">114</FONT>      }<a name="line.114"></a>
+<FONT color="green">115</FONT>    <a name="line.115"></a>
+<FONT color="green">116</FONT>    <a name="line.116"></a>
+<FONT color="green">117</FONT>      /**<a name="line.117"></a>
+<FONT color="green">118</FONT>       * Constructs a new SensorShell instance that can be provided with<a name="line.118"></a>
+<FONT color="green">119</FONT>       * notification data to be sent eventually to a specific user key and host.<a name="line.119"></a>
+<FONT color="green">120</FONT>       *<a name="line.120"></a>
+<FONT color="green">121</FONT>       * @param sensorProperties  The sensor properties instance for this run.<a name="line.121"></a>
+<FONT color="green">122</FONT>       * @param isInteractive     Whether this SensorShell is being interactively invoked or not.<a name="line.122"></a>
+<FONT color="green">123</FONT>       * @param toolName          Indicates the invoking tool that is added to the log file name.<a name="line.123"></a>
+<FONT color="green">124</FONT>       */<a name="line.124"></a>
+<FONT color="green">125</FONT>      public SensorShell(SensorProperties sensorProperties, boolean isInteractive, String toolName) {<a name="line.125"></a>
+<FONT color="green">126</FONT>        this(sensorProperties, isInteractive, toolName, true, null);<a name="line.126"></a>
+<FONT color="green">127</FONT>      }<a name="line.127"></a>
+<FONT color="green">128</FONT>    <a name="line.128"></a>
+<FONT color="green">129</FONT>    <a name="line.129"></a>
+<FONT color="green">130</FONT>      /**<a name="line.130"></a>
+<FONT color="green">131</FONT>       * Constructs a new SensorShell instance that can be provided with<a name="line.131"></a>
+<FONT color="green">132</FONT>       * notification data to be sent eventually to a specific user key and host.<a name="line.132"></a>
+<FONT color="green">133</FONT>       * (For testing purposes only, you may want to disable offline data recovery.)<a name="line.133"></a>
+<FONT color="green">134</FONT>       *<a name="line.134"></a>
+<FONT color="green">135</FONT>       * @param sensorProperties   The sensor properties instance for this run.<a name="line.135"></a>
+<FONT color="green">136</FONT>       * @param isInteractive      Whether this SensorShell is being interactively invoked or not.<a name="line.136"></a>
+<FONT color="green">137</FONT>       * @param toolName           The invoking tool that is added to the log file name.<a name="line.137"></a>
+<FONT color="green">138</FONT>       * @param enableOfflineData  A boolean indicating whether to recover and/or store offline data.<a name="line.138"></a>
+<FONT color="green">139</FONT>       * @param commandFile        A file containing shell commands, or null if none provided.<a name="line.139"></a>
+<FONT color="green">140</FONT>       */<a name="line.140"></a>
+<FONT color="green">141</FONT>      public SensorShell(SensorProperties sensorProperties, boolean isInteractive, String toolName,<a name="line.141"></a>
+<FONT color="green">142</FONT>          boolean enableOfflineData, File commandFile) {<a name="line.142"></a>
+<FONT color="green">143</FONT>        this.isInteractive = isInteractive;<a name="line.143"></a>
+<FONT color="green">144</FONT>        this.toolName = toolName;<a name="line.144"></a>
+<FONT color="green">145</FONT>        this.sensorProperties = sensorProperties;<a name="line.145"></a>
+<FONT color="green">146</FONT>        this.enableOfflineData = enableOfflineData;<a name="line.146"></a>
+<FONT color="green">147</FONT>        this.commandFile = commandFile;<a name="line.147"></a>
+<FONT color="green">148</FONT>        this.commandFilePresent = ((commandFile != null));<a name="line.148"></a>
+<FONT color="green">149</FONT>        this.client = new SensorBaseClient(sensorProperties.getHackystatHost(), <a name="line.149"></a>
+<FONT color="green">150</FONT>            sensorProperties.getEmail(), sensorProperties.getPassword());<a name="line.150"></a>
+<FONT color="green">151</FONT>        // Create the offline directory in the same directory where sensor.properties was found.<a name="line.151"></a>
+<FONT color="green">152</FONT>        //OfflineManager.getInstance(sensorProperties.getSensorPropertiesDir());<a name="line.152"></a>
+<FONT color="green">153</FONT>        initializeLogger();<a name="line.153"></a>
+<FONT color="green">154</FONT>        this.pingCommand = new PingCommand(this, sensorProperties);<a name="line.154"></a>
+<FONT color="green">155</FONT>        this.sensorDataCommand = new SensorDataCommand(this, sensorProperties, this.pingCommand, <a name="line.155"></a>
+<FONT color="green">156</FONT>            this.client);<a name="line.156"></a>
+<FONT color="green">157</FONT>        this.autoSendCommand = new AutoSendCommand(this, sensorProperties);<a name="line.157"></a>
+<FONT color="green">158</FONT>        this.quitCommand = new QuitCommand(this, sensorProperties, this.sensorDataCommand);<a name="line.158"></a>
+<FONT color="green">159</FONT>        printBanner(sensorProperties);<a name="line.159"></a>
+<FONT color="green">160</FONT>        this.autoSendCommand.initialize();<a name="line.160"></a>
+<FONT color="green">161</FONT>    <a name="line.161"></a>
+<FONT color="green">162</FONT>        // Now determine whether to read commands from the input stream or from the command file.<a name="line.162"></a>
+<FONT color="green">163</FONT>        try {<a name="line.163"></a>
+<FONT color="green">164</FONT>          this.bufferedReader = (commandFilePresent) ?<a name="line.164"></a>
+<FONT color="green">165</FONT>            new BufferedReader(new FileReader(this.commandFile)) :<a name="line.165"></a>
+<FONT color="green">166</FONT>            new BufferedReader(new InputStreamReader(System.in));<a name="line.166"></a>
+<FONT color="green">167</FONT>        }<a name="line.167"></a>
+<FONT color="green">168</FONT>        catch (IOException e) {<a name="line.168"></a>
+<FONT color="green">169</FONT>          this.logger.info(cr);<a name="line.169"></a>
+<FONT color="green">170</FONT>        }<a name="line.170"></a>
+<FONT color="green">171</FONT>        this.offlineManager = new OfflineManager(this);<a name="line.171"></a>
+<FONT color="green">172</FONT>        recoverOfflineData();<a name="line.172"></a>
+<FONT color="green">173</FONT>      }<a name="line.173"></a>
+<FONT color="green">174</FONT>      <a name="line.174"></a>
+<FONT color="green">175</FONT>      /**<a name="line.175"></a>
+<FONT color="green">176</FONT>       * Returns the offline manager associated with this instance. <a name="line.176"></a>
+<FONT color="green">177</FONT>       * @return The offline manager. <a name="line.177"></a>
+<FONT color="green">178</FONT>       */<a name="line.178"></a>
+<FONT color="green">179</FONT>      public OfflineManager getOfflineManager() {<a name="line.179"></a>
+<FONT color="green">180</FONT>        return this.offlineManager;<a name="line.180"></a>
+<FONT color="green">181</FONT>      }<a name="line.181"></a>
+<FONT color="green">182</FONT>    <a name="line.182"></a>
+<FONT color="green">183</FONT>    <a name="line.183"></a>
+<FONT color="green">184</FONT>      /**<a name="line.184"></a>
+<FONT color="green">185</FONT>       * Constructs a new SensorShell instance that can be provided with<a name="line.185"></a>
+<FONT color="green">186</FONT>       * notification data to be sent eventually to a specific user key and host.<a name="line.186"></a>
+<FONT color="green">187</FONT>       * (For testing purposes only, you may want to disable offline data recovery.)<a name="line.187"></a>
+<FONT color="green">188</FONT>       *<a name="line.188"></a>
+<FONT color="green">189</FONT>       * @param sensorProperties   The sensor properties instance for this run.<a name="line.189"></a>
+<FONT color="green">190</FONT>       * @param isInteractive      Whether this SensorShell is being interactively invoked or not.<a name="line.190"></a>
+<FONT color="green">191</FONT>       * @param toolName           The invoking tool that is added to the log file name.<a name="line.191"></a>
+<FONT color="green">192</FONT>       * @param enableOfflineData  A boolean indicating whether to recover and/or store offline data.<a name="line.192"></a>
+<FONT color="green">193</FONT>       */<a name="line.193"></a>
+<FONT color="green">194</FONT>      public SensorShell(SensorProperties sensorProperties, boolean isInteractive, String toolName,<a name="line.194"></a>
+<FONT color="green">195</FONT>          boolean enableOfflineData) {<a name="line.195"></a>
+<FONT color="green">196</FONT>        this(sensorProperties, isInteractive, toolName, enableOfflineData, null);<a name="line.196"></a>
+<FONT color="green">197</FONT>      }<a name="line.197"></a>
+<FONT color="green">198</FONT>    <a name="line.198"></a>
+<FONT color="green">199</FONT>    <a name="line.199"></a>
+<FONT color="green">200</FONT>      /**<a name="line.200"></a>
+<FONT color="green">201</FONT>       * Looks for offline data and recovers any that is found if offline data<a name="line.201"></a>
+<FONT color="green">202</FONT>       * management is enabled and if the server is currently pingable.<a name="line.202"></a>
+<FONT color="green">203</FONT>       */<a name="line.203"></a>
+<FONT color="green">204</FONT>      private void recoverOfflineData() {<a name="line.204"></a>
+<FONT color="green">205</FONT>        // Return immediately if server is not available.<a name="line.205"></a>
+<FONT color="green">206</FONT>        if (!this.pingCommand.isPingable()) {<a name="line.206"></a>
+<FONT color="green">207</FONT>          this.println("Server not available; offline data not recovered.");<a name="line.207"></a>
+<FONT color="green">208</FONT>          return;<a name="line.208"></a>
+<FONT color="green">209</FONT>        }<a name="line.209"></a>
+<FONT color="green">210</FONT>        // Return immediately if the SensorShell was instantiated with offline data disabled.<a name="line.210"></a>
+<FONT color="green">211</FONT>        if (!this.enableOfflineData) {<a name="line.211"></a>
+<FONT color="green">212</FONT>          this.println("Offline data management disabled.");<a name="line.212"></a>
+<FONT color="green">213</FONT>          return;<a name="line.213"></a>
+<FONT color="green">214</FONT>        }<a name="line.214"></a>
+<FONT color="green">215</FONT>        // Otherwise do offline data management.<a name="line.215"></a>
+<FONT color="green">216</FONT>        this.println("Checking for offline data to recover.");<a name="line.216"></a>
+<FONT color="green">217</FONT>        this.offlineManager.recover();<a name="line.217"></a>
+<FONT color="green">218</FONT>      }<a name="line.218"></a>
+<FONT color="green">219</FONT>    <a name="line.219"></a>
+<FONT color="green">220</FONT>    <a name="line.220"></a>
+<FONT color="green">221</FONT>      /**<a name="line.221"></a>
+<FONT color="green">222</FONT>       * Initializes SensorShell logging. All client input is recorded to a log file<a name="line.222"></a>
+<FONT color="green">223</FONT>       * in .hackystat/logs/.<a name="line.223"></a>
+<FONT color="green">224</FONT>       */<a name="line.224"></a>
+<FONT color="green">225</FONT>      private void initializeLogger() {<a name="line.225"></a>
+<FONT color="green">226</FONT>        try {<a name="line.226"></a>
+<FONT color="green">227</FONT>          // First, create the logs directory, using the same location as sensor.properties if possible.<a name="line.227"></a>
+<FONT color="green">228</FONT>          File logDir = (sensorProperties.getSensorPropertiesDir() == null) ?<a name="line.228"></a>
+<FONT color="green">229</FONT>              new File(System.getProperty("user.home") + "/.hackystat/logs") :<a name="line.229"></a>
+<FONT color="green">230</FONT>              new File(sensorProperties.getSensorPropertiesDir(), "/logs");<a name="line.230"></a>
+<FONT color="green">231</FONT>          logDir.mkdirs();<a name="line.231"></a>
+<FONT color="green">232</FONT>    <a name="line.232"></a>
+<FONT color="green">233</FONT>          // Now set up logging to a file in that directory.<a name="line.233"></a>
+<FONT color="green">234</FONT>          this.logger = Logger.getLogger("hackystat.client.cli.SensorShell");<a name="line.234"></a>
+<FONT color="green">235</FONT>          this.logger.setUseParentHandlers(false);<a name="line.235"></a>
+<FONT color="green">236</FONT>          String fileName = logDir.getAbsolutePath() + "/" + this.toolName + ".%u.log";<a name="line.236"></a>
+<FONT color="green">237</FONT>          FileHandler handler = new FileHandler(fileName, 500000, 1, true);<a name="line.237"></a>
+<FONT color="green">238</FONT>          handler.setFormatter(this.oneLineFormatter);<a name="line.238"></a>
+<FONT color="green">239</FONT>          this.logger.addHandler(handler);<a name="line.239"></a>
+<FONT color="green">240</FONT>          // Add a couple of newlines to the log file to distinguish new shell sessions.<a name="line.240"></a>
+<FONT color="green">241</FONT>          logger.info(cr + cr);<a name="line.241"></a>
+<FONT color="green">242</FONT>        }<a name="line.242"></a>
+<FONT color="green">243</FONT>        catch (Exception e) {<a name="line.243"></a>
+<FONT color="green">244</FONT>          System.out.println("Error initializing SensorShell logger:\n" + e);<a name="line.244"></a>
+<FONT color="green">245</FONT>        }<a name="line.245"></a>
+<FONT color="green">246</FONT>      }<a name="line.246"></a>
+<FONT color="green">247</FONT>      <a name="line.247"></a>
+<FONT color="green">248</FONT>      /**<a name="line.248"></a>
+<FONT color="green">249</FONT>       * Sets the logging level to be used for this logger.<a name="line.249"></a>
+<FONT color="green">250</FONT>       * If the passed string cannot be parsed into a Level, then INFO is set by default.<a name="line.250"></a>
+<FONT color="green">251</FONT>       * @param level The new Level.<a name="line.251"></a>
+<FONT color="green">252</FONT>       */<a name="line.252"></a>
+<FONT color="green">253</FONT>      public synchronized void setLoggingLevel(String level) {<a name="line.253"></a>
+<FONT color="green">254</FONT>        Level newLevel = Level.INFO;<a name="line.254"></a>
+<FONT color="green">255</FONT>        try {<a name="line.255"></a>
+<FONT color="green">256</FONT>          newLevel = Level.parse(level);<a name="line.256"></a>
+<FONT color="green">257</FONT>        }<a name="line.257"></a>
+<FONT color="green">258</FONT>        catch (Exception e) {<a name="line.258"></a>
+<FONT color="green">259</FONT>          logger.info("Couldn't set Logging level to: " + level);<a name="line.259"></a>
+<FONT color="green">260</FONT>        }<a name="line.260"></a>
+<FONT color="green">261</FONT>        logger.setLevel(newLevel);<a name="line.261"></a>
+<FONT color="green">262</FONT>        logger.getHandlers()[0].setLevel(newLevel);<a name="line.262"></a>
+<FONT color="green">263</FONT>      }<a name="line.263"></a>
+<FONT color="green">264</FONT>    <a name="line.264"></a>
+<FONT color="green">265</FONT>    <a name="line.265"></a>
+<FONT color="green">266</FONT>      /**<a name="line.266"></a>
+<FONT color="green">267</FONT>       * Prints out initial information about the SensorShell.<a name="line.267"></a>
+<FONT color="green">268</FONT>       *<a name="line.268"></a>
+<FONT color="green">269</FONT>       * @param sensorProperties  The sensor properties file.<a name="line.269"></a>
+<FONT color="green">270</FONT>       */<a name="line.270"></a>
+<FONT color="green">271</FONT>      private void printBanner(SensorProperties sensorProperties) {<a name="line.271"></a>
+<FONT color="green">272</FONT>        this.println("Hackystat SensorShell Version: " + getVersion());<a name="line.272"></a>
+<FONT color="green">273</FONT>        this.println("SensorShell started at: " + new Date());<a name="line.273"></a>
+<FONT color="green">274</FONT>        this.println("Using Sensor Properties in: " + sensorProperties.getAbsolutePath());<a name="line.274"></a>
+<FONT color="green">275</FONT>        this.println("Type 'help' for a list of commands.");<a name="line.275"></a>
+<FONT color="green">276</FONT>        // Ping the host to determine availability.<a name="line.276"></a>
+<FONT color="green">277</FONT>        String host = sensorProperties.getHackystatHost();<a name="line.277"></a>
+<FONT color="green">278</FONT>        String email = sensorProperties.getEmail();<a name="line.278"></a>
+<FONT color="green">279</FONT>        String password = sensorProperties.getPassword();<a name="line.279"></a>
+<FONT color="green">280</FONT>        String availability = SensorBaseClient.isHost(host) ? "available." : "not available";<a name="line.280"></a>
+<FONT color="green">281</FONT>        this.println("Host: " + sensorProperties.getHackystatHost() + " is " + availability);<a name="line.281"></a>
+<FONT color="green">282</FONT>        String authorized = SensorBaseClient.isRegistered(host, email, password) ? <a name="line.282"></a>
+<FONT color="green">283</FONT>            " authorized " : " not authorized ";<a name="line.283"></a>
+<FONT color="green">284</FONT>        this.println("User " + email + " is" + authorized + "to login at this host.");<a name="line.284"></a>
+<FONT color="green">285</FONT>      }<a name="line.285"></a>
+<FONT color="green">286</FONT>      <a name="line.286"></a>
+<FONT color="green">287</FONT>      <a name="line.287"></a>
+<FONT color="green">288</FONT>      /**<a name="line.288"></a>
+<FONT color="green">289</FONT>       * Process a single input string representing a command.<a name="line.289"></a>
+<FONT color="green">290</FONT>       * @param inputString A command as a String.<a name="line.290"></a>
+<FONT color="green">291</FONT>       */<a name="line.291"></a>
+<FONT color="green">292</FONT>      private void processInputString(String inputString) {<a name="line.292"></a>
+<FONT color="green">293</FONT>        // Ignore empty commands. <a name="line.293"></a>
+<FONT color="green">294</FONT>        if ((inputString == null) || ("".equals(inputString))) {<a name="line.294"></a>
+<FONT color="green">295</FONT>          return;<a name="line.295"></a>
+<FONT color="green">296</FONT>        }<a name="line.296"></a>
+<FONT color="green">297</FONT>        // Log the command if we're not running interactively.<a name="line.297"></a>
+<FONT color="green">298</FONT>        if (!this.isInteractive) {<a name="line.298"></a>
+<FONT color="green">299</FONT>          logger.info("#&gt; " + inputString);<a name="line.299"></a>
+<FONT color="green">300</FONT>        }<a name="line.300"></a>
+<FONT color="green">301</FONT>        // Process quit command.<a name="line.301"></a>
+<FONT color="green">302</FONT>        if ("quit".equals(inputString)) {<a name="line.302"></a>
+<FONT color="green">303</FONT>          this.quitCommand.quit();<a name="line.303"></a>
+<FONT color="green">304</FONT>          return;<a name="line.304"></a>
+<FONT color="green">305</FONT>        }<a name="line.305"></a>
+<FONT color="green">306</FONT>    <a name="line.306"></a>
+<FONT color="green">307</FONT>        // Process help command.<a name="line.307"></a>
+<FONT color="green">308</FONT>        if ("help".equals(inputString)) {<a name="line.308"></a>
+<FONT color="green">309</FONT>          this.printHelp();<a name="line.309"></a>
 <FONT color="green">310</FONT>          return;<a name="line.310"></a>
 <FONT color="green">311</FONT>        }<a name="line.311"></a>
 <FONT color="green">312</FONT>    <a name="line.312"></a>
-<FONT color="green">313</FONT>        // Get the command name and any arguments. <a name="line.313"></a>
-<FONT color="green">314</FONT>        String commandName = tokenizer.nextToken();<a name="line.314"></a>
-<FONT color="green">315</FONT>        ArrayList&lt;String&gt; argList = new ArrayList&lt;String&gt;();<a name="line.315"></a>
-<FONT color="green">316</FONT>        while (tokenizer.hasMoreElements()) {<a name="line.316"></a>
-<FONT color="green">317</FONT>          argList.add(tokenizer.nextToken());<a name="line.317"></a>
-<FONT color="green">318</FONT>        }<a name="line.318"></a>
-<FONT color="green">319</FONT>        <a name="line.319"></a>
-<FONT color="green">320</FONT>        if ("add".equals(commandName)) {<a name="line.320"></a>
-<FONT color="green">321</FONT>          // For an Add command, the argument list should be a set of key-value pairs.<a name="line.321"></a>
-<FONT color="green">322</FONT>          // So, build the Map of key-value pairs.<a name="line.322"></a>
-<FONT color="green">323</FONT>          Map&lt;String, String&gt; keyValMap = new HashMap&lt;String, String&gt;();<a name="line.323"></a>
-<FONT color="green">324</FONT>          for (String arg : argList) {<a name="line.324"></a>
-<FONT color="green">325</FONT>            int delim = arg.indexOf('=');<a name="line.325"></a>
-<FONT color="green">326</FONT>            if (delim == -1) {<a name="line.326"></a>
-<FONT color="green">327</FONT>              this.println("Error: can't parse argument string for add command.");<a name="line.327"></a>
-<FONT color="green">328</FONT>            }<a name="line.328"></a>
-<FONT color="green">329</FONT>            keyValMap.put(arg.substring(0, delim), arg.substring(delim + 1));<a name="line.329"></a>
-<FONT color="green">330</FONT>          }<a name="line.330"></a>
-<FONT color="green">331</FONT>          try {<a name="line.331"></a>
-<FONT color="green">332</FONT>            this.sensorDataCommand.add(keyValMap);<a name="line.332"></a>
-<FONT color="green">333</FONT>          }<a name="line.333"></a>
-<FONT color="green">334</FONT>          catch (Exception e) {<a name="line.334"></a>
-<FONT color="green">335</FONT>            this.println("Error: Can't parse the Timestamp or Runtime arguments.");<a name="line.335"></a>
-<FONT color="green">336</FONT>          }<a name="line.336"></a>
-<FONT color="green">337</FONT>          return;<a name="line.337"></a>
-<FONT color="green">338</FONT>        }<a name="line.338"></a>
-<FONT color="green">339</FONT>        <a name="line.339"></a>
-<FONT color="green">340</FONT>        if ("statechange".equals(commandName)) {<a name="line.340"></a>
-<FONT color="green">341</FONT>          String resourceCheckSumString = argList.get(0);<a name="line.341"></a>
-<FONT color="green">342</FONT>          int resourceCheckSum = 0;<a name="line.342"></a>
-<FONT color="green">343</FONT>          try {<a name="line.343"></a>
-<FONT color="green">344</FONT>            resourceCheckSum = Integer.parseInt(resourceCheckSumString);<a name="line.344"></a>
-<FONT color="green">345</FONT>          }<a name="line.345"></a>
-<FONT color="green">346</FONT>          catch (Exception e) {<a name="line.346"></a>
-<FONT color="green">347</FONT>            this.println("Error: Can't parse the checksum into an integer.");<a name="line.347"></a>
-<FONT color="green">348</FONT>            return;<a name="line.348"></a>
-<FONT color="green">349</FONT>          }<a name="line.349"></a>
-<FONT color="green">350</FONT>          argList.remove(0);<a name="line.350"></a>
-<FONT color="green">351</FONT>          // Now do almost the same as for an add command. <a name="line.351"></a>
-<FONT color="green">352</FONT>          // Build the Map of key-value pairs.<a name="line.352"></a>
-<FONT color="green">353</FONT>          Map&lt;String, String&gt; keyValMap = new HashMap&lt;String, String&gt;();<a name="line.353"></a>
-<FONT color="green">354</FONT>          for (String arg : argList) {<a name="line.354"></a>
-<FONT color="green">355</FONT>            int delim = arg.indexOf('=');<a name="line.355"></a>
-<FONT color="green">356</FONT>            if (delim == -1) {<a name="line.356"></a>
-<FONT color="green">357</FONT>              this.println("Error: can't parse argument string for statechange command.");<a name="line.357"></a>
-<FONT color="green">358</FONT>            }<a name="line.358"></a>
-<FONT color="green">359</FONT>            keyValMap.put(arg.substring(0, delim), arg.substring(delim + 1));<a name="line.359"></a>
+<FONT color="green">313</FONT>        // Process send command.<a name="line.313"></a>
+<FONT color="green">314</FONT>        if ("send".equals(inputString)) {<a name="line.314"></a>
+<FONT color="green">315</FONT>          this.sensorDataCommand.send();<a name="line.315"></a>
+<FONT color="green">316</FONT>          return;<a name="line.316"></a>
+<FONT color="green">317</FONT>        }<a name="line.317"></a>
+<FONT color="green">318</FONT>        <a name="line.318"></a>
+<FONT color="green">319</FONT>        // Process ping command.<a name="line.319"></a>
+<FONT color="green">320</FONT>        if ("ping".equals(inputString)) {<a name="line.320"></a>
+<FONT color="green">321</FONT>          boolean isPingable = this.pingCommand.isPingable();<a name="line.321"></a>
+<FONT color="green">322</FONT>          this.println("Ping of host " + this.sensorProperties.getHackystatHost() + " for user " +<a name="line.322"></a>
+<FONT color="green">323</FONT>              this.sensorProperties.getEmail() + <a name="line.323"></a>
+<FONT color="green">324</FONT>              (isPingable ? " succeeded." : " did not succeed"));<a name="line.324"></a>
+<FONT color="green">325</FONT>          return;<a name="line.325"></a>
+<FONT color="green">326</FONT>        }<a name="line.326"></a>
+<FONT color="green">327</FONT>    <a name="line.327"></a>
+<FONT color="green">328</FONT>        // Process commands with arguments. <a name="line.328"></a>
+<FONT color="green">329</FONT>        StringTokenizer tokenizer = new StringTokenizer(inputString, this.delimiter);<a name="line.329"></a>
+<FONT color="green">330</FONT>        int numTokens = tokenizer.countTokens();<a name="line.330"></a>
+<FONT color="green">331</FONT>        // All remaining commands must have arguments. <a name="line.331"></a>
+<FONT color="green">332</FONT>        if (numTokens == 0) {<a name="line.332"></a>
+<FONT color="green">333</FONT>          this.println("Error: unknown command or command requires arguments.");<a name="line.333"></a>
+<FONT color="green">334</FONT>          return;<a name="line.334"></a>
+<FONT color="green">335</FONT>        }<a name="line.335"></a>
+<FONT color="green">336</FONT>    <a name="line.336"></a>
+<FONT color="green">337</FONT>        // Get the command name and any arguments. <a name="line.337"></a>
+<FONT color="green">338</FONT>        String commandName = tokenizer.nextToken();<a name="line.338"></a>
+<FONT color="green">339</FONT>        ArrayList&lt;String&gt; argList = new ArrayList&lt;String&gt;();<a name="line.339"></a>
+<FONT color="green">340</FONT>        while (tokenizer.hasMoreElements()) {<a name="line.340"></a>
+<FONT color="green">341</FONT>          argList.add(tokenizer.nextToken());<a name="line.341"></a>
+<FONT color="green">342</FONT>        }<a name="line.342"></a>
+<FONT color="green">343</FONT>        <a name="line.343"></a>
+<FONT color="green">344</FONT>        if ("add".equals(commandName)) {<a name="line.344"></a>
+<FONT color="green">345</FONT>          // For an Add command, the argument list should be a set of key-value pairs.<a name="line.345"></a>
+<FONT color="green">346</FONT>          // So, build the Map of key-value pairs.<a name="line.346"></a>
+<FONT color="green">347</FONT>          Map&lt;String, String&gt; keyValMap = new HashMap&lt;String, String&gt;();<a name="line.347"></a>
+<FONT color="green">348</FONT>          for (String arg : argList) {<a name="line.348"></a>
+<FONT color="green">349</FONT>            int delim = arg.indexOf('=');<a name="line.349"></a>
+<FONT color="green">350</FONT>            if (delim == -1) {<a name="line.350"></a>
+<FONT color="green">351</FONT>              this.println("Error: can't parse argument string for add command.");<a name="line.351"></a>
+<FONT color="green">352</FONT>            }<a name="line.352"></a>
+<FONT color="green">353</FONT>            keyValMap.put(arg.substring(0, delim), arg.substring(delim + 1));<a name="line.353"></a>
+<FONT color="green">354</FONT>          }<a name="line.354"></a>
+<FONT color="green">355</FONT>          try {<a name="line.355"></a>
+<FONT color="green">356</FONT>            this.sensorDataCommand.add(keyValMap);<a name="line.356"></a>
+<FONT color="green">357</FONT>          }<a name="line.357"></a>
+<FONT color="green">358</FONT>          catch (Exception e) {<a name="line.358"></a>
+<FONT color="green">359</FONT>            this.println("Error: Can't parse the Timestamp or Runtime arguments.");<a name="line.359"></a>
 <FONT color="green">360</FONT>          }<a name="line.360"></a>
-<FONT color="green">361</FONT>          try {<a name="line.361"></a>
-<FONT color="green">362</FONT>            this.sensorDataCommand.statechange(resourceCheckSum, keyValMap);<a name="line.362"></a>
-<FONT color="green">363</FONT>          }<a name="line.363"></a>
-<FONT color="green">364</FONT>          catch (Exception e) {<a name="line.364"></a>
-<FONT color="green">365</FONT>            this.println("Error: Can't parse the Timestamp or Runtime arguments.");<a name="line.365"></a>
-<FONT color="green">366</FONT>          }<a name="line.366"></a>
-<FONT color="green">367</FONT>          return;<a name="line.367"></a>
-<FONT color="green">368</FONT>        }<a name="line.368"></a>
-<FONT color="green">369</FONT>        <a name="line.369"></a>
-<FONT color="green">370</FONT>        if ("autosend".equals(commandName)) {<a name="line.370"></a>
-<FONT color="green">371</FONT>          String interval = (argList.isEmpty()) ? "" : argList.get(0);<a name="line.371"></a>
-<FONT color="green">372</FONT>          this.autoSendCommand.initialize(interval);<a name="line.372"></a>
-<FONT color="green">373</FONT>        }<a name="line.373"></a>
-<FONT color="green">374</FONT>      }<a name="line.374"></a>
-<FONT color="green">375</FONT>    <a name="line.375"></a>
-<FONT color="green">376</FONT>    <a name="line.376"></a>
-<FONT color="green">377</FONT>      /**<a name="line.377"></a>
-<FONT color="green">378</FONT>       * The command line shell interface.<a name="line.378"></a>
-<FONT color="green">379</FONT>       * &lt;ul&gt;<a name="line.379"></a>
-<FONT color="green">380</FONT>       *   &lt;li&gt; If invoked with no arguments, then the default sensor.properties<a name="line.380"></a>
-<FONT color="green">381</FONT>       *   file is used and the toolName field in the sensor log file name is<a name="line.381"></a>
-<FONT color="green">382</FONT>       *   "interactive".<a name="line.382"></a>
-<FONT color="green">383</FONT>       *   &lt;li&gt; If invoked with one argument, that argument is used as the toolName<a name="line.383"></a>
-<FONT color="green">384</FONT>       *   value.<a name="line.384"></a>
-<FONT color="green">385</FONT>       *   &lt;li&gt; If invoked with two arguments, then the first argument is used as<a name="line.385"></a>
-<FONT color="green">386</FONT>       *   the toolName value and the second is used as the sensor.properties file<a name="line.386"></a>
-<FONT color="green">387</FONT>       *   path.<a name="line.387"></a>
-<FONT color="green">388</FONT>       *   &lt;li&gt; If invoked with three arguments, then the first argument is the<a name="line.388"></a>
-<FONT color="green">389</FONT>       *   toolname, the second is the sensor.properties file path, and the third<a name="line.389"></a>
-<FONT color="green">390</FONT>       *   argument (regardless of value) disables offline data management.<a name="line.390"></a>
-<FONT color="green">391</FONT>       *   &lt;li&gt; If invoked with four arguments, then the first argument is the<a name="line.391"></a>
-<FONT color="green">392</FONT>       *   toolname, the second is the sensor.properties file path, the third<a name="line.392"></a>
-<FONT color="green">393</FONT>       *   argument (regardless of value) disables offline data management, and<a name="line.393"></a>
-<FONT color="green">394</FONT>       *   the fourth argument specifies a file of commands (the last of which should be 'quit').<a name="line.394"></a>
-<FONT color="green">395</FONT>       * &lt;/ul&gt;<a name="line.395"></a>
-<FONT color="green">396</FONT>       * Unless four arguments are provided,<a name="line.396"></a>
-<FONT color="green">397</FONT>       * the shell then provides a "&gt;&gt;" prompt and supports interactive entry of<a name="line.397"></a>
-<FONT color="green">398</FONT>       * sensor data. The following commands are supported:<a name="line.398"></a>
-<FONT color="green">399</FONT>       * &lt;ul&gt;<a name="line.399"></a>
-<FONT color="green">400</FONT>       *   &lt;li&gt; "help" provides a summary of the available commands.<a name="line.400"></a>
-<FONT color="green">401</FONT>       *   &lt;li&gt; "send" sends all of the accumulated data to the server.<a name="line.401"></a>
-<FONT color="green">402</FONT>       *   &lt;li&gt; "autosend" sets up a timer-based process that invokes send intermittently.<a name="line.402"></a>
-<FONT color="green">403</FONT>       *   &lt;li&gt; "quit" sends all of the accumulated data to the server and exits.<a name="line.403"></a>
-<FONT color="green">404</FONT>       *   &lt;li&gt; "ping" checks to see if the host/user/password is valid. <a name="line.404"></a>
-<FONT color="green">405</FONT>       *   &lt;li&gt; "add" adds a single Sensor Data instance to the buffered list to send.<a name="line.405"></a>
-<FONT color="green">406</FONT>       * &lt;/ul&gt;<a name="line.406"></a>
-<FONT color="green">407</FONT>       *<a name="line.407"></a>
-<FONT color="green">408</FONT>       * @param args  The command line parameters. See above for details.<a name="line.408"></a>
-<FONT color="green">409</FONT>       */<a name="line.409"></a>
-<FONT color="green">410</FONT>      public static void main(String args[]) {<a name="line.410"></a>
-<FONT color="green">411</FONT>        // Print help line and exit if arg is -help.<a name="line.411"></a>
-<FONT color="green">412</FONT>        if ((args.length == 1) &amp;&amp; (args[0].equalsIgnoreCase("-help"))) {<a name="line.412"></a>
-<FONT color="green">413</FONT>          System.out.println("java -jar sensorshell.jar [toolname] [sensor.properties] [no offline] "<a name="line.413"></a>
-<FONT color="green">414</FONT>               + "[command filename]");<a name="line.414"></a>
-<FONT color="green">415</FONT>          return;<a name="line.415"></a>
-<FONT color="green">416</FONT>        }<a name="line.416"></a>
-<FONT color="green">417</FONT>        <a name="line.417"></a>
-<FONT color="green">418</FONT>        // Set Parameter 1 (toolname) to supplied or default value.<a name="line.418"></a>
-<FONT color="green">419</FONT>        String toolName = (args.length &gt; 0) ? args[0] : "interactive";<a name="line.419"></a>
-<FONT color="green">420</FONT>    <a name="line.420"></a>
-<FONT color="green">421</FONT>        // Set Parameter 2 (sensor properties file) to supplied or default value. Exit if can't find it.<a name="line.421"></a>
-<FONT color="green">422</FONT>        SensorProperties sensorProperties = (args.length &gt;= 2) ?<a name="line.422"></a>
-<FONT color="green">423</FONT>            new SensorProperties(new File(args[1])) : new SensorProperties();<a name="line.423"></a>
-<FONT color="green">424</FONT>        if (!sensorProperties.isFileAvailable()) {<a name="line.424"></a>
-<FONT color="green">425</FONT>          System.out.println("Could not find sensor.properties file. ");<a name="line.425"></a>
-<FONT color="green">426</FONT>          System.out.println("Expected in: " + sensorProperties.getAbsolutePath());<a name="line.426"></a>
-<FONT color="green">427</FONT>          System.out.println("Exiting...");<a name="line.427"></a>
-<FONT color="green">428</FONT>          return;<a name="line.428"></a>
-<FONT color="green">429</FONT>        }<a name="line.429"></a>
-<FONT color="green">430</FONT>    <a name="line.430"></a>
-<FONT color="green">431</FONT>        // Set Parameter 3 (offline). True if we don't supply a value, false if any value supplied.<a name="line.431"></a>
-<FONT color="green">432</FONT>        boolean offlineEnabled = ((args.length &lt; 3));<a name="line.432"></a>
-<FONT color="green">433</FONT>    <a name="line.433"></a>
-<FONT color="green">434</FONT>        // Set Parameter 4 (command file). Null if not supplied. Exit if supplied and bogus.<a name="line.434"></a>
-<FONT color="green">435</FONT>        File commandFile = null;<a name="line.435"></a>
-<FONT color="green">436</FONT>        if (args.length == 4) {<a name="line.436"></a>
-<FONT color="green">437</FONT>          commandFile = new File(args[3]);<a name="line.437"></a>
-<FONT color="green">438</FONT>          if (!(commandFile.exists() &amp;&amp; commandFile.isFile())) {<a name="line.438"></a>
-<FONT color="green">439</FONT>            System.out.println("Could not find the command file. Exiting...");<a name="line.439"></a>
-<FONT color="green">440</FONT>            return;<a name="line.440"></a>
-<FONT color="green">441</FONT>          }<a name="line.441"></a>
-<FONT color="green">442</FONT>        }<a name="line.442"></a>
-<FONT color="green">443</FONT>    <a name="line.443"></a>
-<FONT color="green">444</FONT>        // Set interactive parameter. From command line, always interactive unless using command file.<a name="line.444"></a>
-<FONT color="green">445</FONT>        boolean interactive = ((commandFile == null));<a name="line.445"></a>
-<FONT color="green">446</FONT>    <a name="line.446"></a>
-<FONT color="green">447</FONT>        // Now create the shell instance, supplying it with all the appropriate arguments.<a name="line.447"></a>
-<FONT color="green">448</FONT>        SensorShell shell = <a name="line.448"></a>
-<FONT color="green">449</FONT>          new SensorShell(sensorProperties, interactive, toolName, offlineEnabled, commandFile);<a name="line.449"></a>
-<FONT color="green">450</FONT>    <a name="line.450"></a>
-<FONT color="green">451</FONT>        // Start processing commands either interactively or from the command file.<a name="line.451"></a>
-<FONT color="green">452</FONT>        while (true) {<a name="line.452"></a>
-<FONT color="green">453</FONT>          // Get the next command<a name="line.453"></a>
-<FONT color="green">454</FONT>          shell.printPrompt();<a name="line.454"></a>
-<FONT color="green">455</FONT>          String inputString = shell.readLine();<a name="line.455"></a>
-<FONT color="green">456</FONT>          shell.processInputString(inputString);<a name="line.456"></a>
-<FONT color="green">457</FONT>          if (inputString.equalsIgnoreCase("quit")) {<a name="line.457"></a>
-<FONT color="green">458</FONT>            return;<a name="line.458"></a>
-<FONT color="green">459</FONT>          }<a name="line.459"></a>
-<FONT color="green">460</FONT>        }<a name="line.460"></a>
-<FONT color="green">461</FONT>      }<a name="line.461"></a>
-<FONT color="green">462</FONT>    <a name="line.462"></a>
-<FONT color="green">463</FONT>      /** Prints the help strings associated with all commands. */<a name="line.463"></a>
-<FONT color="green">464</FONT>      private void printHelp() {<a name="line.464"></a>
-<FONT color="green">465</FONT>        String helpString = <a name="line.465"></a>
-<FONT color="green">466</FONT>          "SensorShell Command Summary " + cr<a name="line.466"></a>
-<FONT color="green">467</FONT>          + "  add#&lt;key&gt;=&lt;value&gt;[#&lt;key&gt;=&lt;value&gt;]..." + cr<a name="line.467"></a>
-<FONT color="green">468</FONT>          + "    Adds a new sensor data instance for subsequent sending." + cr <a name="line.468"></a>
-<FONT color="green">469</FONT>          + "    Provide fields and properties as key=value pairs separated by '#'." + cr<a name="line.469"></a>
-<FONT color="green">470</FONT>          + "    Owner, Timestamp, and Runtime fields will default to the current user and time." + cr<a name="line.470"></a>
-<FONT color="green">471</FONT>          + "    Example: add#Tool=Eclipse#SensorDataType=DevEvent#DevEventType=Compile" + cr <a name="line.471"></a>
-<FONT color="green">472</FONT>          + "  send" + cr<a name="line.472"></a>
-<FONT color="green">473</FONT>          + "    Sends any added sensor data to the server. " + cr<a name="line.473"></a>
-<FONT color="green">474</FONT>          + "    Server is pinged, and if it does not respond, then data is stored offline." + cr<a name="line.474"></a>
-<FONT color="green">475</FONT>          + "    Example: send" + cr<a name="line.475"></a>
-<FONT color="green">476</FONT>          + "  ping" + cr<a name="line.476"></a>
-<FONT color="green">477</FONT>          + "    Pings the server and checks email/password credentials." + cr<a name="line.477"></a>
-<FONT color="green">478</FONT>          + "    Example: ping" + cr<a name="line.478"></a>
-<FONT color="green">479</FONT>          + "  autosend#&lt;integer&gt;" + cr<a name="line.479"></a>
-<FONT color="green">480</FONT>          + "    Sets the interval in minutes between automatic sending of added sensor data." + cr<a name="line.480"></a>
-<FONT color="green">481</FONT>          + "    Provide 0 as the integer to disable autosend." + cr<a name="line.481"></a>
-<FONT color="green">482</FONT>          + "    Example: autosend#15" + cr<a name="line.482"></a>
-<FONT color="green">483</FONT>          + "  statechange#&lt;ResourceCheckSum&gt;#&lt;key&gt;=&lt;value&gt;[#&lt;key&gt;=&lt;value&gt;]..." + cr<a name="line.483"></a>
-<FONT color="green">484</FONT>          + "    Generates an 'add' command when the 'state' has changed." + cr<a name="line.484"></a>
-<FONT color="green">485</FONT>          + "    ResourceCheckSum is an integer that represents the current state of the Resource." + cr<a name="line.485"></a>
-<FONT color="green">486</FONT>          + "    This command compares ResourceCheckSum and the Resource field value to the values" + cr<a name="line.486"></a>
-<FONT color="green">487</FONT>          + "    saved from the last call to statechange.  If either have changed, indicating that" + cr<a name="line.487"></a>
-<FONT color="green">488</FONT>          + "    the state has changed, then the key-value pairs are passed to the Add command." + cr<a name="line.488"></a>
-<FONT color="green">489</FONT>          + "    This command facilitates the implementation of timer-based sensor processes that" + cr<a name="line.489"></a>
-<FONT color="green">490</FONT>          + "    wake up periodically and emit statechange commands, with the knowledge that if " + cr<a name="line.490"></a>
-<FONT color="green">491</FONT>          + "    the user has not been active, these statechange commands will not result in" + cr<a name="line.491"></a>
-<FONT color="green">492</FONT>          + "    actual sensor data being sent to the server." + cr<a name="line.492"></a>
-<FONT color="green">493</FONT>          + "  quit" + cr<a name="line.493"></a>
-<FONT color="green">494</FONT>          + "    Sends any remaining data and exits the sensorshell." + cr<a name="line.494"></a>
-<FONT color="green">495</FONT>          + "    Example: quit" + cr;<a name="line.495"></a>
-<FONT color="green">496</FONT>        this.print(helpString);<a name="line.496"></a>
-<FONT color="green">497</FONT>      }<a name="line.497"></a>
-<FONT color="green">498</FONT>    <a name="line.498"></a>
-<FONT color="green">499</FONT>     <a name="line.499"></a>
-<FONT color="green">500</FONT>      /** Print out a prompt if in interactive mode. */<a name="line.500"></a>
-<FONT color="green">501</FONT>      private void printPrompt() {<a name="line.501"></a>
-<FONT color="green">502</FONT>        this.print(this.prompt);<a name="line.502"></a>
-<FONT color="green">503</FONT>      }<a name="line.503"></a>
-<FONT color="green">504</FONT>    <a name="line.504"></a>
-<FONT color="green">505</FONT>    <a name="line.505"></a>
-<FONT color="green">506</FONT>      /**<a name="line.506"></a>
-<FONT color="green">507</FONT>       * Returns a string with the next line of input from the user. If input<a name="line.507"></a>
-<FONT color="green">508</FONT>       * errors, returns the string "quit".<a name="line.508"></a>
-<FONT color="green">509</FONT>       *<a name="line.509"></a>
-<FONT color="green">510</FONT>       * @return   A string with user input.<a name="line.510"></a>
-<FONT color="green">511</FONT>       */<a name="line.511"></a>
-<FONT color="green">512</FONT>      private String readLine() {<a name="line.512"></a>
-<FONT color="green">513</FONT>        try {<a name="line.513"></a>
-<FONT color="green">514</FONT>          String line = this.bufferedReader.readLine();<a name="line.514"></a>
-<FONT color="green">515</FONT>          logger.info(line);<a name="line.515"></a>
-<FONT color="green">516</FONT>          return (line == null) ? "" : line;<a name="line.516"></a>
-<FONT color="green">517</FONT>        }<a name="line.517"></a>
-<FONT color="green">518</FONT>        catch (IOException e) {<a name="line.518"></a>
-<FONT color="green">519</FONT>          //logger.info(cr);<a name="line.519"></a>
-<FONT color="green">520</FONT>          return "quit";<a name="line.520"></a>
-<FONT color="green">521</FONT>        }<a name="line.521"></a>
-<FONT color="green">522</FONT>      }<a name="line.522"></a>
-<FONT color="green">523</FONT>    <a name="line.523"></a>
-<FONT color="green">524</FONT>      /**<a name="line.524"></a>
-<FONT color="green">525</FONT>       * Prints out the line plus newline if in interactive mode, and always logs the line.<a name="line.525"></a>
-<FONT color="green">526</FONT>       * Provided to clients to support logging of error messages. <a name="line.526"></a>
-<FONT color="green">527</FONT>       * <a name="line.527"></a>
-<FONT color="green">528</FONT>       * @param line  The line to be printed.<a name="line.528"></a>
-<FONT color="green">529</FONT>       */<a name="line.529"></a>
-<FONT color="green">530</FONT>      public final void println(String line) {<a name="line.530"></a>
-<FONT color="green">531</FONT>        logger.info(line + cr);<a name="line.531"></a>
-<FONT color="green">532</FONT>        if (isInteractive) {<a name="line.532"></a>
-<FONT color="green">533</FONT>          System.out.print(line + cr);<a name="line.533"></a>
-<FONT color="green">534</FONT>        }<a name="line.534"></a>
-<FONT color="green">535</FONT>      }<a name="line.535"></a>
-<FONT color="green">536</FONT>    <a name="line.536"></a>
-<FONT color="green">537</FONT>    <a name="line.537"></a>
-<FONT color="green">538</FONT>      /**<a name="line.538"></a>
-<FONT color="green">539</FONT>       * Prints out the line without newline if in interactive mode.<a name="line.539"></a>
-<FONT color="green">540</FONT>       *<a name="line.540"></a>
-<FONT color="green">541</FONT>       * @param line  The line to be printed.<a name="line.541"></a>
-<FONT color="green">542</FONT>       */<a name="line.542"></a>
-<FONT color="green">543</FONT>      private void print(String line) {<a name="line.543"></a>
-<FONT color="green">544</FONT>        logger.info(line);<a name="line.544"></a>
-<FONT color="green">545</FONT>        if (isInteractive) {<a name="line.545"></a>
-<FONT color="green">546</FONT>          System.out.print(line);<a name="line.546"></a>
-<FONT color="green">547</FONT>        }<a name="line.547"></a>
-<FONT color="green">548</FONT>      }<a name="line.548"></a>
-<FONT color="green">549</FONT>    <a name="line.549"></a>
-<FONT color="green">550</FONT>      /**<a name="line.550"></a>
-<FONT color="green">551</FONT>       * Return the current version number.<a name="line.551"></a>
-<FONT color="green">552</FONT>       *<a name="line.552"></a>
-<FONT color="green">553</FONT>       * @return The version number, or "Unknown" if could not be determined.<a name="line.553"></a>
-<FONT color="green">554</FONT>       */<a name="line.554"></a>
-<FONT color="green">555</FONT>      private String getVersion() {<a name="line.555"></a>
-<FONT color="green">556</FONT>        String release;<a name="line.556"></a>
-<FONT color="green">557</FONT>        try {<a name="line.557"></a>
-<FONT color="green">558</FONT>          Package thisPackage = Class.forName("org.hackystat.sensorshell.SensorShell").getPackage();<a name="line.558"></a>
-<FONT color="green">559</FONT>          release = thisPackage.getImplementationVersion();<a name="line.559"></a>
-<FONT color="green">560</FONT>        }<a name="line.560"></a>
-<FONT color="green">561</FONT>        catch (Exception e) {<a name="line.561"></a>
-<FONT color="green">562</FONT>          release = "Unknown";<a name="line.562"></a>
-<FONT color="green">563</FONT>        }<a name="line.563"></a>
-<FONT color="green">564</FONT>        return release;<a name="line.564"></a>
-<FONT color="green">565</FONT>      }<a name="line.565"></a>
-<FONT color="green">566</FONT>      <a name="line.566"></a>
-<FONT color="green">567</FONT>      /**<a name="line.567"></a>
-<FONT color="green">568</FONT>       * Returns true if this sensorshell is being run interactively from the command line.<a name="line.568"></a>
-<FONT color="green">569</FONT>       * @return True if sensorshell is interactive. <a name="line.569"></a>
-<FONT color="green">570</FONT>       */<a name="line.570"></a>
-<FONT color="green">571</FONT>      public boolean isInteractive() {<a name="line.571"></a>
-<FONT color="green">572</FONT>        return this.isInteractive;<a name="line.572"></a>
-<FONT color="green">573</FONT>      }<a name="line.573"></a>
-<FONT color="green">574</FONT>      <a name="line.574"></a>
-<FONT color="green">575</FONT>      /**<a name="line.575"></a>
-<FONT color="green">576</FONT>       * Returns the Logger associated with this sensorshell.<a name="line.576"></a>
-<FONT color="green">577</FONT>       * @return The Logger. <a name="line.577"></a>
-<FONT color="green">578</FONT>       */<a name="line.578"></a>
-<FONT color="green">579</FONT>      public Logger getLogger() {<a name="line.579"></a>
-<FONT color="green">580</FONT>        return this.logger;<a name="line.580"></a>
-<FONT color="green">581</FONT>      }<a name="line.581"></a>
-<FONT color="green">582</FONT>      <a name="line.582"></a>
-<FONT color="green">583</FONT>      <a name="line.583"></a>
-<FONT color="green">584</FONT>      /**<a name="line.584"></a>
-<FONT color="green">585</FONT>       * Returns true if offline data saving is enabled. <a name="line.585"></a>
-<FONT color="green">586</FONT>       * @return True if offline data is enabled. <a name="line.586"></a>
-<FONT color="green">587</FONT>       */<a name="line.587"></a>
-<FONT color="green">588</FONT>      public boolean enableOfflineData() {<a name="line.588"></a>
-<FONT color="green">589</FONT>        return this.enableOfflineData;<a name="line.589"></a>
-<FONT color="green">590</FONT>      }<a name="line.590"></a>
-<FONT color="green">591</FONT>      <a name="line.591"></a>
-<FONT color="green">592</FONT>      /**<a name="line.592"></a>
-<FONT color="green">593</FONT>       * Converts the values in the KeyValMap to a SensorData instance and adds it to the shell.<a name="line.593"></a>
-<FONT color="green">594</FONT>       * This is the easiest way to add sensor data.<a name="line.594"></a>
-<FONT color="green">595</FONT>       * The Owner will default to the hackystat user in the sensor.properties file.<a name="line.595"></a>
-<FONT color="green">596</FONT>       * The Timestamp and Runtime will default to the current time.  <a name="line.596"></a>
-<FONT color="green">597</FONT>       * @param keyValMap The map of key-value pairs. <a name="line.597"></a>
-<FONT color="green">598</FONT>       * @throws Exception If the Map cannot be translated into SensorData, typically because a <a name="line.598"></a>
-<FONT color="green">599</FONT>       * value was passed for Timestamp or Runtime that could not be parsed into XMLGregorianCalendar. <a name="line.599"></a>
-<FONT color="green">600</FONT>       */<a name="line.600"></a>
-<FONT color="green">601</FONT>      public void add(Map&lt;String, String&gt; keyValMap) throws Exception {<a name="line.601"></a>
-<FONT color="green">602</FONT>        this.sensorDataCommand.add(keyValMap);<a name="line.602"></a>
-<FONT color="green">603</FONT>      }<a name="line.603"></a>
-<FONT color="green">604</FONT>      <a name="line.604"></a>
-<FONT color="green">605</FONT>      /**<a name="line.605"></a>
-<FONT color="green">606</FONT>       * Sends any accumulated SensorData instances to the Server.<a name="line.606"></a>
-<FONT color="green">607</FONT>       * @return The number of sensor data instances that were sent.  <a name="line.607"></a>
-<FONT color="green">608</FONT>       */<a name="line.608"></a>
-<FONT color="green">609</FONT>      public int send() {<a name="line.609"></a>
-<FONT color="green">610</FONT>        return this.sensorDataCommand.send();<a name="line.610"></a>
-<FONT color="green">611</FONT>      }<a name="line.611"></a>
-<FONT color="green">612</FONT>      <a name="line.612"></a>
-<FONT color="green">613</FONT>      /** Shuts down this SensorShell, sending any unsent data and closing log files.  */<a name="line.613"></a>
-<FONT color="green">614</FONT>      public void quit() {<a name="line.614"></a>
-<FONT color="green">615</FONT>        this.quitCommand.quit();<a name="line.615"></a>
-<FONT color="green">616</FONT>      }<a name="line.616"></a>
-<FONT color="green">617</FONT>      <a name="line.617"></a>
-<FONT color="green">618</FONT>      /**<a name="line.618"></a>
-<FONT color="green">619</FONT>       * Returns true if the host can be pinged and the email/password combination is valid.<a name="line.619"></a>
-<FONT color="green">620</FONT>       * @return True if the host can be pinged and the user credentials are valid.<a name="line.620"></a>
-<FONT color="green">621</FONT>       */<a name="line.621"></a>
-<FONT color="green">622</FONT>      public boolean ping() {<a name="line.622"></a>
-<FONT color="green">623</FONT>        return this.pingCommand.isPingable();<a name="line.623"></a>
-<FONT color="green">624</FONT>      }<a name="line.624"></a>
-<FONT color="green">625</FONT>    <a name="line.625"></a>
-<FONT color="green">626</FONT>      /**<a name="line.626"></a>
-<FONT color="green">627</FONT>       * Sets the autosend interval to minutes.  If minutes is 0, then autosending is disabled.<a name="line.627"></a>
-<FONT color="green">628</FONT>       * @param minutes The interval in minutes for autosending. <a name="line.628"></a>
-<FONT color="green">629</FONT>       */<a name="line.629"></a>
-<FONT color="green">630</FONT>      public void setAutoSend(int minutes) {<a name="line.630"></a>
-<FONT color="green">631</FONT>        this.autoSendCommand.initialize(minutes);<a name="line.631"></a>
-<FONT color="green">632</FONT>      }<a name="line.632"></a>
-<FONT color="green">633</FONT>      <a name="line.633"></a>
-<FONT color="green">634</FONT>      /**<a name="line.634"></a>
-<FONT color="green">635</FONT>       * Implements the "StateChange" algorithm.  The goal of StateChange is to add a new SensorData<a name="line.635"></a>
-<FONT color="green">636</FONT>       * instance for sending to the SensorBase only when "something has changed" in the tool (which<a name="line.636"></a>
-<FONT color="green">637</FONT>       * is typically an interactive editor or IDE). This method is designed to be used in conjunction<a name="line.637"></a>
-<FONT color="green">638</FONT>       * with a timer-based process in the sensor client.  The timer-based process should wake up <a name="line.638"></a>
-<FONT color="green">639</FONT>       * at regular intervals, determine the currently "active" resource (typically a file), and <a name="line.639"></a>
-<FONT color="green">640</FONT>       * compute a "checksum" for that resource representing its state. (This checksum is typically<a name="line.640"></a>
-<FONT color="green">641</FONT>       * the size of the resource in bytes or characters.) Having obtained those two values, the <a name="line.641"></a>
-<FONT color="green">642</FONT>       * sensor client can then create a keyValMap as if it were going to do a regular Add command,<a name="line.642"></a>
-<FONT color="green">643</FONT>       * and invoke this method with it as well as with the resourceCheckSum.  This method keeps<a name="line.643"></a>
-<FONT color="green">644</FONT>       * track of the last Resource and last ResourceCheckSum provided to it, and if either has<a name="line.644"></a>
-<FONT color="green">645</FONT>       * changed, it will automatically invoke the Add command, passing the keyValMap to it. <a name="line.645"></a>
-<FONT color="green">646</FONT>       * &lt;p&gt;<a name="line.646"></a>
-<FONT color="green">647</FONT>       * Thus, if an editor is running but the user is out at lunch, repeated invocations of the <a name="line.647"></a>
-<FONT color="green">648</FONT>       * StateChange method will not result in any new data being sent to the server.  <a name="line.648"></a>
-<FONT color="green">649</FONT>       * @param resourceCheckSum An integer representing the state of the Resource. <a name="line.649"></a>
-<FONT color="green">650</FONT>       * @param keyValMap A map of key-value pairs representing sensor data fields and properties. <a name="line.650"></a>
-<FONT color="green">651</FONT>       * @throws Exception If problems occur during the Add (if the Add actually occurs.)<a name="line.651"></a>
-<FONT color="green">652</FONT>       */<a name="line.652"></a>
-<FONT color="green">653</FONT>      public void statechange(long resourceCheckSum, Map&lt;String, String&gt; keyValMap) throws Exception {<a name="line.653"></a>
-<FONT color="green">654</FONT>        this.sensorDataCommand.statechange(resourceCheckSum, keyValMap);<a name="line.654"></a>
-<FONT color="green">655</FONT>      }<a name="line.655"></a>
-<FONT color="green">656</FONT>    }<a name="line.656"></a>
-<FONT color="green">657</FONT>    <a name="line.657"></a>
+<FONT color="green">361</FONT>          return;<a name="line.361"></a>
+<FONT color="green">362</FONT>        }<a name="line.362"></a>
+<FONT color="green">363</FONT>        <a name="line.363"></a>
+<FONT color="green">364</FONT>        if ("statechange".equals(commandName)) {<a name="line.364"></a>
+<FONT color="green">365</FONT>          String resourceCheckSumString = argList.get(0);<a name="line.365"></a>
+<FONT color="green">366</FONT>          int resourceCheckSum = 0;<a name="line.366"></a>
+<FONT color="green">367</FONT>          try {<a name="line.367"></a>
+<FONT color="green">368</FONT>            resourceCheckSum = Integer.parseInt(resourceCheckSumString);<a name="line.368"></a>
+<FONT color="green">369</FONT>          }<a name="line.369"></a>
+<FONT color="green">370</FONT>          catch (Exception e) {<a name="line.370"></a>
+<FONT color="green">371</FONT>            this.println("Error: Can't parse the checksum into an integer.");<a name="line.371"></a>
+<FONT color="green">372</FONT>            return;<a name="line.372"></a>
+<FONT color="green">373</FONT>          }<a name="line.373"></a>
+<FONT color="green">374</FONT>          argList.remove(0);<a name="line.374"></a>
+<FONT color="green">375</FONT>          // Now do almost the same as for an add command. <a name="line.375"></a>
+<FONT color="green">376</FONT>          // Build the Map of key-value pairs.<a name="line.376"></a>
+<FONT color="green">377</FONT>          Map&lt;String, String&gt; keyValMap = new HashMap&lt;String, String&gt;();<a name="line.377"></a>
+<FONT color="green">378</FONT>          for (String arg : argList) {<a name="line.378"></a>
+<FONT color="green">379</FONT>            int delim = arg.indexOf('=');<a name="line.379"></a>
+<FONT color="green">380</FONT>            if (delim == -1) {<a name="line.380"></a>
+<FONT color="green">381</FONT>              this.println("Error: can't parse argument string for statechange command.");<a name="line.381"></a>
+<FONT color="green">382</FONT>            }<a name="line.382"></a>
+<FONT color="green">383</FONT>            keyValMap.put(arg.substring(0, delim), arg.substring(delim + 1));<a name="line.383"></a>
+<FONT color="green">384</FONT>          }<a name="line.384"></a>
+<FONT color="green">385</FONT>          try {<a name="line.385"></a>
+<FONT color="green">386</FONT>            this.sensorDataCommand.statechange(resourceCheckSum, keyValMap);<a name="line.386"></a>
+<FONT color="green">387</FONT>          }<a name="line.387"></a>
+<FONT color="green">388</FONT>          catch (Exception e) {<a name="line.388"></a>
+<FONT color="green">389</FONT>            this.println("Error: Can't parse the Timestamp or Runtime arguments.");<a name="line.389"></a>
+<FONT color="green">390</FONT>          }<a name="line.390"></a>
+<FONT color="green">391</FONT>          return;<a name="line.391"></a>
+<FONT color="green">392</FONT>        }<a name="line.392"></a>
+<FONT color="green">393</FONT>        <a name="line.393"></a>
+<FONT color="green">394</FONT>        if ("setAutoSendTimeInterval".equals(commandName)) {<a name="line.394"></a>
+<FONT color="green">395</FONT>          String interval = (argList.isEmpty()) ? "" : argList.get(0);<a name="line.395"></a>
+<FONT color="green">396</FONT>          this.autoSendCommand.setTimeInterval(interval);<a name="line.396"></a>
+<FONT color="green">397</FONT>          return;<a name="line.397"></a>
+<FONT color="green">398</FONT>        }<a name="line.398"></a>
+<FONT color="green">399</FONT>        <a name="line.399"></a>
+<FONT color="green">400</FONT>        if ("setAutoSendBufferSize".equals(commandName)) {<a name="line.400"></a>
+<FONT color="green">401</FONT>          String bufferSize = (argList.isEmpty()) ? "" : argList.get(0);<a name="line.401"></a>
+<FONT color="green">402</FONT>          this.autoSendCommand.setBufferSize(bufferSize);<a name="line.402"></a>
+<FONT color="green">403</FONT>          return;<a name="line.403"></a>
+<FONT color="green">404</FONT>        }<a name="line.404"></a>
+<FONT color="green">405</FONT>    <a name="line.405"></a>
+<FONT color="green">406</FONT>        // Otherwise we don't understand.<a name="line.406"></a>
+<FONT color="green">407</FONT>        this.println("Invalid command entered and ignored. Type 'help' for help.");<a name="line.407"></a>
+<FONT color="green">408</FONT>      }<a name="line.408"></a>
+<FONT color="green">409</FONT>    <a name="line.409"></a>
+<FONT color="green">410</FONT>    <a name="line.410"></a>
+<FONT color="green">411</FONT>      /**<a name="line.411"></a>
+<FONT color="green">412</FONT>       * The command line shell interface.<a name="line.412"></a>
+<FONT color="green">413</FONT>       * &lt;ul&gt;<a name="line.413"></a>
+<FONT color="green">414</FONT>       *   &lt;li&gt; If invoked with no arguments, then the default sensor.properties<a name="line.414"></a>
+<FONT color="green">415</FONT>       *   file is used and the toolName field in the sensor log file name is<a name="line.415"></a>
+<FONT color="green">416</FONT>       *   "interactive".<a name="line.416"></a>
+<FONT color="green">417</FONT>       *   &lt;li&gt; If invoked with one argument, that argument is used as the toolName<a name="line.417"></a>
+<FONT color="green">418</FONT>       *   value.<a name="line.418"></a>
+<FONT color="green">419</FONT>       *   &lt;li&gt; If invoked with two arguments, then the first argument is used as<a name="line.419"></a>
+<FONT color="green">420</FONT>       *   the toolName value and the second is used as the sensor.properties file<a name="line.420"></a>
+<FONT color="green">421</FONT>       *   path.<a name="line.421"></a>
+<FONT color="green">422</FONT>       *   &lt;li&gt; If invoked with three arguments, then the first argument is the<a name="line.422"></a>
+<FONT color="green">423</FONT>       *   toolname, the second is the sensor.properties file path, and the third<a name="line.423"></a>
+<FONT color="green">424</FONT>       *   argument (regardless of value) disables offline data management.<a name="line.424"></a>
+<FONT color="green">425</FONT>       *   &lt;li&gt; If invoked with four arguments, then the first argument is the<a name="line.425"></a>
+<FONT color="green">426</FONT>       *   toolname, the second is the sensor.properties file path, the third<a name="line.426"></a>
+<FONT color="green">427</FONT>       *   argument (regardless of value) disables offline data management, and<a name="line.427"></a>
+<FONT color="green">428</FONT>       *   the fourth argument specifies a file of commands (the last of which should be 'quit').<a name="line.428"></a>
+<FONT color="green">429</FONT>       * &lt;/ul&gt;<a name="line.429"></a>
+<FONT color="green">430</FONT>       * Unless four arguments are provided,<a name="line.430"></a>
+<FONT color="green">431</FONT>       * the shell then provides a "&gt;&gt;" prompt and supports interactive entry of<a name="line.431"></a>
+<FONT color="green">432</FONT>       * sensor data. The following commands are supported:<a name="line.432"></a>
+<FONT color="green">433</FONT>       * &lt;ul&gt;<a name="line.433"></a>
+<FONT color="green">434</FONT>       *   &lt;li&gt; "help" provides a summary of the available commands.<a name="line.434"></a>
+<FONT color="green">435</FONT>       *   &lt;li&gt; "send" sends all of the accumulated data to the server.<a name="line.435"></a>
+<FONT color="green">436</FONT>       *   &lt;li&gt; "setAutoSendTimeInterval" specifies the number of minutes between auto sending.<a name="line.436"></a>
+<FONT color="green">437</FONT>       *   &lt;li&gt; "setAutoSendBufferSize" specifies the maximum number of local entries before sending.<a name="line.437"></a>
+<FONT color="green">438</FONT>       *   &lt;li&gt; "quit" sends all of the accumulated data to the server and exits.<a name="line.438"></a>
+<FONT color="green">439</FONT>       *   &lt;li&gt; "ping" checks to see if the host/user/password is valid. <a name="line.439"></a>
+<FONT color="green">440</FONT>       *   &lt;li&gt; "add" adds a single Sensor Data instance to the buffered list to send.<a name="line.440"></a>
+<FONT color="green">441</FONT>       * &lt;/ul&gt;<a name="line.441"></a>
+<FONT color="green">442</FONT>       *<a name="line.442"></a>
+<FONT color="green">443</FONT>       * @param args  The command line parameters. See above for details.<a name="line.443"></a>
+<FONT color="green">444</FONT>       */<a name="line.444"></a>
+<FONT color="green">445</FONT>      public static void main(String args[]) {<a name="line.445"></a>
+<FONT color="green">446</FONT>        // Print help line and exit if arg is -help.<a name="line.446"></a>
+<FONT color="green">447</FONT>        if ((args.length == 1) &amp;&amp; (args[0].equalsIgnoreCase("-help"))) {<a name="line.447"></a>
+<FONT color="green">448</FONT>          System.out.println("java -jar sensorshell.jar [toolname] [sensor.properties] [no offline] "<a name="line.448"></a>
+<FONT color="green">449</FONT>               + "[command filename]");<a name="line.449"></a>
+<FONT color="green">450</FONT>          return;<a name="line.450"></a>
+<FONT color="green">451</FONT>        }<a name="line.451"></a>
+<FONT color="green">452</FONT>        <a name="line.452"></a>
+<FONT color="green">453</FONT>        // Set Parameter 1 (toolname) to supplied or default value.<a name="line.453"></a>
+<FONT color="green">454</FONT>        String toolName = (args.length &gt; 0) ? args[0] : "interactive";<a name="line.454"></a>
+<FONT color="green">455</FONT>    <a name="line.455"></a>
+<FONT color="green">456</FONT>        // Set Parameter 2 (sensor properties file) to supplied or default value. Exit if can't find it.<a name="line.456"></a>
+<FONT color="green">457</FONT>        SensorProperties sensorProperties = null;<a name="line.457"></a>
+<FONT color="green">458</FONT>        try {<a name="line.458"></a>
+<FONT color="green">459</FONT>          sensorProperties = (args.length &gt;= 2) ?<a name="line.459"></a>
+<FONT color="green">460</FONT>              new SensorProperties(new File(args[1])) : new SensorProperties();<a name="line.460"></a>
+<FONT color="green">461</FONT>        }<a name="line.461"></a>
+<FONT color="green">462</FONT>        catch (SensorPropertiesException e) {<a name="line.462"></a>
+<FONT color="green">463</FONT>          System.out.println(e.getMessage());<a name="line.463"></a>
+<FONT color="green">464</FONT>          System.out.println("Exiting...");<a name="line.464"></a>
+<FONT color="green">465</FONT>          return;<a name="line.465"></a>
+<FONT color="green">466</FONT>        }<a name="line.466"></a>
+<FONT color="green">467</FONT>    <a name="line.467"></a>
+<FONT color="green">468</FONT>        // Set Parameter 3 (offline). True if we don't supply a value, false if any value supplied.<a name="line.468"></a>
+<FONT color="green">469</FONT>        boolean offlineEnabled = ((args.length &lt; 3));<a name="line.469"></a>
+<FONT color="green">470</FONT>    <a name="line.470"></a>
+<FONT color="green">471</FONT>        // Set Parameter 4 (command file). Null if not supplied. Exit if supplied and bogus.<a name="line.471"></a>
+<FONT color="green">472</FONT>        File commandFile = null;<a name="line.472"></a>
+<FONT color="green">473</FONT>        if (args.length == 4) {<a name="line.473"></a>
+<FONT color="green">474</FONT>          commandFile = new File(args[3]);<a name="line.474"></a>
+<FONT color="green">475</FONT>          if (!(commandFile.exists() &amp;&amp; commandFile.isFile())) {<a name="line.475"></a>
+<FONT color="green">476</FONT>            System.out.println("Could not find the command file. Exiting...");<a name="line.476"></a>
+<FONT color="green">477</FONT>            return;<a name="line.477"></a>
+<FONT color="green">478</FONT>          }<a name="line.478"></a>
+<FONT color="green">479</FONT>        }<a name="line.479"></a>
+<FONT color="green">480</FONT>    <a name="line.480"></a>
+<FONT color="green">481</FONT>        // Set interactive parameter. From command line, always interactive unless using command file.<a name="line.481"></a>
+<FONT color="green">482</FONT>        boolean interactive = ((commandFile == null));<a name="line.482"></a>
+<FONT color="green">483</FONT>    <a name="line.483"></a>
+<FONT color="green">484</FONT>        // Now create the shell instance, supplying it with all the appropriate arguments.<a name="line.484"></a>
+<FONT color="green">485</FONT>        SensorShell shell = <a name="line.485"></a>
+<FONT color="green">486</FONT>          new SensorShell(sensorProperties, interactive, toolName, offlineEnabled, commandFile);<a name="line.486"></a>
+<FONT color="green">487</FONT>    <a name="line.487"></a>
+<FONT color="green">488</FONT>        // Start processing commands either interactively or from the command file.<a name="line.488"></a>
+<FONT color="green">489</FONT>        while (true) {<a name="line.489"></a>
+<FONT color="green">490</FONT>          // Get the next command<a name="line.490"></a>
+<FONT color="green">491</FONT>          shell.printPrompt();<a name="line.491"></a>
+<FONT color="green">492</FONT>          String inputString = shell.readLine();<a name="line.492"></a>
+<FONT color="green">493</FONT>          shell.processInputString(inputString);<a name="line.493"></a>
+<FONT color="green">494</FONT>          if (inputString.equalsIgnoreCase("quit")) {<a name="line.494"></a>
+<FONT color="green">495</FONT>            return;<a name="line.495"></a>
+<FONT color="green">496</FONT>          }<a name="line.496"></a>
+<FONT color="green">497</FONT>        }<a name="line.497"></a>
+<FONT color="green">498</FONT>      }<a name="line.498"></a>
+<FONT color="green">499</FONT>    <a name="line.499"></a>
+<FONT color="green">500</FONT>      /** Prints the help strings associated with all commands. */<a name="line.500"></a>
+<FONT color="green">501</FONT>      private void printHelp() {<a name="line.501"></a>
+<FONT color="green">502</FONT>        String helpString = <a name="line.502"></a>
+<FONT color="green">503</FONT>          "SensorShell Command Summary " + cr<a name="line.503"></a>
+<FONT color="green">504</FONT>          + "  add#&lt;key&gt;=&lt;value&gt;[#&lt;key&gt;=&lt;value&gt;]..." + cr<a name="line.504"></a>
+<FONT color="green">505</FONT>          + "    Adds a new sensor data instance for subsequent sending." + cr <a name="line.505"></a>
+<FONT color="green">506</FONT>          + "    Provide fields and properties as key=value pairs separated by '#'." + cr<a name="line.506"></a>
+<FONT color="green">507</FONT>          + "    Owner, Timestamp, and Runtime fields will default to the current user and time." + cr<a name="line.507"></a>
+<FONT color="green">508</FONT>          + "    Example: add#Tool=Eclipse#SensorDataType=DevEvent#DevEventType=Compile" + cr <a name="line.508"></a>
+<FONT color="green">509</FONT>          + "  send" + cr<a name="line.509"></a>
+<FONT color="green">510</FONT>          + "    Sends any added sensor data to the server. " + cr<a name="line.510"></a>
+<FONT color="green">511</FONT>          + "    Server is pinged, and if it does not respond, then data is stored offline." + cr<a name="line.511"></a>
+<FONT color="green">512</FONT>          + "    Example: send" + cr<a name="line.512"></a>
+<FONT color="green">513</FONT>          + "  ping" + cr<a name="line.513"></a>
+<FONT color="green">514</FONT>          + "    Pings the server and checks email/password credentials." + cr<a name="line.514"></a>
+<FONT color="green">515</FONT>          + "    Example: ping" + cr<a name="line.515"></a>
+<FONT color="green">516</FONT>          + "  setAutoSendTimeInterval#&lt;integer&gt;" + cr<a name="line.516"></a>
+<FONT color="green">517</FONT>          + "    Sets the interval in minutes between automatic sending of added sensor data." + cr<a name="line.517"></a>
+<FONT color="green">518</FONT>          + "    Provide 0 as the integer to disable autosend. Fractional values to 0.1 minutes OK" + cr<a name="line.518"></a>
+<FONT color="green">519</FONT>          + "    Example: setAutoSendTimeInterval#15" + cr<a name="line.519"></a>
+<FONT color="green">520</FONT>          + "  setAutoSendBufferSize#&lt;integer&gt;" + cr<a name="line.520"></a>
+<FONT color="green">521</FONT>          + "    Sets the maximum size of the local buffer before sending" + cr<a name="line.521"></a>
+<FONT color="green">522</FONT>          + "    Example: setAutoSendBufferSize#250" + cr<a name="line.522"></a>
+<FONT color="green">523</FONT>          + "  statechange#&lt;ResourceCheckSum&gt;#&lt;key&gt;=&lt;value&gt;[#&lt;key&gt;=&lt;value&gt;]..." + cr<a name="line.523"></a>
+<FONT color="green">524</FONT>          + "    Generates an 'add' command when the 'state' has changed." + cr<a name="line.524"></a>
+<FONT color="green">525</FONT>          + "    ResourceCheckSum is an integer that represents the current state of the Resource." + cr<a name="line.525"></a>
+<FONT color="green">526</FONT>          + "    This command compares ResourceCheckSum and the Resource field value to the values" + cr<a name="line.526"></a>
+<FONT color="green">527</FONT>          + "    saved from the last call to statechange.  If either have changed, indicating that" + cr<a name="line.527"></a>
+<FONT color="green">528</FONT>          + "    the state has changed, then the key-value pairs are passed to the Add command." + cr<a name="line.528"></a>
+<FONT color="green">529</FONT>          + "    This command facilitates the implementation of timer-based sensor processes that" + cr<a name="line.529"></a>
+<FONT color="green">530</FONT>          + "    wake up periodically and emit statechange commands, with the knowledge that if " + cr<a name="line.530"></a>
+<FONT color="green">531</FONT>          + "    the user has not been active, these statechange commands will not result in" + cr<a name="line.531"></a>
+<FONT color="green">532</FONT>          + "    actual sensor data being sent to the server." + cr<a name="line.532"></a>
+<FONT color="green">533</FONT>          + "  quit" + cr<a name="line.533"></a>
+<FONT color="green">534</FONT>          + "    Sends any remaining data and exits the sensorshell." + cr<a name="line.534"></a>
+<FONT color="green">535</FONT>          + "    Example: quit" + cr;<a name="line.535"></a>
+<FONT color="green">536</FONT>        this.print(helpString);<a name="line.536"></a>
+<FONT color="green">537</FONT>      }<a name="line.537"></a>
+<FONT color="green">538</FONT>    <a name="line.538"></a>
+<FONT color="green">539</FONT>     <a name="line.539"></a>
+<FONT color="green">540</FONT>      /** Print out a prompt if in interactive mode. */<a name="line.540"></a>
+<FONT color="green">541</FONT>      private void printPrompt() {<a name="line.541"></a>
+<FONT color="green">542</FONT>        this.print(this.prompt);<a name="line.542"></a>
+<FONT color="green">543</FONT>      }<a name="line.543"></a>
+<FONT color="green">544</FONT>    <a name="line.544"></a>
+<FONT color="green">545</FONT>    <a name="line.545"></a>
+<FONT color="green">546</FONT>      /**<a name="line.546"></a>
+<FONT color="green">547</FONT>       * Returns a string with the next line of input from the user. If input<a name="line.547"></a>
+<FONT color="green">548</FONT>       * errors, returns the string "quit".<a name="line.548"></a>
+<FONT color="green">549</FONT>       *<a name="line.549"></a>
+<FONT color="green">550</FONT>       * @return   A string with user input.<a name="line.550"></a>
+<FONT color="green">551</FONT>       */<a name="line.551"></a>
+<FONT color="green">552</FONT>      private String readLine() {<a name="line.552"></a>
+<FONT color="green">553</FONT>        try {<a name="line.553"></a>
+<FONT color="green">554</FONT>          String line = this.bufferedReader.readLine();<a name="line.554"></a>
+<FONT color="green">555</FONT>          logger.info(line);<a name="line.555"></a>
+<FONT color="green">556</FONT>          return (line == null) ? "" : line;<a name="line.556"></a>
+<FONT color="green">557</FONT>        }<a name="line.557"></a>
+<FONT color="green">558</FONT>        catch (IOException e) {<a name="line.558"></a>
+<FONT color="green">559</FONT>          //logger.info(cr);<a name="line.559"></a>
+<FONT color="green">560</FONT>          return "quit";<a name="line.560"></a>
+<FONT color="green">561</FONT>        }<a name="line.561"></a>
+<FONT color="green">562</FONT>      }<a name="line.562"></a>
+<FONT color="green">563</FONT>    <a name="line.563"></a>
+<FONT color="green">564</FONT>      /**<a name="line.564"></a>
+<FONT color="green">565</FONT>       * Prints out the line plus newline if in interactive mode, and always logs the line.<a name="line.565"></a>
+<FONT color="green">566</FONT>       * Provided to clients to support logging of error messages. <a name="line.566"></a>
+<FONT color="green">567</FONT>       * <a name="line.567"></a>
+<FONT color="green">568</FONT>       * @param line  The line to be printed.<a name="line.568"></a>
+<FONT color="green">569</FONT>       */<a name="line.569"></a>
+<FONT color="green">570</FONT>      public final synchronized void println(String line) {<a name="line.570"></a>
+<FONT color="green">571</FONT>        logger.info(line + cr);<a name="line.571"></a>
+<FONT color="green">572</FONT>        if (isInteractive) {<a name="line.572"></a>
+<FONT color="green">573</FONT>          System.out.print(line + cr);<a name="line.573"></a>
+<FONT color="green">574</FONT>        }<a name="line.574"></a>
+<FONT color="green">575</FONT>      }<a name="line.575"></a>
+<FONT color="green">576</FONT>    <a name="line.576"></a>
+<FONT color="green">577</FONT>    <a name="line.577"></a>
+<FONT color="green">578</FONT>      /**<a name="line.578"></a>
+<FONT color="green">579</FONT>       * Prints out the line without newline if in interactive mode.<a name="line.579"></a>
+<FONT color="green">580</FONT>       *<a name="line.580"></a>
+<FONT color="green">581</FONT>       * @param line  The line to be printed.<a name="line.581"></a>
+<FONT color="green">582</FONT>       */<a name="line.582"></a>
+<FONT color="green">583</FONT>      private void print(String line) {<a name="line.583"></a>
+<FONT color="green">584</FONT>        logger.info(line);<a name="line.584"></a>
+<FONT color="green">585</FONT>        if (isInteractive) {<a name="line.585"></a>
+<FONT color="green">586</FONT>          System.out.print(line);<a name="line.586"></a>
+<FONT color="green">587</FONT>        }<a name="line.587"></a>
+<FONT color="green">588</FONT>      }<a name="line.588"></a>
+<FONT color="green">589</FONT>    <a name="line.589"></a>
+<FONT color="green">590</FONT>      /**<a name="line.590"></a>
+<FONT color="green">591</FONT>       * Return the current version number.<a name="line.591"></a>
+<FONT color="green">592</FONT>       *<a name="line.592"></a>
+<FONT color="green">593</FONT>       * @return The version number, or "Unknown" if could not be determined.<a name="line.593"></a>
+<FONT color="green">594</FONT>       */<a name="line.594"></a>
+<FONT color="green">595</FONT>      private String getVersion() {<a name="line.595"></a>
+<FONT color="green">596</FONT>        String release;<a name="line.596"></a>
+<FONT color="green">597</FONT>        try {<a name="line.597"></a>
+<FONT color="green">598</FONT>          Package thisPackage = Class.forName("org.hackystat.sensorshell.SensorShell").getPackage();<a name="line.598"></a>
+<FONT color="green">599</FONT>          release = thisPackage.getImplementationVersion();<a name="line.599"></a>
+<FONT color="green">600</FONT>        }<a name="line.600"></a>
+<FONT color="green">601</FONT>        catch (Exception e) {<a name="line.601"></a>
+<FONT color="green">602</FONT>          release = "Unknown";<a name="line.602"></a>
+<FONT color="green">603</FONT>        }<a name="line.603"></a>
+<FONT color="green">604</FONT>        return release;<a name="line.604"></a>
+<FONT color="green">605</FONT>      }<a name="line.605"></a>
+<FONT color="green">606</FONT>      <a name="line.606"></a>
+<FONT color="green">607</FONT>      /**<a name="line.607"></a>
+<FONT color="green">608</FONT>       * Returns true if this sensorshell is being run interactively from the command line.<a name="line.608"></a>
+<FONT color="green">609</FONT>       * @return True if sensorshell is interactive. <a name="line.609"></a>
+<FONT color="green">610</FONT>       */<a name="line.610"></a>
+<FONT color="green">611</FONT>      public synchronized boolean isInteractive() {<a name="line.611"></a>
+<FONT color="green">612</FONT>        return this.isInteractive;<a name="line.612"></a>
+<FONT color="green">613</FONT>      }<a name="line.613"></a>
+<FONT color="green">614</FONT>      <a name="line.614"></a>
+<FONT color="green">615</FONT>      /**<a name="line.615"></a>
+<FONT color="green">616</FONT>       * Returns the Logger associated with this sensorshell.<a name="line.616"></a>
+<FONT color="green">617</FONT>       * @return The Logger. <a name="line.617"></a>
+<FONT color="green">618</FONT>       */<a name="line.618"></a>
+<FONT color="green">619</FONT>      public synchronized Logger getLogger() {<a name="line.619"></a>
+<FONT color="green">620</FONT>        return this.logger;<a name="line.620"></a>
+<FONT color="green">621</FONT>      }<a name="line.621"></a>
+<FONT color="green">622</FONT>      <a name="line.622"></a>
+<FONT color="green">623</FONT>      <a name="line.623"></a>
+<FONT color="green">624</FONT>      /**<a name="line.624"></a>
+<FONT color="green">625</FONT>       * Returns true if offline data saving is enabled. <a name="line.625"></a>
+<FONT color="green">626</FONT>       * @return True if offline data is enabled. <a name="line.626"></a>
+<FONT color="green">627</FONT>       */<a name="line.627"></a>
+<FONT color="green">628</FONT>      public synchronized boolean enableOfflineData() {<a name="line.628"></a>
+<FONT color="green">629</FONT>        return this.enableOfflineData;<a name="line.629"></a>
+<FONT color="green">630</FONT>      }<a name="line.630"></a>
+<FONT color="green">631</FONT>      <a name="line.631"></a>
+<FONT color="green">632</FONT>      /**<a name="line.632"></a>
+<FONT color="green">633</FONT>       * Converts the values in the KeyValMap to a SensorData instance and adds it to the shell.<a name="line.633"></a>
+<FONT color="green">634</FONT>       * This is the easiest way to add sensor data.<a name="line.634"></a>
+<FONT color="green">635</FONT>       * The Owner will default to the hackystat user in the sensor.properties file.<a name="line.635"></a>
+<FONT color="green">636</FONT>       * The Timestamp and Runtime will default to the current time.  <a name="line.636"></a>
+<FONT color="green">637</FONT>       * @param keyValMap The map of key-value pairs. <a name="line.637"></a>
+<FONT color="green">638</FONT>       * @throws Exception If the Map cannot be translated into SensorData, typically because a <a name="line.638"></a>
+<FONT color="green">639</FONT>       * value was passed for Timestamp or Runtime that could not be parsed into XMLGregorianCalendar. <a name="line.639"></a>
+<FONT color="green">640</FONT>       */<a name="line.640"></a>
+<FONT color="green">641</FONT>      public synchronized void add(Map&lt;String, String&gt; keyValMap) throws Exception {<a name="line.641"></a>
+<FONT color="green">642</FONT>        this.sensorDataCommand.add(keyValMap);<a name="line.642"></a>
+<FONT color="green">643</FONT>      }<a name="line.643"></a>
+<FONT color="green">644</FONT>      <a name="line.644"></a>
+<FONT color="green">645</FONT>      /**<a name="line.645"></a>
+<FONT color="green">646</FONT>       * Adds the SensorData instance to the shell. <a name="line.646"></a>
+<FONT color="green">647</FONT>       * This is generally used only by the OfflineManager to resend previously stored entries. <a name="line.647"></a>
+<FONT color="green">648</FONT>       * @param sensorData The sensordata instance. <a name="line.648"></a>
+<FONT color="green">649</FONT>       */<a name="line.649"></a>
+<FONT color="green">650</FONT>      public synchronized void add(SensorData sensorData) {<a name="line.650"></a>
+<FONT color="green">651</FONT>        this.sensorDataCommand.add(sensorData);<a name="line.651"></a>
+<FONT color="green">652</FONT>      }<a name="line.652"></a>
+<FONT color="green">653</FONT>      <a name="line.653"></a>
+<FONT color="green">654</FONT>      /**<a name="line.654"></a>
+<FONT color="green">655</FONT>       * Sends any accumulated SensorData instances to the Server.<a name="line.655"></a>
+<FONT color="green">656</FONT>       * @return The number of sensor data instances that were sent.  <a name="line.656"></a>
+<FONT color="green">657</FONT>       */<a name="line.657"></a>
+<FONT color="green">658</FONT>      public synchronized int send() {<a name="line.658"></a>
+<FONT color="green">659</FONT>        return this.sensorDataCommand.send();<a name="line.659"></a>
+<FONT color="green">660</FONT>      }<a name="line.660"></a>
+<FONT color="green">661</FONT>      <a name="line.661"></a>
+<FONT color="green">662</FONT>      /** Shuts down this SensorShell, sending any unsent data and closing log files.  */<a name="line.662"></a>
+<FONT color="green">663</FONT>      public synchronized void quit() {<a name="line.663"></a>
+<FONT color="green">664</FONT>        this.quitCommand.quit();<a name="line.664"></a>
+<FONT color="green">665</FONT>      }<a name="line.665"></a>
+<FONT color="green">666</FONT>      <a name="line.666"></a>
+<FONT color="green">667</FONT>      /**<a name="line.667"></a>
+<FONT color="green">668</FONT>       * Returns true if the host can be pinged and the email/password combination is valid.<a name="line.668"></a>
+<FONT color="green">669</FONT>       * @return True if the host can be pinged and the user credentials are valid.<a name="line.669"></a>
+<FONT color="green">670</FONT>       */<a name="line.670"></a>
+<FONT color="green">671</FONT>      public synchronized boolean ping() {<a name="line.671"></a>
+<FONT color="green">672</FONT>        return this.pingCommand.isPingable();<a name="line.672"></a>
+<FONT color="green">673</FONT>      }<a name="line.673"></a>
+<FONT color="green">674</FONT>    <a name="line.674"></a>
+<FONT color="green">675</FONT>      /**<a name="line.675"></a>
+<FONT color="green">676</FONT>       * Sets the autosend interval to minutes.  If minutes is 0, then autosending is disabled.<a name="line.676"></a>
+<FONT color="green">677</FONT>       * @param minutes The interval in minutes for autosending. <a name="line.677"></a>
+<FONT color="green">678</FONT>       */<a name="line.678"></a>
+<FONT color="green">679</FONT>      public synchronized void setAutoSendTimeInterval(double minutes) {<a name="line.679"></a>
+<FONT color="green">680</FONT>        this.autoSendCommand.setTimeInterval(minutes);<a name="line.680"></a>
+<FONT color="green">681</FONT>      }<a name="line.681"></a>
+<FONT color="green">682</FONT>      <a name="line.682"></a>
+<FONT color="green">683</FONT>      /**<a name="line.683"></a>
+<FONT color="green">684</FONT>       * Sets the maximum number of sensor data entries to be buffered locally before invoking send. <a name="line.684"></a>
+<FONT color="green">685</FONT>       * @param bufferSize The maximum buffer size. <a name="line.685"></a>
+<FONT color="green">686</FONT>       */<a name="line.686"></a>
+<FONT color="green">687</FONT>      public synchronized void setAutoSendBufferSize(int bufferSize) {<a name="line.687"></a>
+<FONT color="green">688</FONT>        this.sensorDataCommand.setBufferSize(bufferSize);<a name="line.688"></a>
+<FONT color="green">689</FONT>      }<a name="line.689"></a>
+<FONT color="green">690</FONT>      <a name="line.690"></a>
+<FONT color="green">691</FONT>      /**<a name="line.691"></a>
+<FONT color="green">692</FONT>       * Implements the "StateChange" algorithm.  The goal of StateChange is to add a new SensorData<a name="line.692"></a>
+<FONT color="green">693</FONT>       * instance for sending to the SensorBase only when "something has changed" in the tool (which<a name="line.693"></a>
+<FONT color="green">694</FONT>       * is typically an interactive editor or IDE). This method is designed to be used in conjunction<a name="line.694"></a>
+<FONT color="green">695</FONT>       * with a timer-based process in the sensor client.  The timer-based process should wake up <a name="line.695"></a>
+<FONT color="green">696</FONT>       * at regular intervals, determine the currently "active" resource (typically a file), and <a name="line.696"></a>
+<FONT color="green">697</FONT>       * compute a "checksum" for that resource representing its state. (This checksum is typically<a name="line.697"></a>
+<FONT color="green">698</FONT>       * the size of the resource in bytes or characters.) Having obtained those two values, the <a name="line.698"></a>
+<FONT color="green">699</FONT>       * sensor client can then create a keyValMap as if it were going to do a regular Add command,<a name="line.699"></a>
+<FONT color="green">700</FONT>       * and invoke this method with it as well as with the resourceCheckSum.  This method keeps<a name="line.700"></a>
+<FONT color="green">701</FONT>       * track of the last Resource and last ResourceCheckSum provided to it, and if either has<a name="line.701"></a>
+<FONT color="green">702</FONT>       * changed, it will automatically invoke the Add command, passing the keyValMap to it. <a name="line.702"></a>
+<FONT color="green">703</FONT>       * &lt;p&gt;<a name="line.703"></a>
+<FONT color="green">704</FONT>       * Thus, if an editor is running but the user is out at lunch, repeated invocations of the <a name="line.704"></a>
+<FONT color="green">705</FONT>       * StateChange method will not result in any new data being sent to the server.  <a name="line.705"></a>
+<FONT color="green">706</FONT>       * @param resourceCheckSum An integer representing the state of the Resource. <a name="line.706"></a>
+<FONT color="green">707</FONT>       * @param keyValMap A map of key-value pairs representing sensor data fields and properties. <a name="line.707"></a>
+<FONT color="green">708</FONT>       * @throws Exception If problems occur during the Add (if the Add actually occurs.)<a name="line.708"></a>
+<FONT color="green">709</FONT>       */<a name="line.709"></a>
+<FONT color="green">710</FONT>      public synchronized void statechange(long resourceCheckSum, Map&lt;String, String&gt; keyValMap) <a name="line.710"></a>
+<FONT color="green">711</FONT>      throws Exception {<a name="line.711"></a>
+<FONT color="green">712</FONT>        this.sensorDataCommand.statechange(resourceCheckSum, keyValMap);<a name="line.712"></a>
+<FONT color="green">713</FONT>      }<a name="line.713"></a>
+<FONT color="green">714</FONT>    }<a name="line.714"></a>
+<FONT color="green">715</FONT>    <a name="line.715"></a>
 
 
 
