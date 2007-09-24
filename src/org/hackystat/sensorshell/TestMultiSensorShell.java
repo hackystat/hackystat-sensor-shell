@@ -157,7 +157,7 @@ public class TestMultiSensorShell {
       long time2 = new Date().getTime();
       System.out.println("Elapsed millis for add: " + (time2 - time1));
     }
-    multiShell.send();
+    multiShell.quit();
     long totalTime = (new Date().getTime() - startTime.getTime());
     System.out.println("Total time: " + totalTime + " milliseconds.");
     double timePerData = (double)totalTime / (double)totalData;
