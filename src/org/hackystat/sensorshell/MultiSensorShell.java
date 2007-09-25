@@ -2,6 +2,7 @@ package org.hackystat.sensorshell;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Random;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
 
 /**
@@ -43,6 +44,12 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
  * <p>
  * We have also found that we can store around 350,000 sensor data instances per GB of disk space.
  * <p>
+ * Note that although autoSendBatchSize is provided as a tuning parameter, you will probably want
+ * to set this to a high value (20,000 or 30,000) to effectively disable it. This is because 
+ * reaching the batchSize limit forces to blocking send() of the data, which is precisely what we
+ * want to avoid in MultiSensorShell.  Instead, we want to tune the autoSendTimeInterval so that all
+ * of our send() invocations occur asynchronously in a separate thread. 
+ * <p>
  * Note that a single SensorShell instance is simpler, creates less processing overhead, and has
  * equivalent performance to MultiSensorShell for transmission loads up to a dozen or so sensor data
  * instances per second. We recommend using a single SensorShell instance rather than
@@ -61,6 +68,8 @@ public class MultiSensorShell {
   private int batchCounter = 0;
   /** A pointer to the current Shell that is receiving SensorData instances. */
   private int currShellIndex = 0;
+  /** Used when batchSize == 0 */
+  private Random generator = new Random(0L);
 
   /**
    * Creates a new MultiSensorShell for multi-threaded transmission of SensorData instances to a
@@ -73,7 +82,8 @@ public class MultiSensorShell {
    * @param autoSendBatchSize The maximum buffer size for each shell.
    * @param numShells The total number of SensorShell instances to create. Must be greater than 0.
    * @param batchSize The number of SensorData instances to send in a row to a single SensorShell.
-   * Must be greater than 0.
+   * Must be greater than or equal to 0. If equal to 0, each instance is sent to a shell picked at 
+   * random.
    * @throws Exception If numShells or batchSize values are illegal, or other problems occur.
    */
   public MultiSensorShell(SensorProperties properties, String toolName, boolean enableOfflineData,
@@ -82,8 +92,8 @@ public class MultiSensorShell {
     if (numShells < 1) {
       throw new Exception("Number of shells must be greater than 0.");
     }
-    if (batchSize < 1) {
-      throw new Exception("Batch size must be greater than 0.");
+    if (batchSize < 0) {
+      throw new Exception("Batch size must be greater than or equal to 0.");
     }
     this.shells = new ArrayList<SensorShell>();
     this.numShells = numShells;
@@ -93,6 +103,7 @@ public class MultiSensorShell {
       boolean isInteractive = false;
       SensorShell shell = new SensorShell(properties, isInteractive, toolName, enableOfflineData);
       shell.setAutoSendTimeInterval(autoSendTimeInterval);
+      //autoSendTimeInterval += 0.001; // see if slightly changing send times helps. It doesn't.
       shell.setAutoSendBufferSize(autoSendBatchSize);
       this.shells.add(shell);
     }
@@ -100,15 +111,15 @@ public class MultiSensorShell {
 
   /**
    * Constructs a new MultiSensorShell instance with reasonable default values for enableOfflineData
-   * (true), autoSendTimeInterval (6 seconds), autoSendBatchSize (1000), numShells (5), and
-   * batchSize (200).
+   * (true), autoSendTimeInterval (6 seconds), autoSendBatchSize (1000), numShells (10), and
+   * batchSize (1000).
    * 
    * @param sensorProperties The sensor properties instance for this run.
    * @param toolName Indicates the invoking tool that is added to the log file name.
    * @throws Exception If problems occur.
    */
   public MultiSensorShell(SensorProperties sensorProperties, String toolName) throws Exception {
-    this(sensorProperties, toolName, true, 0.1, 1000, 5, 200);
+    this(sensorProperties, toolName, true, 0.1, 1000, 10, 200);
   }
 
   /**
@@ -136,11 +147,17 @@ public class MultiSensorShell {
   /**
    * Returns an index to the current SensorShell index to be used for data transmission. Internally
    * updates the batchCounter.
+   * If batchSize is 0, then an index is returned at random. In our initial trials, this was found
+   * to be a suboptimal strategy; it is better to set the batchSize to something like 200.
    * 
    * @return The index to the current SensorShell instance.
    */
   private int getCurrShellIndex() {
-    // First, update the batchCounter and change the currShellIndex if necessary.
+    // If batchSize is 0, then we return a shell index chosen randomly.
+    if (batchSize == 0) {
+      return generator.nextInt(numShells);
+    }
+    // Now, update the batchCounter and change the currShellIndex if necessary.
     // batchCounter goes from 1 to batchSize.
     // currShellIndex goes from 0 to numShells -1
     batchCounter++;

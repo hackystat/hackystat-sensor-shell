@@ -132,10 +132,10 @@ public class TestMultiSensorShell {
    * @throws Exception If things go wrong. 
    */
   public static void main(String[] args) throws Exception {
-    long totalData = 5000;
+    long totalData = 50000;
     int numShells = 10;
     double autoSendTimeInterval = 0.05;
-    int autoSendBatchSize = 1000;
+    int autoSendBatchSize = 30000;
     int batchSize = 200;
     String host = "http://localhost:9876/sensorbase";
     String user = "TestUser@hackystat.org";
