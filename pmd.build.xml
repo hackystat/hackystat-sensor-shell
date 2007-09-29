@@ -26,7 +26,7 @@
 
     <!-- Run PMD -->
     <mkdir dir="${pmd.dir}"/>
-    <pmd rulesetfiles="lib/pmd/hackystat.pmd.xml" 
+    <pmd rulesetfiles="${basedir}/lib/pmd/hackystat.pmd.xml" 
          shortFilenames="false" 
          targetjdk="1.6" 
          failonerror="${pmd.failonerror}"
