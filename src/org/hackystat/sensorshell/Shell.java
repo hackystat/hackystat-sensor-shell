@@ -9,6 +9,17 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
  * sensors that can restrict themselves to the use of the following public methods to
  * easily toggle between the use of SensorShell or MultiSensorShell depending upon 
  * load requirements.
+ * 
+ * As a simple example, a sensor might contain code similar to the following:
+ * <pre>
+ * boolean useMulti = isMultiSensorShellRequested();
+ * Shell shell = (useMulti) ? new MultiSensorShell(...) : new SensorShell(...);
+ *  :
+ * shell.add(...)
+ *  :
+ * shell.quit()
+ * </pre>
+ * Thus, the decision to use a SensorShell vs. a MultiSensorShell can be made at run-time.
  *   
  * @author Philip Johnson
  */
