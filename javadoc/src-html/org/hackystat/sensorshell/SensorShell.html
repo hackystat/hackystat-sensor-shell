@@ -47,7 +47,7 @@
 <FONT color="green">044</FONT>     *<a name="line.44"></a>
 <FONT color="green">045</FONT>     * @author    Philip M. Johnson<a name="line.45"></a>
 <FONT color="green">046</FONT>     */<a name="line.46"></a>
-<FONT color="green">047</FONT>    public class SensorShell {<a name="line.47"></a>
+<FONT color="green">047</FONT>    public class SensorShell implements Shell {<a name="line.47"></a>
 <FONT color="green">048</FONT>    <a name="line.48"></a>
 <FONT color="green">049</FONT>      /** Indicates if SensorShell is running interactively and thus output should be printed. */<a name="line.49"></a>
 <FONT color="green">050</FONT>      private boolean isInteractive = false;<a name="line.50"></a>
@@ -179,7 +179,7 @@
 <FONT color="green">176</FONT>       * Returns the offline manager associated with this instance. <a name="line.176"></a>
 <FONT color="green">177</FONT>       * @return The offline manager. <a name="line.177"></a>
 <FONT color="green">178</FONT>       */<a name="line.178"></a>
-<FONT color="green">179</FONT>      public OfflineManager getOfflineManager() {<a name="line.179"></a>
+<FONT color="green">179</FONT>      public synchronized OfflineManager getOfflineManager() {<a name="line.179"></a>
 <FONT color="green">180</FONT>        return this.offlineManager;<a name="line.180"></a>
 <FONT color="green">181</FONT>      }<a name="line.181"></a>
 <FONT color="green">182</FONT>    <a name="line.182"></a>

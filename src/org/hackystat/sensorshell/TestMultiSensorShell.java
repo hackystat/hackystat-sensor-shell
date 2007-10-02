@@ -75,7 +75,7 @@ public class TestMultiSensorShell {
     // First, start up a SensorShell.
     SensorProperties properties = new SensorProperties(host, user, user);
     // Create a MultiSensorShell with default performance properties. 
-    MultiSensorShell shell = new MultiSensorShell(properties, "Test");
+    Shell shell = new MultiSensorShell(properties, "Test");
     
     // Now construct a key-val map representing a SensorData instance. 
     Map<String, String> keyValMap = new HashMap<String, String>();

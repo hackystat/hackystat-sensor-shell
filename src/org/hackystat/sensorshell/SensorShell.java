@@ -44,7 +44,7 @@ import org.hackystat.utilities.logger.OneLineFormatter;
  *
  * @author    Philip M. Johnson
  */
-public class SensorShell {
+public class SensorShell implements Shell {
 
   /** Indicates if SensorShell is running interactively and thus output should be printed. */
   private boolean isInteractive = false;
@@ -176,7 +176,7 @@ public class SensorShell {
    * Returns the offline manager associated with this instance. 
    * @return The offline manager. 
    */
-  public OfflineManager getOfflineManager() {
+  public synchronized OfflineManager getOfflineManager() {
     return this.offlineManager;
   }
 

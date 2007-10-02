@@ -3,6 +3,8 @@ package org.hackystat.sensorshell;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
+import java.util.logging.Level;
+
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
 
 /**
@@ -57,7 +59,7 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
  * 
  * @author Philip Johnson
  */
-public class MultiSensorShell {
+public class MultiSensorShell implements Shell {
   /** The internal SensorShells managed by this MultiSensorShell. */
   private ArrayList<SensorShell> shells;
   /** The total number of shells. */
@@ -122,24 +124,12 @@ public class MultiSensorShell {
     this(sensorProperties, toolName, true, 0.1, 1000, 10, 200);
   }
 
-  /**
-   * Adds the passed SensorData instance to one of the internal SensorShells.
-   * 
-   * @param sensorData The SensorData instance to be queued for transmission.
-   */
+  /** {@inheritDoc} */
   public void add(SensorData sensorData) {
     this.shells.get(getCurrShellIndex()).add(sensorData);
   }
 
-  /**
-   * Converts the values in the KeyValMap to a SensorData instance and adds it to one of the
-   * internal SensorShells. Owner will default to the hackystat user in the sensor.properties file.
-   * Timestamp and Runtime will default to the current time.
-   * 
-   * @param keyValMap The map of key-value pairs.
-   * @throws Exception If the Map cannot be translated into SensorData, typically because a value
-   * was passed for Timestamp or Runtime that could not be parsed into XMLGregorianCalendar.
-   */
+  /** {@inheritDoc} */
   public void add(Map<String, String> keyValMap) throws Exception {
     this.shells.get(getCurrShellIndex()).add(keyValMap);
   }
@@ -180,13 +170,7 @@ public class MultiSensorShell {
     return this.shells.get(0).ping();
   }
 
-  /**
-   * Immediately invokes send() on all of the internal SensorShells. Note that you will rarely want
-   * to invoke this method. Instead, during normal operation you will rely on the
-   * autoSendTimeInterval to invoke send() in a separate thread, and then invoke quit() to invoke
-   * send() at the conclusion of the run.
-   * @return The total number of instances sent by all internal SensorShells. 
-   */
+  /** {@inheritDoc} */
   public int send() {
     int totalSent = 0;
     for (int i = 0; i < numShells; i++) {
@@ -195,13 +179,25 @@ public class MultiSensorShell {
     return totalSent;
   }
 
-  /**
-   * Invokes quit() on all of the internal SensorShells, which invokes a final send() and closes any
-   * logging files.
-   */
+  /** {@inheritDoc} */
   public void quit() {
     for (int i = 0; i < numShells; i++) {
       this.shells.get(i).quit();
+    }
+  }
+  
+  /** {@inheritDoc} */
+  public void setLoggingLevel(String level) {
+    Level newLevel = Level.INFO;
+    try {
+      newLevel = Level.parse(level);
+    }
+    catch (Exception e) {
+      this.shells.get(0).getLogger().warning("Couldn't set Logging level to: " + level);
+    }
+    for (int i = 0; i < numShells; i++) {
+      this.shells.get(i).getLogger().setLevel(newLevel);
+      this.shells.get(i).getLogger().getHandlers()[0].setLevel(newLevel);
     }
   }
 }
