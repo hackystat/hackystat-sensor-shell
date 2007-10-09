@@ -12,6 +12,7 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDataIndex;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDataRef;
 import org.hackystat.sensorbase.server.Server;
+import org.hackystat.sensorbase.server.ServerProperties;
 import org.hackystat.utilities.tstamp.Tstamp;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -46,7 +47,9 @@ public class TestMultiSensorShell {
    * @throws Exception If problems occur setting up the server. 
    */
   @BeforeClass public static void setupServer() throws Exception {
-    TestMultiSensorShell.server = Server.newInstance();
+    ServerProperties properties = new ServerProperties();
+    properties.setTestProperties();
+    TestMultiSensorShell.server = Server.newInstance(properties);
     TestMultiSensorShell.host = TestMultiSensorShell.server.getHostName();
     SensorBaseClient.registerUser(host, user);
   }
