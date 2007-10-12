@@ -8,10 +8,10 @@
   <property name="emma.dir" location="${build.dir}/emma" />
   <property name="junit.dir" location="${build.dir}/junit" />
 
-  <target name="emma" depends="emma.tool" 
+  <target name="emma" depends="emma.tool" unless="emma.disabled"
     description="Runs Emma."/>
 
-  <target name="emma.tool" depends="clean, compile" 
+  <target name="emma.tool" depends="clean, compile" unless="emma.disabled" 
     description="Cleans, compiles, instruments byte codes, runs unit tests, generates Emma report.">
     <!-- Verify that Emma is installed. -->
     <available file="${env.EMMA_HOME}/lib/emma.jar" property="emma.available"/>
@@ -73,7 +73,7 @@
      <delete dir="${build.dir}/classes" />
   </target>
   
-  <target name="emma.echo" description="Sends summary of Emma results to console">
+  <target name="emma.echo" description="Sends summary of Emma results to console" unless="emma.disabled">
     <!-- It's ridiculous what we have to do to get a decent summary. -->
      <xslt style="${basedir}/lib/emma/hackystat.emma.xsl" 
               in="${emma.dir}/coverage.xml" out="${emma.dir}/coverage.brief.txt" />  
@@ -87,7 +87,7 @@
      </concat>
   </target>
 
-  <target name="emma.sensor" description="Sends Emma coverage data to Hackystat using the Emma sensor.">
+  <target name="emma.sensor" unless="emma.disabled" description="Sends Emma coverage data to Hackystat using the Emma sensor.">
     <!-- Define the emma sensor taskdef, failing the build if the sensor is not installed. -->
     <available classname="org.hackystat.sensor.emma.EmmaSensor" property="emma.sensor.available"/>
     <fail unless="emma.sensor.available" message="Error: Emma sensor not installed."/>
