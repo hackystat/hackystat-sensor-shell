@@ -38,7 +38,8 @@ public class OfflineManager {
     this.shell = shell;
     try {
       this.jaxbContext = 
-        JAXBContext.newInstance("org.hackystat.sensorbase.resource.sensordata.jaxb");
+        JAXBContext.newInstance(
+            "org.hackystat.sensorbase.resource.sensordata.jaxb.ObjectFactory.class");
     }
     catch (Exception e) {
       throw new RuntimeException("Could not create JAXB context.");
