@@ -14,7 +14,5 @@
 	<classpathentry kind="var" path="DERBY_HOME/lib/derby.jar"/>
 	<classpathentry kind="var" path="JAVAMAIL_HOME/mail.jar"/>
 	<classpathentry kind="var" path="HACKYSTAT_UTILITIES_HOME/tstamp.lib.jar"/>
-	<classpathentry kind="var" path="AGITAR_MOCK_OBJECTS5"/>
-	<classpathentry kind="var" path="AGITAR_TEST_LIB"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

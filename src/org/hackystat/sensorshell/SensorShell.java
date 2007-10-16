@@ -148,8 +148,6 @@ public class SensorShell implements Shell {
     this.commandFilePresent = ((commandFile != null));
     this.client = new SensorBaseClient(sensorProperties.getHackystatHost(), 
         sensorProperties.getEmail(), sensorProperties.getPassword());
-    // Create the offline directory in the same directory where sensor.properties was found.
-    //OfflineManager.getInstance(sensorProperties.getSensorPropertiesDir());
     initializeLogger();
     this.pingCommand = new PingCommand(this, sensorProperties);
     this.sensorDataCommand = new SensorDataCommand(this, sensorProperties, this.pingCommand, 
