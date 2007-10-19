@@ -72,6 +72,7 @@
     <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/stacktrace.lib.jar"/> 
     <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/hackystatlogger.lib.jar"/> 
     <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/tstamp.lib.jar"/> 
+    <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/time.lib.jar"/>
     <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/uricache.lib.jar"/> 
     <fileset file="${env.HACKYSTAT_SENSORBASE_HOME}/sensorbase.lib.jar"/> 
     <fileset file="${env.RESTLET_HOME}/lib/org.restlet.jar" />

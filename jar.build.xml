@@ -19,7 +19,8 @@
      <unjar src="${env.HACKYSTAT_UTILITIES_HOME}/hackystatlogger.lib.jar" dest="${tmp.dir}"/>
      <unjar src="${env.HACKYSTAT_UTILITIES_HOME}/stacktrace.lib.jar" dest="${tmp.dir}"/>
      <unjar src="${env.HACKYSTAT_UTILITIES_HOME}/tstamp.lib.jar" dest="${tmp.dir}"/>
-     <unjar src="${env.HACKYSTAT_UTILITIES_HOME}/uricache.lib.jar" dest="${tmp.dir}"/>
+    <unjar src="${env.HACKYSTAT_UTILITIES_HOME}/uricache.lib.jar" dest="${tmp.dir}"/>
+    <unjar src="${env.HACKYSTAT_UTILITIES_HOME}/time.lib.jar" dest="${tmp.dir}"/>
      <unjar src="${env.HACKYSTAT_SENSORBASE_HOME}/sensorbase.lib.jar" dest="${tmp.dir}"/>
      <unjar src="${env.RESTLET_HOME}/lib/org.restlet.jar" dest="${tmp.dir}"/>
      <unjar src="${env.RESTLET_HOME}/lib/com.noelios.restlet.jar" dest="${tmp.dir}"/>
