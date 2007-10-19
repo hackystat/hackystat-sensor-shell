@@ -14,5 +14,6 @@
 	<classpathentry kind="var" path="DERBY_HOME/lib/derby.jar"/>
 	<classpathentry kind="var" path="JAVAMAIL_HOME/mail.jar"/>
 	<classpathentry kind="var" path="HACKYSTAT_UTILITIES_HOME/tstamp.lib.jar"/>
+	<classpathentry kind="var" path="HACKYSTAT_UTILITIES_HOME/uricache.lib.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
