@@ -395,6 +395,21 @@ public class SensorShell implements Shell {
       return;
     }
     
+    if ("setTimeout".equals(commandName)) {
+      String milliString = (argList.isEmpty()) ? "0" : argList.get(0);
+      int millis = 0;
+      try {
+        millis = Integer.parseInt(milliString);
+      }
+      catch (Exception e) {
+        this.println("Error: Can't parse the milliseconds into an integer.");
+        return;
+      }
+      this.setTimeout(millis);
+      this.println("Timeout set to " + millis);
+      return;
+    }
+    
     if ("setAutoSendBufferSize".equals(commandName)) {
       String bufferSize = (argList.isEmpty()) ? "" : argList.get(0);
       this.autoSendCommand.setBufferSize(bufferSize);
@@ -511,6 +526,10 @@ public class SensorShell implements Shell {
       + "  ping" + cr
       + "    Pings the server and checks email/password credentials." + cr
       + "    Example: ping" + cr
+      + "  setTimeout#<milliseconds>" + cr
+      + "    Sets the number of milliseconds before timing out a request." + cr
+      + "    A value of zero means an infinite timeout." + cr
+      + "    Example: setTimeout#1000" + cr      
       + "  setAutoSendTimeInterval#<integer>" + cr
       + "    Sets the interval in minutes between automatic sending of added sensor data." + cr
       + "    Provide 0 as the integer to disable autosend. Fractional values to 0.1 minutes OK" + cr
@@ -669,7 +688,16 @@ public class SensorShell implements Shell {
   public synchronized boolean ping() {
     return this.pingCommand.isPingable();
   }
-
+  
+  /**
+   * Sets the timeout for this client when making requests to milliseconds.
+   * A value of 0 means infinite timeout. 
+   * @param milliseconds The number of milliseconds to wait before timing out. 
+   */
+  public synchronized void setTimeout(int milliseconds) {
+    this.client.setTimeout(milliseconds);
+  }
+  
   /**
    * Sets the autosend interval to minutes.  If minutes is 0, then autosending is disabled.
    * @param minutes The interval in minutes for autosending. 
