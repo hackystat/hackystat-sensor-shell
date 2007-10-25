@@ -104,7 +104,8 @@ class UserMap {
       Usermaps usermaps = (Usermaps) unmarshaller.unmarshal(userMapFile);
       List<Usermap> usermapList = usermaps.getUsermap();
       for (Usermap usermap : usermapList) {
-        String tool = usermap.getTool();
+        // user lowercase tool for case-insensitive comparison
+        String tool = usermap.getTool().toLowerCase();
         List<User> userList = usermap.getUser();
         for (User user : userList) {
           String toolAccount = user.getToolaccount();
@@ -157,8 +158,12 @@ class UserMap {
    * @return Returns the value matching the criteria given or null if none can be found.
    */
   String get(String tool, String toolAccount, UserMapKey key) {
-    if (this.userMappings.containsKey(tool)) {
-      Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(tool);
+    if (tool == null) {
+      return null;
+    }
+    String lowercasetool = tool.toLowerCase();
+    if (this.userMappings.containsKey(lowercasetool)) {
+      Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(lowercasetool);
       if (toolMapping.containsKey(toolAccount)) {
         Map<UserMapKey, String> toolAccountMapping = toolMapping.get(toolAccount);
         return toolAccountMapping.get(key);
@@ -166,9 +171,10 @@ class UserMap {
     }
     return null;
   }
-  
+
   /**
-   * Returns true if there is a defined userKey for the given Tool and ToolAccount. 
+   * Returns true if there is a defined userKey for the given Tool and ToolAccount.
+   * 
    * @param tool A Tool, such as "Jira".
    * @param toolAccount A Tool account, such as "johnson".
    * @return True if the toolAccount is defined for the given tool in this userMap.
