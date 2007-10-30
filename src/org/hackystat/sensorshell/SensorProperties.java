@@ -194,7 +194,7 @@ public class SensorProperties {
   }
   
   /**
-   * Returns the AutoSend time interval for use by the SensorShell, or 10 if it was not specified. 
+   * Returns the AutoSend time interval for use by the SensorShell, or 1 if it was not specified. 
    * Returned as a string since it is typically sent off to the SensorShell as a String argument.
    * @return The autosend interval.
    */
@@ -206,7 +206,7 @@ public class SensorProperties {
       return intervalString;
     }
     catch (Exception e) {
-      return "10";
+      return "1";
     }
   }
 

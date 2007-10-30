@@ -100,6 +100,9 @@ public class SensorShell implements Shell {
   /** The OfflineManager used to recover data. */
   private OfflineManager offlineManager;
   
+  /** The default timeout for the sensorbase, which is 3 seconds by default. */
+  private int defaultTimeout = 3000;
+  
   /**
    * Constructs a new SensorShell instance that can be provided with
    * notification data to be sent eventually to a specific user key and host.
@@ -148,6 +151,7 @@ public class SensorShell implements Shell {
     this.commandFilePresent = ((commandFile != null));
     this.client = new SensorBaseClient(sensorProperties.getHackystatHost(), 
         sensorProperties.getEmail(), sensorProperties.getPassword());
+    this.client.setTimeout(this.defaultTimeout);
     initializeLogger();
     this.pingCommand = new PingCommand(this, sensorProperties);
     this.sensorDataCommand = new SensorDataCommand(this, sensorProperties, this.pingCommand, 

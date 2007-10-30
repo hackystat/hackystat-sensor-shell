@@ -59,15 +59,14 @@ public class SensorDataCommand extends Command {
       this.shell.getLogger().info("#> send" + cr);
     }
     if (this.pingCommand.isPingable()) {
-      //OfflineManager.getInstance().clear();
       try {
         if (sensorDatas.getSensorData().isEmpty()) {
           this.shell.println("No sensor data to send.");
           return 0;
         }
         this.client.putSensorDataBatch(sensorDatas);
-        this.shell.println(sensorDatas.getSensorData().size() + " SensorData instances sent to " +
-            this.properties.getHackystatHost());
+        this.shell.println(sensorDatas.getSensorData().size() + " SensorData instances sent to "
+            + this.properties.getHackystatHost());
         numDataSent = sensorDatas.getSensorData().size();
         this.sensorDatas.getSensorData().clear();
       }
