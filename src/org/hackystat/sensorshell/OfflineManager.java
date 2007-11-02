@@ -42,7 +42,7 @@ public class OfflineManager {
             org.hackystat.sensorbase.resource.sensordata.jaxb.ObjectFactory.class);
     }
     catch (Exception e) {
-      throw new RuntimeException("Could not create JAXB context.");
+      throw new RuntimeException("Could not create JAXB context.", e);
     }
   }
   

@@ -23,4 +23,13 @@ public class SensorPropertiesException extends Exception {
   public SensorPropertiesException(String message) {
     super(message);
   }
+  
+  /**
+   * Thrown when a SensorProperties instance cannot be created.
+   * @param message The message indicating the problem. 
+   * @param e The exception.
+   */
+  public SensorPropertiesException(String message, Throwable e) {
+    super(message, e);
+  }
 }

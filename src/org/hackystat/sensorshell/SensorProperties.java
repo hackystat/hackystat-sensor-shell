@@ -90,11 +90,11 @@ public class SensorProperties {
     }
     catch (FileNotFoundException e) {
       throw new SensorPropertiesException("Sensor properties file does not exist at "
-          + sensorFile.getAbsolutePath());
+          + sensorFile.getAbsolutePath(), e);
     }
     catch (IOException e) {
       throw new SensorPropertiesException("Unable to read the sensor properties file at "
-          + sensorFile.getAbsolutePath());
+          + sensorFile.getAbsolutePath(), e);
     }
     finally {
       try {
