@@ -9,8 +9,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import org.hackystat.sensorshell.SensorProperties;
-import org.hackystat.sensorshell.SensorPropertiesException;
 import org.hackystat.sensorshell.usermap.resource.jaxb.ObjectFactory;
 import org.hackystat.sensorshell.usermap.resource.jaxb.User;
 import org.hackystat.sensorshell.usermap.resource.jaxb.Usermap;
@@ -58,19 +56,10 @@ class UserMap {
    *           parsed.
    */
   UserMap() throws SensorShellMapException {
-    SensorProperties properties;
-    try {
-      // try to instantiate sensor properties to get properties directory
-      properties = new SensorProperties();
-    }
-    catch (SensorPropertiesException e) {
-      throw new SensorShellMapException("Error instantiating sensor properties.", e);
-    }
-
     this.userMappings = new HashMap<String, Map<String, Map<UserMapKey, String>>>();
 
-    File sensorPropertiesDir = properties.getSensorPropertiesDir();
-    String userMapFilePath = sensorPropertiesDir.getAbsolutePath() + "/usermap/UserMap.xml";
+    File sensorPropsDir = new File(System.getProperty("user.home") + "/.hackystat/sensorshell/");
+    String userMapFilePath = sensorPropsDir.getAbsolutePath() + "/usermap/UserMap.xml";
     File userMapFile = new File(userMapFilePath);
     if (userMapFile.exists()) {
       this.loadUserMapFile(userMapFile);

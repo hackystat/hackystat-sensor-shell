@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
@@ -24,15 +26,15 @@ public class OfflineManager {
   private File offlineDir;
   
   /** The SensorShell associated with this OfflineManager. */
-  private SensorShell shell;
-  
+  private SingleSensorShell shell;
+  /** The jaxb context. */
   private JAXBContext jaxbContext;
   
   /**
    * Constructor for OfflineManager which initializes the location for offline data.
    * @param shell The SensorShell associated with this OfflineManager.
    */
-  public OfflineManager(SensorShell shell) {
+  public OfflineManager(SingleSensorShell shell) {
     this.offlineDir = new File(System.getProperty("user.home") + "/.hackystat/offline/");
     this.offlineDir.mkdirs();
     this.shell = shell;
@@ -74,10 +76,12 @@ public class OfflineManager {
    * send batches off at whatever interval it chooses.
    * All serialized files are deleted after being processed, regardless of whether or not
    * processing is successful or not. 
+   * @throws SensorShellException If problems occur sending the recovered data.
    */
-  public void recover() {
+  public void recover() throws SensorShellException {
     File[] xmlFiles = this.offlineDir.listFiles(new ExtensionFileFilter(".xml"));
     FileInputStream fileStream = null;
+    List<SensorData> offlineData = new ArrayList<SensorData>(500);
     for (int i = 0; i < xmlFiles.length; i++) {
       try {
         // Reconstruct the SensorDatas instances from the serialized files. 
@@ -85,22 +89,37 @@ public class OfflineManager {
         fileStream = new FileInputStream(xmlFiles[i]);
         Unmarshaller unmarshaller = this.jaxbContext.createUnmarshaller();
         SensorDatas sensorDatas = (SensorDatas)unmarshaller.unmarshal(fileStream);
-        for (SensorData data : sensorDatas.getSensorData()) {
-          this.shell.add(data);
-        }
+        // Now that we have the sensor data in memory, close and delete the file. 
         fileStream.close();
+        xmlFiles[i].delete();
+        // Next, add this data to our local arraylist.
+        for (SensorData data : sensorDatas.getSensorData()) {
+          offlineData.add(data);
+        }
+        // Now, if we've collected enough local entries, send them out.
+        if (offlineData.size() > 500) {
+          this.shell.println("Sending recovered offline data (" + offlineData.size() + " entries)");
+          for (SensorData data : offlineData) {
+            shell.add(data);
+          }
+          offlineData.clear();
+        }
       }
       catch (Exception e) {
         this.shell.println("Error recovering offline data from: " + xmlFiles[i] + " " + e);
         try {
           fileStream.close();
         }
-        catch (Exception f) { //NOPMD
-          // do nothing
+        catch (Exception f) { 
+          this.shell.println("Failed to close: " + fileStream.toString() + " " + e);
         }
       }
-      // Delete the serialized file, regardless of whether it was restored correctly or not.
-      xmlFiles[i].delete();
-    }   
+    }
+    // Clear out any remaining data from our local buffer. 
+    for (SensorData data : offlineData) {
+      shell.add(data);
+    }
+    this.shell.println("Explicit send of recovered data.");
+    shell.send();
   }
 }

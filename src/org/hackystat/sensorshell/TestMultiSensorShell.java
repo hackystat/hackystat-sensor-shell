@@ -76,7 +76,7 @@ public class TestMultiSensorShell {
    */
   @Test public void testMultiSensorShell() throws Exception {
     // First, start up a SensorShell.
-    SensorProperties properties = new SensorProperties(host, user, user);
+    SensorShellProperties properties = new SensorShellProperties(host, user, user);
     // Create a MultiSensorShell with default performance properties. 
     Shell shell = new MultiSensorShell(properties, "Test");
     
@@ -130,24 +130,38 @@ public class TestMultiSensorShell {
    * A simple main class that illustrates how to invoke the MultiSensorShell to explore 
    * performance improvements related to throughput of SensorData instances.  The idea is 
    * bring up a local SensorBase, edit the local variables of this method, then run this 
-   * main() to see how fast you can transmit the SensorData to the SensorBase. 
+   * main() to see how fast you can transmit the SensorData to the SensorBase.  On our system, 
    * @param args Ignored.
    * @throws Exception If things go wrong. 
    */
   public static void main(String[] args) throws Exception {
-    long totalData = 50000;
-    int numShells = 10;
-    double autoSendTimeInterval = 0.05;
-    int autoSendBatchSize = 30000;
-    int batchSize = 200;
+    long totalData = 5000;
     String host = "http://localhost:9876/sensorbase";
     String user = "TestUser@hackystat.org";
+    String numShells = "10";
+    String batchSize = "250";
+    String interval = "0.05";
+    // Create the custom SensorProperties instance for this test.
+    java.util.Properties properties = new java.util.Properties();
+    properties.setProperty(SensorShellProperties.SENSORSHELL_SENSORBASE_HOST_KEY, host);
+    properties.setProperty(SensorShellProperties.SENSORSHELL_SENSORBASE_USER_KEY, user);
+    properties.setProperty(SensorShellProperties.SENSORSHELL_SENSORBASE_PASSWORD_KEY, user);
+    properties.setProperty(SensorShellProperties.SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, "false");
+    properties.setProperty(SensorShellProperties.SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, "false");
+    properties.setProperty(SensorShellProperties.SENSORSHELL_LOGGING_LEVEL_KEY, "OFF");
+    properties.setProperty(SensorShellProperties.SENSORSHELL_MULTISHELL_ENABLED_KEY, "true");
+    properties.setProperty(SensorShellProperties.SENSORSHELL_MULTISHELL_NUMSHELLS_KEY, numShells);
+    properties.setProperty(SensorShellProperties.SENSORSHELL_MULTISHELL_BATCHSIZE_KEY, batchSize);
+    properties.setProperty(SensorShellProperties.SENSORSHELL_MULTISHELL_AUTOSEND_TIMEINTERVAL_KEY, 
+        interval);
+    properties.setProperty(SensorShellProperties.SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "30000");
+    properties.setProperty(SensorShellProperties.SENSORSHELL_TIMEOUT_KEY, "30");
+    SensorShellProperties shellProps = new SensorShellProperties(properties, true);
+
+    
     System.out.println("Starting run with: totalData: " + totalData + ", numShells: " + numShells + 
-        ", autoSendTimeInterval: " + autoSendTimeInterval + ", batchSize: " + batchSize);
-    SensorProperties properties = new SensorProperties(host, user, user);
-    MultiSensorShell multiShell = 
-      new MultiSensorShell(properties, "MultiTest", false, autoSendTimeInterval, 
-          autoSendBatchSize, numShells, batchSize);
+        ", autoSendTimeInterval: " + interval + ", batchSize: " + batchSize);
+    MultiSensorShell multiShell = new MultiSensorShell(shellProps, "MultiTest");
     // Make sure the user remembers to get the SensorBase running. :-)
     if (!multiShell.ping()) {
       throw new Exception("Before running MultiShell, you probably want to run SensorBase!");
@@ -158,7 +172,7 @@ public class TestMultiSensorShell {
       SensorData data = makeSensorData(user);
       multiShell.add(data);
       long time2 = new Date().getTime();
-      System.out.println("Elapsed millis for add: " + (time2 - time1));
+      System.out.println("Elapsed millis for add " + i + " : " + (time2 - time1));
     }
     multiShell.quit();
     long totalTime = (new Date().getTime() - startTime.getTime());

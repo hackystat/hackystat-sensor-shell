@@ -1,7 +1,7 @@
 package org.hackystat.sensorshell.command;
 
-import org.hackystat.sensorshell.SensorProperties;
-import org.hackystat.sensorshell.SensorShell;
+import org.hackystat.sensorshell.SensorShellProperties;
+import org.hackystat.sensorshell.SingleSensorShell;
 
 /**
  * A class providing access to information useful for all Command instances. 
@@ -10,9 +10,9 @@ import org.hackystat.sensorshell.SensorShell;
 public class Command {
   
   /** The sensorshell. */
-  protected SensorShell shell;
+  protected SingleSensorShell shell;
   /** The SensorProperties. */
-  protected SensorProperties properties;
+  protected SensorShellProperties properties;
   /** The sensorbase host. */
   protected String host;
   /** The client email. */
@@ -27,11 +27,11 @@ public class Command {
    * @param shell The sensorshell. 
    * @param properties The properties. 
    */
-  public Command(SensorShell shell, SensorProperties properties) {
+  public Command(SingleSensorShell shell, SensorShellProperties properties) {
     this.shell = shell;
     this.properties = properties;
-    this.host = properties.getHackystatHost();
-    this.email = properties.getEmail();
-    this.password = properties.getPassword();
+    this.host = properties.getSensorBaseHost();
+    this.email = properties.getSensorBaseUser();
+    this.password = properties.getSensorBasePassword();
   }
 }

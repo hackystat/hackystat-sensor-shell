@@ -3,12 +3,11 @@ package org.hackystat.sensorshell;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
-import java.util.logging.Level;
 
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
 
 /**
- * MultiSensorShell is a wrapper around SensorShell that is designed to support high performance
+ * MultiSensorShell is a wrapper around SingleSensorShell that is designed for high performance
  * transmission of sensor data instances from a client to a server. Prior research has determined
  * that when a single SensorShell is used to transmit a large amount of data in a short period of
  * time, it can spend a substantial portion of its time blocked while waiting for an HTTP PUT to
@@ -20,11 +19,19 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
  * instance is performing its HTTP PUT call, the MultiSensorShell can be concurrently adding data to
  * one of the other SensorShell instances.
  * <p>
- * MultiSensorShell provides a number of "tuning parameters", including the number of SensorShells
- * to be created, the number of SensorData instances to be sent to a single SensorShell before
- * moving on to the next SensorShell (the "batchSize"), and the autoSendInterval for each
- * SensorShell. There is a MultiSensorShell constructor that provides reasonable default values for
- * these tuning parameters and that should result in good performance under most conditions.
+ * The sensorshell.properties file provides a number of tuning parameters for MultiSensorShell
+ * processing. We currently recommend the following settings for best performance:
+ * <ul>
+ * <li>sensorshell.multishell.enabled = true
+ * <li>sensorshell.multishell.numshells = 10
+ * <li>sensorshell.multishell.batchsize = 250
+ * <li>sensorshell.multishell.autosend.timeinterval = 0.05
+ * <li>sensorshell.offline.cache.enabled = false
+ * <li>sensorshell.offline.recovery.enabled = false
+ * <li>sensorshell.autosend.maxbuffer = 30000
+ * <li>sensorshell.logging.level = OFF
+ * <li>sensorshell.timeout = 30
+ * </ul>
  * <p>
  * The TestMultiSensorShell class provides a main() method that we have used to do some simple
  * performance evaluation, which we report on next. All results were obtained using a MacBook Pro
@@ -38,19 +45,19 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
  * the throughput, to approximately 3 milliseconds per instance. At this point, some kind of
  * performance plateau is reached, with further tweaking of the tuning parameters seeming to have
  * little effect. We do not know whether this is a "real" limit or an artificial limit based upon
- * some environmental feature (such as the logging mechanism.)
+ * some environmental feature.
  * <p>
- * With totalData = 500,000, numShells = 10, autoSendInterval = 0.05, and batchSize = 200, we have
+ * With the sensorshell.properties settings listed above, we have 
  * achieved throughput of 2.8 milliseconds per instance (which is equivalent to 360 instances per
  * second and 1.2M instances per hour.)
  * <p>
  * We have also found that we can store around 350,000 sensor data instances per GB of disk space.
  * <p>
- * Note that although autoSendBatchSize is provided as a tuning parameter, you will probably want
- * to set this to a high value (20,000 or 30,000) to effectively disable it. This is because 
- * reaching the batchSize limit forces to blocking send() of the data, which is precisely what we
- * want to avoid in MultiSensorShell.  Instead, we want to tune the autoSendTimeInterval so that all
- * of our send() invocations occur asynchronously in a separate thread. 
+ * Note that we are effectively disabling autosend.batchsize by setting it
+ * to a high value (30,000). This is because 
+ * reaching the batchSize limit forces a blocking send() of the data, which is precisely what we
+ * want to avoid in MultiSensorShell.  Instead, we try to tune the autosend.timeinterval so that as
+ * many of our send() invocations as possible occur asynchronously in a separate thread. 
  * <p>
  * Note that a single SensorShell instance is simpler, creates less processing overhead, and has
  * equivalent performance to MultiSensorShell for transmission loads up to a dozen or so sensor data
@@ -61,7 +68,7 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
  */
 public class MultiSensorShell implements Shell {
   /** The internal SensorShells managed by this MultiSensorShell. */
-  private ArrayList<SensorShell> shells;
+  private ArrayList<SingleSensorShell> shells;
   /** The total number of shells. */
   private int numShells;
   /** The number of SensorData instances to be sent to a single Shell before going to the next. */
@@ -79,58 +86,27 @@ public class MultiSensorShell implements Shell {
    * 
    * @param properties A SensorProperties instance.
    * @param toolName The name of the tool, used to name the log file.
-   * @param enableOfflineData Whether or not to save/restore offline data.
-   * @param autoSendTimeInterval The time in minutes between autoSends for each shell.
-   * @param autoSendBatchSize The maximum buffer size for each shell.
-   * @param numShells The total number of SensorShell instances to create. Must be greater than 0.
-   * @param batchSize The number of SensorData instances to send in a row to a single SensorShell.
-   * Must be greater than or equal to 0. If equal to 0, each instance is sent to a shell picked at 
-   * random.
-   * @throws Exception If numShells or batchSize values are illegal, or other problems occur.
    */
-  public MultiSensorShell(SensorProperties properties, String toolName, boolean enableOfflineData,
-      double autoSendTimeInterval, int autoSendBatchSize, int numShells, int batchSize)
-      throws Exception {
-    if (numShells < 1) {
-      throw new Exception("Number of shells must be greater than 0.");
-    }
-    if (batchSize < 0) {
-      throw new Exception("Batch size must be greater than or equal to 0.");
-    }
-    this.shells = new ArrayList<SensorShell>();
-    this.numShells = numShells;
-    this.batchSize = batchSize;
-    for (int i = 0; i < numShells; i++) {
+  public MultiSensorShell(SensorShellProperties properties, String toolName) {
+    this.shells = new ArrayList<SingleSensorShell>(properties.getMultiShellNumShells());
+    this.numShells = properties.getMultiShellNumShells();
+    this.batchSize = properties.getMultiShellBatchSize();
+    properties.switchToMultiShellAutoSendTimeInterval();
+    for (int i = 0; i < numShells; i++) { 
       // MultiSensorShells must always be non-interactive.
       boolean isInteractive = false;
-      SensorShell shell = new SensorShell(properties, isInteractive, toolName, enableOfflineData);
-      shell.setAutoSendTimeInterval(autoSendTimeInterval);
-      //autoSendTimeInterval += 0.001; // see if slightly changing send times helps. It doesn't.
-      shell.setAutoSendBufferSize(autoSendBatchSize);
+      SingleSensorShell shell = new SingleSensorShell(properties, isInteractive, toolName);
       this.shells.add(shell);
     }
   }
 
-  /**
-   * Constructs a new MultiSensorShell instance with reasonable default values for enableOfflineData
-   * (true), autoSendTimeInterval (6 seconds), autoSendBatchSize (1000), numShells (10), and
-   * batchSize (1000).
-   * 
-   * @param sensorProperties The sensor properties instance for this run.
-   * @param toolName Indicates the invoking tool that is added to the log file name.
-   * @throws Exception If problems occur.
-   */
-  public MultiSensorShell(SensorProperties sensorProperties, String toolName) throws Exception {
-    this(sensorProperties, toolName, true, 0.1, 1000, 10, 200);
-  }
-
   /** {@inheritDoc} */
-  public void add(SensorData sensorData) {
+  public void add(SensorData sensorData) throws SensorShellException {
     this.shells.get(getCurrShellIndex()).add(sensorData);
   }
 
   /** {@inheritDoc} */
-  public void add(Map<String, String> keyValMap) throws Exception {
+  public void add(Map<String, String> keyValMap) throws SensorShellException {
     this.shells.get(getCurrShellIndex()).add(keyValMap);
   }
 
@@ -161,17 +137,13 @@ public class MultiSensorShell implements Shell {
     return currShellIndex;
   }
 
-  /**
-   * Returns true if the host can be pinged and the email/password combination is valid.
-   * 
-   * @return True if the host can be pinged and the user credentials are valid.
-   */
+  /** {@inheritDoc} */
   public boolean ping() {
     return this.shells.get(0).ping();
   }
 
   /** {@inheritDoc} */
-  public int send() {
+  public int send() throws SensorShellException {
     int totalSent = 0;
     for (int i = 0; i < numShells; i++) {
       totalSent += this.shells.get(i).send();
@@ -187,17 +159,8 @@ public class MultiSensorShell implements Shell {
   }
   
   /** {@inheritDoc} */
-  public void setLoggingLevel(String level) {
-    Level newLevel = Level.INFO;
-    try {
-      newLevel = Level.parse(level);
-    }
-    catch (Exception e) {
-      this.shells.get(0).getLogger().warning("Couldn't set Logging level to: " + level);
-    }
-    for (int i = 0; i < numShells; i++) {
-      this.shells.get(i).getLogger().setLevel(newLevel);
-      this.shells.get(i).getLogger().getHandlers()[0].setLevel(newLevel);
-    }
+  public void statechange(long resourceCheckSum, Map<String, String> keyValMap) throws Exception {
+    // The same SingleSensorShell always has to process statechange events.  
+    this.shells.get(0).statechange(resourceCheckSum, keyValMap);
   }
 }

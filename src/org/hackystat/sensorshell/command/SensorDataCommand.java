@@ -10,8 +10,9 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.Properties;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.Property;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDatas;
-import org.hackystat.sensorshell.SensorProperties;
-import org.hackystat.sensorshell.SensorShell;
+import org.hackystat.sensorshell.SensorShellException;
+import org.hackystat.sensorshell.SensorShellProperties;
+import org.hackystat.sensorshell.SingleSensorShell;
 
 /**
  * Implements the SensorData commands, of which there is "add", "send", and "statechange".
@@ -30,8 +31,6 @@ public class SensorDataCommand extends Command {
   private String lastStateChangeResource = "";
   /** Holds the bufferSize value from the last StateChange event. */
   private long lastStateChangeResourceCheckSum = 0;
-  /** The maximum number of sensor data instances to buffer locally before sending. */
-  private int maxBufferSize = 250;
   
   /**
    * Creates the SensorDataCommand. 
@@ -40,7 +39,7 @@ public class SensorDataCommand extends Command {
    * @param pingCommand The Ping Command. 
    * @param client The SensorBase client.
    */
-  public SensorDataCommand(SensorShell shell, SensorProperties properties, 
+  public SensorDataCommand(SingleSensorShell shell, SensorShellProperties properties, 
       PingCommand pingCommand, SensorBaseClient client) {
     super(shell, properties);
     this.pingCommand = pingCommand;
@@ -51,8 +50,9 @@ public class SensorDataCommand extends Command {
    * Sends accumulated data, including offline and current data from the AddCommand.
    * If server not pingable, then the offline data is saved for a later attempt.
    * @return The number of sensor data instances that were sent. 
+   * @throws SensorShellException If problems occur sending the data. 
    */
-  public int send() {
+  public int send() throws SensorShellException {
     int numDataSent = 0;
     // Log this command if not running interactively.
     if (!this.shell.isInteractive()) {
@@ -66,35 +66,28 @@ public class SensorDataCommand extends Command {
         }
         this.client.putSensorDataBatch(sensorDatas);
         this.shell.println(sensorDatas.getSensorData().size() + " SensorData instances sent to "
-            + this.properties.getHackystatHost());
+            + this.properties.getSensorBaseHost());
         numDataSent = sensorDatas.getSensorData().size();
         this.sensorDatas.getSensorData().clear();
       }
       catch (SensorBaseClientException e) {
         this.shell.println("Error sending data: " + e);
-        numDataSent = 0;
+        throw new SensorShellException("Could not send data: error in SensorBaseClient", e);
       }
     }
     else {
-      if (this.shell.enableOfflineData()) {
+      if (this.properties.isOfflineCacheEnabled()) {
         this.shell.println("Server not available. Storing commands offline.");
         numDataSent = 0;
         this.shell.getOfflineManager().store(this.sensorDatas);
       }
       else {
-        this.shell.println("Server not available and offline storage disabled. Data lost.");
-        numDataSent = 0;
+        String msg = "Server not available and offline storage disabled. Sensor Data lost.";
+        this.shell.println(msg);
+        throw new SensorShellException(msg);
       }
     }
     return numDataSent;
-  }
-  
-  /**
-   * Sets the maximum buffer size for sensor data before automatically invoking send. 
-   * @param maxBufferSize The maximum buffer size. 
-   */
-  public void setBufferSize(int maxBufferSize) {
-    this.maxBufferSize = maxBufferSize;
   }
   
   /**
@@ -132,13 +125,14 @@ public class SensorDataCommand extends Command {
    * Given a Map containing key-value pairs corresponding to SensorData fields and properties,
    * constructs a SensorData instance and stores it for subsequent sending to the SensorBase.
    * @param keyValMap The map of key-value pairs. 
-   * @throws Exception If problems occur creating the SensorData instance. 
+   * @throws SensorShellException If problems occur sending the data.  
    */
-  public void add(Map<String, String> keyValMap) throws Exception {
+  public void add(Map<String, String> keyValMap) throws SensorShellException {
     // Begin by creating the sensor data instance. 
+    try {
     SensorData data = new SensorData();
     XMLGregorianCalendar tstamp = Tstamp.makeTimestamp();
-    data.setOwner(getMap(keyValMap, "Owner", this.properties.getEmail()));
+    data.setOwner(getMap(keyValMap, "Owner", this.properties.getSensorBaseUser()));
     data.setResource(getMap(keyValMap, RESOURCE, ""));
     data.setRuntime(Tstamp.makeTimestamp(getMap(keyValMap, "Runtime", tstamp.toString())));
     data.setSensorDataType(getMap(keyValMap, "SensorDataType", ""));
@@ -156,19 +150,24 @@ public class SensorDataCommand extends Command {
       }
     }
     add(data);
+    }
+    catch (Exception e) {
+      throw new SensorShellException("Error adding sensor data instance.", e);
+    }
   }
   
   /**
    * Adds the SensorData instance, invoking send if the max buffer size has been exceeded.
    * @param data The SensorData instance to be added.
+   * @throws SensorShellException If problems occur sending the data. 
    */
-  public void add(SensorData data) {
+  public void add(SensorData data) throws SensorShellException {
     sensorDatas.getSensorData().add(data);
     this.shell.println("Adding: " + formatSensorData(data));
     
     // If that makes the buffer size too big, then send this data. 
-    if (sensorDatas.getSensorData().size() > this.maxBufferSize) {
-      this.shell.println("Invoking send() due to buffer size > " + this.maxBufferSize);
+    if (sensorDatas.getSensorData().size() > properties.getAutoSendMaxBuffer()) {
+      this.shell.println("Invoking send(); buffer size > " + properties.getAutoSendMaxBuffer());
       this.send();
     }
   }

@@ -1,14 +1,28 @@
 package org.hackystat.sensorshell.command;
 
 import org.hackystat.sensorbase.client.SensorBaseClient;
-import org.hackystat.sensorshell.SensorProperties;
-import org.hackystat.sensorshell.SensorShell;
+import org.hackystat.sensorshell.SensorShellProperties;
+import org.hackystat.sensorshell.SingleSensorShell;
 
 /**
  * Implements the Ping command, which ensures that the SensorBase is reachable. 
  * @author Philip Johnson
  */
 public class PingCommand extends Command {
+  
+  /** The timeout in milliseconds, initialized from sensorshell.properties.*/
+  private int timeout;
+  
+  /**
+   * Creates the PingCommand. 
+   * @param shell The sensorshell. 
+   * @param properties The sensorproperties. 
+   */
+  public PingCommand(SingleSensorShell shell, SensorShellProperties properties) {
+    super(shell, properties);
+    // don't use properties.getTimeout() * 1000, since it could be set quite high for MultiShell.
+    this.timeout = 5000; 
+  }
   
   /**
    * Does a ping on the hackystat server and returns true if the server was
@@ -18,7 +32,7 @@ public class PingCommand extends Command {
    * @return   True if the server could be pinged.
    */
   public boolean isPingable() {
-    return this.isPingable(5000);
+    return this.isPingable(this.timeout);
   }
 
   /**
@@ -28,13 +42,13 @@ public class PingCommand extends Command {
    * If the server is not reachable, or does not respond with given time frame, false will
    * be returned.
    *
-   * @param milliSecondsToWait Maximum seconds to wait for server response. A 0 value or negative
+   * @param timeout Maximum seconds to wait for server response. A 0 value or negative
    * value is equivalent to set time out to infinity.
    * @return   True if the server could be pinged.
    */
-  public boolean isPingable(int milliSecondsToWait) {
+  public boolean isPingable(int timeout) {
     boolean result = false;
-    int waitTime = milliSecondsToWait <= 0 ? 0 : milliSecondsToWait;
+    int waitTime = timeout <= 0 ? 0 : timeout;
     PingWorkerThread workThread = new PingWorkerThread(this.host, this.email, this.password);
     workThread.start();
     try {
@@ -75,7 +89,7 @@ public class PingCommand extends Command {
      * @param password The client password.
      */
     public PingWorkerThread(String host, String email, String password) {
-      setDaemon(true); //want VM to termine even if this thread is alive.
+      setDaemon(true); //want VM to terminate even if this thread is alive.
       this.host = host;
       this.email = email;
       this.password = password;
@@ -88,12 +102,4 @@ public class PingCommand extends Command {
     }
   }
 
-  /**
-   * Creates the PingCommand. 
-   * @param shell The sensorshell. 
-   * @param properties The sensorproperties. 
-   */
-  public PingCommand(SensorShell shell, SensorProperties properties) {
-    super(shell, properties);
-  }
 }

@@ -2,9 +2,10 @@ package org.hackystat.sensorshell.usermap;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Properties;
 
-import org.hackystat.sensorshell.SensorProperties;
-import org.hackystat.sensorshell.SensorShell;
+import org.hackystat.sensorshell.SensorShellProperties;
+import org.hackystat.sensorshell.SingleSensorShell;
 import org.hackystat.sensorshell.usermap.UserMap.UserMapKey;
 
 /**
@@ -29,7 +30,8 @@ public class SensorShellMap {
   private UserMap userMap;
 
   /** Map of Tool specific tool accounts to their SensorShells. */
-  private HashMap<String, SensorShell> toolAccountsToShells = new HashMap<String, SensorShell>();
+  private HashMap<String, SingleSensorShell> toolAccountsToShells = 
+    new HashMap<String, SingleSensorShell>();
 
   /**
    * Instantiate this class which initializes the UserMap used to get SensorShells for users and
@@ -86,7 +88,7 @@ public class SensorShellMap {
    * @return The SensorShell instance for the specific Hackystat user.
    * @throws SensorShellMapException When the user account and/or tool is undefined.
    */
-  public SensorShell getUserShell(String toolAccount) throws SensorShellMapException {
+  public SingleSensorShell getUserShell(String toolAccount) throws SensorShellMapException {
     // Check argument that it is valid
     if (toolAccount == null || toolAccount.length() == 0) {
       throw new SensorShellMapException("Error: toolAccount is null or the empty string.");
@@ -95,11 +97,19 @@ public class SensorShellMap {
     try {
       String user = this.userMap.get(this.tool, trimmedToolAccount, UserMapKey.USER);
       String password = this.userMap.get(this.tool, trimmedToolAccount, UserMapKey.PASSWORD);
-      String sensorbase = this.userMap.get(this.tool, trimmedToolAccount, UserMapKey.SENSORBASE);
+      String host = this.userMap.get(this.tool, trimmedToolAccount, UserMapKey.SENSORBASE);
       // If we haven't instantiated this shell yet, then do it now.
       if (this.toolAccountsToShells.get(toolAccount) == null) {
-        SensorShell userShell = new SensorShell(new SensorProperties(sensorbase, user, password),
-            false, this.tool);
+        // First, build the SensorShellProperties instance. All remaining properties get set
+        // from the sensorshell.properties file or from internal defaults. 
+        Properties props = new Properties();
+        props.setProperty(SensorShellProperties.SENSORSHELL_SENSORBASE_HOST_KEY, host);
+        props.setProperty(SensorShellProperties.SENSORSHELL_SENSORBASE_USER_KEY, user);
+        props.setProperty(SensorShellProperties.SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
+        SensorShellProperties sensorProps = new SensorShellProperties(props, true);
+        
+        // Now, instantiate the non-interactive SensorShell.
+        SingleSensorShell userShell = new SingleSensorShell(sensorProps, false, this.tool);
         this.toolAccountsToShells.put(trimmedToolAccount, userShell);
       }
       // Now return the SensorShell.

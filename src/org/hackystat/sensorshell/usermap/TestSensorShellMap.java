@@ -4,7 +4,7 @@ import java.io.File;
 
 import junit.framework.TestCase;
 
-import org.hackystat.sensorshell.SensorShell;
+import org.hackystat.sensorshell.SingleSensorShell;
 
 /**
  * Tests the SensorShellMap class. It ensures that instantiation and use can be done correctly. A
@@ -31,7 +31,7 @@ public class TestSensorShellMap extends TestCase {
     assertTrue("Tool account dummyaccount should exist", sensorShellMap.hasUserShell(toolAccount));
     
     // Test for successful acquisition of user's SensorShell instance
-    SensorShell userShell = sensorShellMap.getUserShell(this.toolAccount);
+    SingleSensorShell userShell = sensorShellMap.getUserShell(this.toolAccount);
     assertNotNull("Checking successful acquisition of user SensorShell", userShell);
     
     // Test that only one instance per user is created
