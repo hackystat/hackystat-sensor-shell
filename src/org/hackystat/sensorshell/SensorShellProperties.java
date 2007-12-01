@@ -189,8 +189,8 @@ public class SensorShellProperties {
   }
 
   /**
-   * Initializes SensorShell properties using the specified properties file. 
-   * All remaining properties are set to their default values. 
+   * Creates a SensorShellProperties instance using the specified properties file. 
+   * All unspecified properties are set to their built-in default values. 
    * @param sensorFile The sensorshell properties file to read.
    * @throws SensorShellException If the SensorProperties instance cannot be 
    * instantiated due to a missing host, user, and/or password properties.
@@ -215,23 +215,16 @@ public class SensorShellProperties {
       }
     }
     validateProperties();
-    this.addToSystemProperties(this.sensorProps);
+    //this.addToSystemProperties(this.sensorProps);
   }
 
   /**
-   * Creates a "minimal" sensor properties file intended for test case purposes only.
-   * Do not use this constructor in production code! Instead, use either the default no-arg
-   * constructor or the constructor that accepts a Properties instance with your tool-level 
-   * customizations. 
+   * Constructs a "basic" instance with the supplied three required properties.
+   * All other properties are assigned values from sensorshell.properties, or the 
+   * built-in defaults if not specified there.
    * <p>
-   * This testing-only constructor does the following:
-   * <ul>
-   * <li> Requires the three required properties: the SensorBase host, user and password.
-   * <li> Disables offline recovery and caching.
-   * <li> Disables logging. 
-   * <li> Does not read the local sensorshell.properties file. 
-   * </ul>
-   * Due to the above special behavior, this constructor is not suitable for production use. 
+   * Use SensorShellProperties.getTestInstance to create an instance for testing purposes, since
+   * it will override certain properties that may be present in the sensorshell.properties file.
    * @param host The hackystat host.
    * @param email The user's email.
    * @param password The user's password.
@@ -240,15 +233,75 @@ public class SensorShellProperties {
    */
   public SensorShellProperties(String host, String email, String password) 
   throws SensorShellException {
-    this.setDefaultSensorShellProperties(true);
+    setDefaultSensorShellProperties(true);
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_HOST_KEY, host);
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
-    this.sensorProps.setProperty(SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, "false");
-    this.sensorProps.setProperty(SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, "false");
-    this.sensorProps.setProperty(SENSORSHELL_LOGGING_LEVEL_KEY, "OFF");
     validateProperties();
-    this.addToSystemProperties(this.sensorProps);
+    //this.addToSystemProperties(this.sensorProps);
+  }
+  
+  /**
+   * Constructs an instance with the supplied three required properties and any other
+   * properties provided in the properties argument.
+   * All other properties are assigned values from sensorshell.properties, or the 
+   * built-in defaults if not specified there. 
+   * @param host The hackystat host.
+   * @param email The user's email.
+   * @param password The user's password.
+   * @param properties A properties instance with other properties. 
+   * @throws SensorShellException If the SensorProperties instance cannot be 
+   * instantiated due to a missing host, user, and/or password properties.
+   */
+  public SensorShellProperties(String host, String email, String password, Properties properties) 
+  throws SensorShellException {
+    setDefaultSensorShellProperties(true);
+    this.sensorProps.putAll(properties);
+    this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_HOST_KEY, host);
+    this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
+    this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
+    validateProperties();
+    //this.addToSystemProperties(this.sensorProps);
+  }
+  
+  
+  /**
+   * Constructs a "test" instance with the supplied three required properties.
+   * <p>
+   * This testing-only factory class sets the three required properties, and overrides the 
+   * following properties for testing purposes:
+   * <ul>
+   * <li> Disables offline recovery and caching.
+   * <li> Disables logging. 
+   * <li> Disables multishell.
+   * </ul>
+   * All remaining properties are set to their built-in default values. 
+   * @param host The hackystat host.
+   * @param email The user's email.
+   * @param password The user's password.
+   * @return the new SensorShellProperties instance. 
+   * @throws SensorShellException If the SensorProperties instance cannot be 
+   * instantiated due to a missing host, user, and/or password properties.
+   */
+  public static SensorShellProperties getTestInstance(String host, String email, String password) 
+  throws SensorShellException {
+    Properties props = new Properties();
+    props.setProperty(SENSORSHELL_SENSORBASE_HOST_KEY, host);
+    props.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
+    props.setProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
+    props.setProperty(SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, "false");
+    props.setProperty(SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, "false");
+    props.setProperty(SENSORSHELL_LOGGING_LEVEL_KEY, "OFF");
+    props.setProperty(SENSORSHELL_MULTISHELL_ENABLED_KEY, "false");
+    props.setProperty(SENSORSHELL_TIMEOUT_KEY, "10");
+    props.setProperty(SENSORSHELL_MULTISHELL_NUMSHELLS_KEY, "10");
+    props.setProperty(SENSORSHELL_MULTISHELL_BATCHSIZE_KEY, "250");
+    props.setProperty(SENSORSHELL_MULTISHELL_AUTOSEND_TIMEINTERVAL_KEY, "0.05");
+    props.setProperty(SENSORSHELL_STATECHANGE_INTERVAL_KEY, "30");
+    props.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "250");
+    props.setProperty(SENSORSHELL_AUTOSEND_TIMEINTERVAL_KEY, "1.0");
+    //this.addToSystemProperties(this.sensorProps);
+    return new SensorShellProperties(props, true);
   }
   
   /**
@@ -288,7 +341,7 @@ public class SensorShellProperties {
       this.setDefaultSensorShellProperties(false);
     }
     validateProperties();
-    this.addToSystemProperties(this.sensorProps);
+    //this.addToSystemProperties(this.sensorProps);
   }
   
   
@@ -510,10 +563,13 @@ public class SensorShellProperties {
       this.sensorProps.setProperty(SENSORSHELL_LOGGING_LEVEL_KEY, origValue);
     }
     
+    String errInfo = " You might wish to check the settings in " + sensorShellPropertiesFilePath;
+    
+    
     // SENSORBASE_HOST
     this.sensorBaseHost = this.getProperty(SENSORSHELL_SENSORBASE_HOST_KEY);
     if (this.sensorBaseHost == null) {
-      throw new SensorShellException("Missing sensorbase host property.");
+      throw new SensorShellException("Missing sensorshell.sensorbase.host." + errInfo);
     }
     if (!this.sensorBaseHost.endsWith("/")) {
       this.sensorBaseHost = this.sensorBaseHost + "/";
@@ -521,12 +577,12 @@ public class SensorShellProperties {
     // SENSORBASE_USER
     this.user = this.getProperty(SENSORSHELL_SENSORBASE_USER_KEY);
     if (this.user == null) {
-      throw new SensorShellException("Missing user property.");
+      throw new SensorShellException("Missing sensorshell.sensorbase.user." + errInfo);
     }
     // SENSORBASE_PASSWORD
     this.password = this.getProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY);
     if (this.password == null) {
-      throw new SensorShellException("Missing password property.");
+      throw new SensorShellException("Missing sensorshell.sensorbase.password." + errInfo);
     }
   }
   
@@ -681,6 +737,13 @@ public class SensorShellProperties {
   }
 
   /**
+   * NOTE: We are not currently adding these values to the System properties object. The reason
+   * is that there can be multiple SensorShell (and the SensorShellProperties) instances active
+   * within a single JVM, either due to MultiShell or UserMaps.  These can have potentially
+   * different properties settings, leading to unpredictable values in the System Properties
+   * instance. Thus, it is safer to not rely on the System Properties instance to store any
+   * of these values. 
+   * 
    * Updates the System properties object with the contents of the passed Hackystat
    * properties instance.  This method is declared static so that it can be invoked
    * from both SensorProperties and ServerProperties.  The hackystat properties added from
@@ -689,6 +752,7 @@ public class SensorShellProperties {
    * This method is package-private for access by SensorProperties.
    * @param hackyProperties A Properties instance containing hackystat properties.
    */
+  @SuppressWarnings("unused")
   private void addToSystemProperties(Properties hackyProperties) {
     Properties systemProperties = System.getProperties();
     systemProperties.putAll(hackyProperties);

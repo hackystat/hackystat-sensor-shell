@@ -63,7 +63,7 @@ public class TestSingleSensorShell {
    */
   @Test public void testSensorShell() throws Exception {
     // First, create a "test" SensorShellProperties with disabled caching and logging.
-    SensorShellProperties properties = new SensorShellProperties(host, user, user);
+    SensorShellProperties properties = SensorShellProperties.getTestInstance(host, user, user);
     // Create a SensorShell that is non-interactive, logging as "Test".
     SingleSensorShell shell = new SingleSensorShell(properties, false, "Test");
     
@@ -96,7 +96,7 @@ public class TestSingleSensorShell {
    */
   @Test public void testStateChange () throws Exception {
     // First, create a "test" SensorShellProperties.
-    SensorShellProperties properties = new SensorShellProperties(host, user, user);
+    SensorShellProperties properties = SensorShellProperties.getTestInstance(host, user, user);
     // Create a SensorShell that is non-interactive, logging as "Test".
     SingleSensorShell shell = new SingleSensorShell(properties, true, "Test");
     

@@ -25,7 +25,7 @@ public class TestSensorShellProperties {
   @Test public void testDefaultSensorProperties() throws Exception {
     // Create a 'testing' version, that does not read sensorshell.properties and that disables
     // caching and logging.
-    SensorShellProperties properties = new SensorShellProperties(host, user, user);
+    SensorShellProperties properties = SensorShellProperties.getTestInstance(host, user, user);
 
     assertEquals("Check host", TestSensorShellProperties.host, properties.getSensorBaseHost());
     assertEquals("Check email", TestSensorShellProperties.user, properties.getSensorBaseUser());

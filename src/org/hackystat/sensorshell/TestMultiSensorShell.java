@@ -131,6 +131,7 @@ public class TestMultiSensorShell {
    * performance improvements related to throughput of SensorData instances.  The idea is 
    * bring up a local SensorBase, edit the local variables of this method, then run this 
    * main() to see how fast you can transmit the SensorData to the SensorBase.  On our system, 
+   * the average time was around 3 ms/instance. 
    * @param args Ignored.
    * @throws Exception If things go wrong. 
    */
