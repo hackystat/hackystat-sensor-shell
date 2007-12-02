@@ -202,21 +202,23 @@ public class SensorShellProperties {
     try {
       fileStream = new FileInputStream(this.sensorShellPropertiesFile);
       this.sensorProps.load(fileStream);
+      validateProperties();
     } 
     catch (Exception e) {
-      String errMsg = "SensorShellProperties error: missing " + sensorFile.getAbsolutePath();
+      String errMsg = "SensorShellProperties error: sensorFile is: " + sensorFile;
       this.logger.warning(errMsg);
       throw new SensorShellException(errMsg);
     }
     finally {
       try {
-        fileStream.close();
+        if (fileStream != null) {
+          fileStream.close();
+        }
       }
       catch (Exception e) { //NOPMD
         // Don't say anything. 
       }
     }
-    validateProperties();
   }
 
   /**
