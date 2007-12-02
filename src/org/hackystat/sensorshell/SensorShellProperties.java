@@ -217,7 +217,6 @@ public class SensorShellProperties {
       }
     }
     validateProperties();
-    //this.addToSystemProperties(this.sensorProps);
   }
 
   /**
@@ -240,7 +239,6 @@ public class SensorShellProperties {
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
     validateProperties();
-    //this.addToSystemProperties(this.sensorProps);
   }
   
   /**
@@ -272,7 +270,22 @@ public class SensorShellProperties {
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
     validateProperties();
-    //this.addToSystemProperties(this.sensorProps);
+  }
+ 
+  /**
+   * Creates and returns a new SensorShellProperties instance which is initialized to the contents
+   * of the passed SensorProperties instance, with additional new properties overriding the previous
+   * selection.
+   * @param orig The original properties.
+   * @param newProps The replacing properties.
+   * @throws SensorShellException If the SensorProperties instance cannot be instantiated due to 
+   * invalid or missing properties.  
+   */
+  public SensorShellProperties(SensorShellProperties orig, Properties newProps) 
+  throws SensorShellException {
+    this.sensorProps = orig.sensorProps;
+    this.sensorProps.putAll(newProps);
+    validateProperties();
   }
   
   
