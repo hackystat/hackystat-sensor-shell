@@ -495,5 +495,10 @@ public class SingleSensorShell implements Shell {
   throws Exception {
     this.sensorDataCommand.statechange(resourceCheckSum, keyValMap);
   }
+  
+  /** {@inheritDoc} */
+  public synchronized SensorShellProperties getProperties() {
+    return this.sensorProperties;
+  }
 }
 

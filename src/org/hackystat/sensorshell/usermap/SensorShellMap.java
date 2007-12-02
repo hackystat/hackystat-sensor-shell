@@ -2,6 +2,8 @@ package org.hackystat.sensorshell.usermap;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Properties;
+
 import org.hackystat.sensorshell.SensorShell;
 import org.hackystat.sensorshell.SensorShellProperties;
 import org.hackystat.sensorshell.usermap.UserMap.UserMapKey;
@@ -86,6 +88,25 @@ public class SensorShellMap {
    * @throws SensorShellMapException When the user account and/or tool is undefined.
    */
   public SensorShell getUserShell(String toolAccount) throws SensorShellMapException {
+   return getUserShell(toolAccount, null);
+  }
+  
+  /**
+   * Gets the SensorShell instance for a Hackystat user with an account for the given tool. Assumes
+   * that toolAccount is known and will map to a userKey; use hasUserShell() to check whether this
+   * is true before calling this method. Instantiates the SensorShell instance if it is not yet
+   * available.
+   * 
+   * @param toolAccount The name of the account for the given tool. This is not the same as the
+   *          Hackystat account name although it may be the same.
+   * @param properties A properties instance holding SensorShell properties to be used to 
+   * initialize the underlying SensorShell if it requires instantiation. If null, then no 
+   * additional properties are required.          
+   * @return The SensorShell instance for the specific Hackystat user.
+   * @throws SensorShellMapException When the user account and/or tool is undefined.
+   */
+  public SensorShell getUserShell(String toolAccount, Properties properties) 
+  throws SensorShellMapException {
     // Check argument that it is valid
     if (toolAccount == null || toolAccount.length() == 0) {
       throw new SensorShellMapException("Error: toolAccount is null or the empty string.");
@@ -97,9 +118,12 @@ public class SensorShellMap {
       String host = this.userMap.get(this.tool, trimmedToolAccount, UserMapKey.SENSORBASE);
       // If we haven't instantiated this shell yet, then do it now.
       if (this.toolAccountsToShells.get(toolAccount) == null) {
-        // First, build the SensorShellProperties instance. All remaining properties get set
-        // from the sensorshell.properties file or from internal defaults. 
-        SensorShellProperties sensorProps = new SensorShellProperties(host, user, password);
+        // First, build the SensorShellProperties instance. 
+        // If properties is null, then call the three arg constructor. otherwise pass them in.
+        // Note: properties do not override user preferences as set in sensorshell.properties.
+        SensorShellProperties sensorProps = (properties == null) ? 
+            new SensorShellProperties(host, user, password) :
+              new SensorShellProperties(host, user, password, properties, false) ;
         // Now, instantiate the non-interactive SensorShell.
         SensorShell userShell = new SensorShell(sensorProps, false, this.tool);
         this.toolAccountsToShells.put(trimmedToolAccount, userShell);

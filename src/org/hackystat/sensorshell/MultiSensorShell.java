@@ -91,7 +91,7 @@ public class MultiSensorShell implements Shell {
     this.shells = new ArrayList<SingleSensorShell>(properties.getMultiShellNumShells());
     this.numShells = properties.getMultiShellNumShells();
     this.batchSize = properties.getMultiShellBatchSize();
-    properties.switchToMultiShellAutoSendTimeInterval();
+    properties.switchToMultiShellMode();
     for (int i = 0; i < numShells; i++) { 
       // MultiSensorShells must always be non-interactive.
       boolean isInteractive = false;
@@ -162,5 +162,10 @@ public class MultiSensorShell implements Shell {
   public void statechange(long resourceCheckSum, Map<String, String> keyValMap) throws Exception {
     // The same SingleSensorShell always has to process statechange events.  
     this.shells.get(0).statechange(resourceCheckSum, keyValMap);
+  }
+  
+  /** {@inheritDoc} */
+  public SensorShellProperties getProperties() {
+    return this.shells.get(0).getProperties();
   }
 }

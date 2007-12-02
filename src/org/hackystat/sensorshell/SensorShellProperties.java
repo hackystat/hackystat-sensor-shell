@@ -204,7 +204,9 @@ public class SensorShellProperties {
       this.sensorProps.load(fileStream);
     } 
     catch (Exception e) {
-      this.logger.warning("SensorProperties warning: Missing " + this.sensorShellPropertiesFile);
+      String errMsg = "SensorShellProperties error: missing " + sensorFile.getAbsolutePath();
+      this.logger.warning(errMsg);
+      throw new SensorShellException(errMsg);
     }
     finally {
       try {
@@ -249,14 +251,23 @@ public class SensorShellProperties {
    * @param host The hackystat host.
    * @param email The user's email.
    * @param password The user's password.
-   * @param properties A properties instance with other properties. 
+   * @param properties A properties instance with other properties.
+   * @param overrideFile If true, then the passed properties override sensorshell.properties. 
    * @throws SensorShellException If the SensorProperties instance cannot be 
    * instantiated due to a missing host, user, and/or password properties.
    */
-  public SensorShellProperties(String host, String email, String password, Properties properties) 
-  throws SensorShellException {
-    setDefaultSensorShellProperties(true);
-    this.sensorProps.putAll(properties);
+  public SensorShellProperties(String host, String email, String password, Properties properties, 
+      boolean overrideFile) throws SensorShellException {
+    if (overrideFile) {
+      this.setPropertiesFromFile(new File(sensorShellPropertiesFilePath));
+      this.sensorProps.putAll(properties);
+      this.setDefaultSensorShellProperties(false);
+    }
+    else {
+      this.sensorProps.putAll(properties);
+      this.setPropertiesFromFile(new File(sensorShellPropertiesFilePath));
+      this.setDefaultSensorShellProperties(false);
+    }
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_HOST_KEY, host);
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
@@ -360,7 +371,9 @@ public class SensorShellProperties {
     }
     finally {
       try {
-        fileStream.close();
+        if (fileStream != null) {
+          fileStream.close();
+        }
       }
       catch (Exception e) {
         System.err.println("Error closing stream: " + e);
@@ -785,14 +798,16 @@ public class SensorShellProperties {
   }
  
   /**
-   * Sets the autosend time interval to the multishell version. 
+   * Sets the autosend time interval to the multishell version, and sets autoSendMaxBuffer to 30K. 
    * Invoked by the multishell just before instantiating its child SingleSensorShells so that
    * they are set up with the appropriate multishell time interval. 
    */
-  public void switchToMultiShellAutoSendTimeInterval() {
+  public void switchToMultiShellMode() {
     this.sensorProps.setProperty(SENSORSHELL_AUTOSEND_TIMEINTERVAL_KEY, 
         String.valueOf(this.getMultiShellAutoSendTimeInterval()));
     this.autosendTimeInterval = this.multiShellAutoSendTimeInterval;
+    this.sensorProps.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "30000");
+    this.autosendMaxBuffer = 30000;
   }
 }
 

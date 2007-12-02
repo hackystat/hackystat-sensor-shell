@@ -31,7 +31,6 @@ public class SensorShell implements Shell {
   /** The underlying SingleSensorShell or MultiSensorShell. */
   private Shell shell = null;
   
-
   /**
    * Constructs a new SensorShell instance that can be provided with
    * notification data to be sent eventually to a specific user key and host.
@@ -70,7 +69,6 @@ public class SensorShell implements Shell {
    */
   public SensorShell(SensorShellProperties properties, boolean isInteractive, String toolName,
       File commandFile) {
-    
     if (properties.isMultiShellEnabled()) {
       // Note that isInteractive, commandFile are ignored if MultiSensorShell is specified.
       shell = new MultiSensorShell(properties, toolName);
@@ -103,6 +101,11 @@ public class SensorShell implements Shell {
   /** {@inheritDoc} */
   public boolean ping() {
     return this.shell.ping();
+  }
+  
+  /** {@inheritDoc} */
+  public SensorShellProperties getProperties() {
+    return this.shell.getProperties();
   }
   
   /** {@inheritDoc} */

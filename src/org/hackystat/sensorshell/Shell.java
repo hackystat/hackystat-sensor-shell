@@ -90,5 +90,11 @@ public interface Shell {
    */
   public void statechange(long resourceCheckSum, Map<String, String> keyValMap) 
   throws Exception;
+  
+  /**
+   * Returns the SensorShell properties instance used to create this SensorShell.
+   * @return The SensorShellProperties instance. 
+   */
+  public SensorShellProperties getProperties();
 
 }
