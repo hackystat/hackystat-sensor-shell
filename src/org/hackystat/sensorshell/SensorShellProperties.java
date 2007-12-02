@@ -207,7 +207,7 @@ public class SensorShellProperties {
     catch (Exception e) {
       String errMsg = "SensorShellProperties error: sensorFile is: " + sensorFile;
       this.logger.warning(errMsg);
-      throw new SensorShellException(errMsg);
+      throw new SensorShellException(errMsg, e);
     }
     finally {
       try {
