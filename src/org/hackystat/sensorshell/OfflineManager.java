@@ -13,6 +13,7 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDatas;
+import org.hackystat.utilities.home.HackystatUserHome;
 
 /**
  * Provides a facility for persisting buffered SensorData instances locally when the SensorBase
@@ -35,7 +36,7 @@ public class OfflineManager {
    * @param shell The SensorShell associated with this OfflineManager.
    */
   public OfflineManager(SingleSensorShell shell) {
-    this.offlineDir = new File(System.getProperty("user.home") + "/.hackystat/offline/");
+    this.offlineDir = new File(HackystatUserHome.getHome(),  "/.hackystat/sensorshell/offline/");
     this.offlineDir.mkdirs();
     this.shell = shell;
     try {

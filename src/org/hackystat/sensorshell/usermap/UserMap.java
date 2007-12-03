@@ -13,6 +13,7 @@ import org.hackystat.sensorshell.usermap.resource.jaxb.ObjectFactory;
 import org.hackystat.sensorshell.usermap.resource.jaxb.User;
 import org.hackystat.sensorshell.usermap.resource.jaxb.Usermap;
 import org.hackystat.sensorshell.usermap.resource.jaxb.Usermaps;
+import org.hackystat.utilities.home.HackystatUserHome;
 
 /**
  * Gets hackystat information for a specific tool by parsing a predefined xml file located in the
@@ -58,7 +59,7 @@ class UserMap {
   UserMap() throws SensorShellMapException {
     this.userMappings = new HashMap<String, Map<String, Map<UserMapKey, String>>>();
 
-    File sensorPropsDir = new File(System.getProperty("user.home") + "/.hackystat/sensorshell/");
+    File sensorPropsDir = new File(HackystatUserHome.getHome(), "/.hackystat/sensorshell/");
     String userMapFilePath = sensorPropsDir.getAbsolutePath() + "/usermap/UserMap.xml";
     File userMapFile = new File(userMapFilePath);
     if (userMapFile.exists()) {
