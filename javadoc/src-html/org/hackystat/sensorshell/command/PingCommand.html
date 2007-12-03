@@ -4,8 +4,8 @@
 <FONT color="green">001</FONT>    package org.hackystat.sensorshell.command;<a name="line.1"></a>
 <FONT color="green">002</FONT>    <a name="line.2"></a>
 <FONT color="green">003</FONT>    import org.hackystat.sensorbase.client.SensorBaseClient;<a name="line.3"></a>
-<FONT color="green">004</FONT>    import org.hackystat.sensorshell.SensorProperties;<a name="line.4"></a>
-<FONT color="green">005</FONT>    import org.hackystat.sensorshell.SensorShell;<a name="line.5"></a>
+<FONT color="green">004</FONT>    import org.hackystat.sensorshell.SensorShellProperties;<a name="line.4"></a>
+<FONT color="green">005</FONT>    import org.hackystat.sensorshell.SingleSensorShell;<a name="line.5"></a>
 <FONT color="green">006</FONT>    <a name="line.6"></a>
 <FONT color="green">007</FONT>    /**<a name="line.7"></a>
 <FONT color="green">008</FONT>     * Implements the Ping command, which ensures that the SensorBase is reachable. <a name="line.8"></a>
@@ -13,93 +13,101 @@
 <FONT color="green">010</FONT>     */<a name="line.10"></a>
 <FONT color="green">011</FONT>    public class PingCommand extends Command {<a name="line.11"></a>
 <FONT color="green">012</FONT>      <a name="line.12"></a>
-<FONT color="green">013</FONT>      /**<a name="line.13"></a>
-<FONT color="green">014</FONT>       * Does a ping on the hackystat server and returns true if the server was<a name="line.14"></a>
-<FONT color="green">015</FONT>       * accessible. A ping-able server indicates the data will be sent to it,<a name="line.15"></a>
-<FONT color="green">016</FONT>       * while a non-pingable server indicates that data will be stored offline.<a name="line.16"></a>
-<FONT color="green">017</FONT>       *<a name="line.17"></a>
-<FONT color="green">018</FONT>       * @return   True if the server could be pinged.<a name="line.18"></a>
-<FONT color="green">019</FONT>       */<a name="line.19"></a>
-<FONT color="green">020</FONT>      public boolean isPingable() {<a name="line.20"></a>
-<FONT color="green">021</FONT>        return this.isPingable(5000);<a name="line.21"></a>
-<FONT color="green">022</FONT>      }<a name="line.22"></a>
-<FONT color="green">023</FONT>    <a name="line.23"></a>
-<FONT color="green">024</FONT>      /**<a name="line.24"></a>
-<FONT color="green">025</FONT>       * Does a ping on the hackystat server and returns true if the server was<a name="line.25"></a>
-<FONT color="green">026</FONT>       * accessible. A ping-able server indicates the data will be sent to it,<a name="line.26"></a>
-<FONT color="green">027</FONT>       * while a non-pingable server indicates that data will be stored offline.<a name="line.27"></a>
-<FONT color="green">028</FONT>       * If the server is not reachable, or does not respond with given time frame, false will<a name="line.28"></a>
-<FONT color="green">029</FONT>       * be returned.<a name="line.29"></a>
-<FONT color="green">030</FONT>       *<a name="line.30"></a>
-<FONT color="green">031</FONT>       * @param milliSecondsToWait Maximum seconds to wait for server response. A 0 value or negative<a name="line.31"></a>
-<FONT color="green">032</FONT>       * value is equivalent to set time out to infinity.<a name="line.32"></a>
-<FONT color="green">033</FONT>       * @return   True if the server could be pinged.<a name="line.33"></a>
-<FONT color="green">034</FONT>       */<a name="line.34"></a>
-<FONT color="green">035</FONT>      public boolean isPingable(int milliSecondsToWait) {<a name="line.35"></a>
-<FONT color="green">036</FONT>        boolean result = false;<a name="line.36"></a>
-<FONT color="green">037</FONT>        int waitTime = milliSecondsToWait &lt;= 0 ? 0 : milliSecondsToWait;<a name="line.37"></a>
-<FONT color="green">038</FONT>        PingWorkerThread workThread = new PingWorkerThread(this.host, this.email, this.password);<a name="line.38"></a>
-<FONT color="green">039</FONT>        workThread.start();<a name="line.39"></a>
-<FONT color="green">040</FONT>        try {<a name="line.40"></a>
-<FONT color="green">041</FONT>          workThread.join(waitTime);  //block this thread until work thread dies or times out.<a name="line.41"></a>
-<FONT color="green">042</FONT>        }<a name="line.42"></a>
-<FONT color="green">043</FONT>        catch (InterruptedException ex) {<a name="line.43"></a>
-<FONT color="green">044</FONT>          //do nothing<a name="line.44"></a>
-<FONT color="green">045</FONT>        }<a name="line.45"></a>
-<FONT color="green">046</FONT>        //if work thread is still alive, then it's time out, result = false by default.<a name="line.46"></a>
-<FONT color="green">047</FONT>        if (!workThread.isAlive()) {<a name="line.47"></a>
-<FONT color="green">048</FONT>          result = workThread.serverPingable;<a name="line.48"></a>
-<FONT color="green">049</FONT>        }<a name="line.49"></a>
-<FONT color="green">050</FONT>        return result;<a name="line.50"></a>
-<FONT color="green">051</FONT>      }<a name="line.51"></a>
-<FONT color="green">052</FONT>    <a name="line.52"></a>
-<FONT color="green">053</FONT>      /**<a name="line.53"></a>
-<FONT color="green">054</FONT>       * Worker thread to ping the server to determine whether it's reachable or not. The original<a name="line.54"></a>
-<FONT color="green">055</FONT>       * ping command is implemented as a synchronous command, a separate thread is need to<a name="line.55"></a>
-<FONT color="green">056</FONT>       * implement time out feature.<a name="line.56"></a>
-<FONT color="green">057</FONT>       *<a name="line.57"></a>
-<FONT color="green">058</FONT>       * @author Qin ZHANG<a name="line.58"></a>
-<FONT color="green">059</FONT>       */<a name="line.59"></a>
-<FONT color="green">060</FONT>      private static class PingWorkerThread extends Thread {<a name="line.60"></a>
-<FONT color="green">061</FONT>    <a name="line.61"></a>
-<FONT color="green">062</FONT>        /**<a name="line.62"></a>
-<FONT color="green">063</FONT>         * This instance will only be be accessed in the parent thread after the termination of this<a name="line.63"></a>
-<FONT color="green">064</FONT>         * thread, there is no need to synchronize access.<a name="line.64"></a>
-<FONT color="green">065</FONT>         */<a name="line.65"></a>
-<FONT color="green">066</FONT>        private boolean serverPingable = false;<a name="line.66"></a>
-<FONT color="green">067</FONT>        private String host;<a name="line.67"></a>
-<FONT color="green">068</FONT>        private String email;<a name="line.68"></a>
-<FONT color="green">069</FONT>        private String password;<a name="line.69"></a>
-<FONT color="green">070</FONT>    <a name="line.70"></a>
-<FONT color="green">071</FONT>        /**<a name="line.71"></a>
-<FONT color="green">072</FONT>         * Constructs this worker thread.<a name="line.72"></a>
-<FONT color="green">073</FONT>         * @param host The sensorbase host.<a name="line.73"></a>
-<FONT color="green">074</FONT>         * @param email The client email.<a name="line.74"></a>
-<FONT color="green">075</FONT>         * @param password The client password.<a name="line.75"></a>
-<FONT color="green">076</FONT>         */<a name="line.76"></a>
-<FONT color="green">077</FONT>        public PingWorkerThread(String host, String email, String password) {<a name="line.77"></a>
-<FONT color="green">078</FONT>          setDaemon(true); //want VM to termine even if this thread is alive.<a name="line.78"></a>
-<FONT color="green">079</FONT>          this.host = host;<a name="line.79"></a>
-<FONT color="green">080</FONT>          this.email = email;<a name="line.80"></a>
-<FONT color="green">081</FONT>          this.password = password;<a name="line.81"></a>
-<FONT color="green">082</FONT>        }<a name="line.82"></a>
-<FONT color="green">083</FONT>    <a name="line.83"></a>
-<FONT color="green">084</FONT>        /** Pings the server synchronously. */<a name="line.84"></a>
-<FONT color="green">085</FONT>        @Override<a name="line.85"></a>
-<FONT color="green">086</FONT>        public void run() {<a name="line.86"></a>
-<FONT color="green">087</FONT>          this.serverPingable = SensorBaseClient.isRegistered(this.host, this.email, this.password);<a name="line.87"></a>
-<FONT color="green">088</FONT>        }<a name="line.88"></a>
-<FONT color="green">089</FONT>      }<a name="line.89"></a>
-<FONT color="green">090</FONT>    <a name="line.90"></a>
-<FONT color="green">091</FONT>      /**<a name="line.91"></a>
-<FONT color="green">092</FONT>       * Creates the PingCommand. <a name="line.92"></a>
-<FONT color="green">093</FONT>       * @param shell The sensorshell. <a name="line.93"></a>
-<FONT color="green">094</FONT>       * @param properties The sensorproperties. <a name="line.94"></a>
-<FONT color="green">095</FONT>       */<a name="line.95"></a>
-<FONT color="green">096</FONT>      public PingCommand(SensorShell shell, SensorProperties properties) {<a name="line.96"></a>
-<FONT color="green">097</FONT>        super(shell, properties);<a name="line.97"></a>
-<FONT color="green">098</FONT>      }<a name="line.98"></a>
-<FONT color="green">099</FONT>    }<a name="line.99"></a>
+<FONT color="green">013</FONT>      /** The timeout in milliseconds, initialized from sensorshell.properties.*/<a name="line.13"></a>
+<FONT color="green">014</FONT>      private int timeout;<a name="line.14"></a>
+<FONT color="green">015</FONT>      <a name="line.15"></a>
+<FONT color="green">016</FONT>      /**<a name="line.16"></a>
+<FONT color="green">017</FONT>       * Creates the PingCommand. <a name="line.17"></a>
+<FONT color="green">018</FONT>       * @param shell The sensorshell. <a name="line.18"></a>
+<FONT color="green">019</FONT>       * @param properties The sensorproperties. <a name="line.19"></a>
+<FONT color="green">020</FONT>       */<a name="line.20"></a>
+<FONT color="green">021</FONT>      public PingCommand(SingleSensorShell shell, SensorShellProperties properties) {<a name="line.21"></a>
+<FONT color="green">022</FONT>        super(shell, properties);<a name="line.22"></a>
+<FONT color="green">023</FONT>        // don't use properties.getTimeout() * 1000, since it could be set quite high for MultiShell.<a name="line.23"></a>
+<FONT color="green">024</FONT>        this.timeout = 5000; <a name="line.24"></a>
+<FONT color="green">025</FONT>      }<a name="line.25"></a>
+<FONT color="green">026</FONT>      <a name="line.26"></a>
+<FONT color="green">027</FONT>      /**<a name="line.27"></a>
+<FONT color="green">028</FONT>       * Does a ping on the hackystat server and returns true if the server was<a name="line.28"></a>
+<FONT color="green">029</FONT>       * accessible. A ping-able server indicates the data will be sent to it,<a name="line.29"></a>
+<FONT color="green">030</FONT>       * while a non-pingable server indicates that data will be stored offline.<a name="line.30"></a>
+<FONT color="green">031</FONT>       *<a name="line.31"></a>
+<FONT color="green">032</FONT>       * @return   True if the server could be pinged.<a name="line.32"></a>
+<FONT color="green">033</FONT>       */<a name="line.33"></a>
+<FONT color="green">034</FONT>      public boolean isPingable() {<a name="line.34"></a>
+<FONT color="green">035</FONT>        return this.isPingable(this.timeout);<a name="line.35"></a>
+<FONT color="green">036</FONT>      }<a name="line.36"></a>
+<FONT color="green">037</FONT>    <a name="line.37"></a>
+<FONT color="green">038</FONT>      /**<a name="line.38"></a>
+<FONT color="green">039</FONT>       * Does a ping on the hackystat server and returns true if the server was<a name="line.39"></a>
+<FONT color="green">040</FONT>       * accessible. A ping-able server indicates the data will be sent to it,<a name="line.40"></a>
+<FONT color="green">041</FONT>       * while a non-pingable server indicates that data will be stored offline.<a name="line.41"></a>
+<FONT color="green">042</FONT>       * If the server is not reachable, or does not respond with given time frame, false will<a name="line.42"></a>
+<FONT color="green">043</FONT>       * be returned.<a name="line.43"></a>
+<FONT color="green">044</FONT>       *<a name="line.44"></a>
+<FONT color="green">045</FONT>       * @param timeout Maximum seconds to wait for server response. A 0 value or negative<a name="line.45"></a>
+<FONT color="green">046</FONT>       * value is equivalent to set time out to infinity.<a name="line.46"></a>
+<FONT color="green">047</FONT>       * @return   True if the server could be pinged.<a name="line.47"></a>
+<FONT color="green">048</FONT>       */<a name="line.48"></a>
+<FONT color="green">049</FONT>      public boolean isPingable(int timeout) {<a name="line.49"></a>
+<FONT color="green">050</FONT>        boolean result = false;<a name="line.50"></a>
+<FONT color="green">051</FONT>        int waitTime = timeout &lt;= 0 ? 0 : timeout;<a name="line.51"></a>
+<FONT color="green">052</FONT>        this.shell.println("Starting a ping...");<a name="line.52"></a>
+<FONT color="green">053</FONT>        PingWorkerThread workThread = new PingWorkerThread(this.host, this.email, this.password);<a name="line.53"></a>
+<FONT color="green">054</FONT>        workThread.start();<a name="line.54"></a>
+<FONT color="green">055</FONT>        try {<a name="line.55"></a>
+<FONT color="green">056</FONT>          workThread.join(waitTime);  //block this thread until work thread dies or times out.<a name="line.56"></a>
+<FONT color="green">057</FONT>        }<a name="line.57"></a>
+<FONT color="green">058</FONT>        catch (InterruptedException ex) {<a name="line.58"></a>
+<FONT color="green">059</FONT>          //do nothing<a name="line.59"></a>
+<FONT color="green">060</FONT>        }<a name="line.60"></a>
+<FONT color="green">061</FONT>        //if work thread is still alive, then it's time out, result = false by default.<a name="line.61"></a>
+<FONT color="green">062</FONT>        if (!workThread.isAlive()) {<a name="line.62"></a>
+<FONT color="green">063</FONT>          result = workThread.serverPingable;<a name="line.63"></a>
+<FONT color="green">064</FONT>        }<a name="line.64"></a>
+<FONT color="green">065</FONT>        this.shell.println("Finished the ping... result is: " + result);<a name="line.65"></a>
+<FONT color="green">066</FONT>        return result;<a name="line.66"></a>
+<FONT color="green">067</FONT>      }<a name="line.67"></a>
+<FONT color="green">068</FONT>    <a name="line.68"></a>
+<FONT color="green">069</FONT>      /**<a name="line.69"></a>
+<FONT color="green">070</FONT>       * Worker thread to ping the server to determine whether it's reachable or not. The original<a name="line.70"></a>
+<FONT color="green">071</FONT>       * ping command is implemented as a synchronous command, a separate thread is need to<a name="line.71"></a>
+<FONT color="green">072</FONT>       * implement time out feature.<a name="line.72"></a>
+<FONT color="green">073</FONT>       *<a name="line.73"></a>
+<FONT color="green">074</FONT>       * @author Qin ZHANG<a name="line.74"></a>
+<FONT color="green">075</FONT>       */<a name="line.75"></a>
+<FONT color="green">076</FONT>      private static class PingWorkerThread extends Thread {<a name="line.76"></a>
+<FONT color="green">077</FONT>    <a name="line.77"></a>
+<FONT color="green">078</FONT>        /**<a name="line.78"></a>
+<FONT color="green">079</FONT>         * This instance will only be be accessed in the parent thread after the termination of this<a name="line.79"></a>
+<FONT color="green">080</FONT>         * thread, there is no need to synchronize access.<a name="line.80"></a>
+<FONT color="green">081</FONT>         */<a name="line.81"></a>
+<FONT color="green">082</FONT>        private boolean serverPingable = false;<a name="line.82"></a>
+<FONT color="green">083</FONT>        private String host;<a name="line.83"></a>
+<FONT color="green">084</FONT>        private String email;<a name="line.84"></a>
+<FONT color="green">085</FONT>        private String password;<a name="line.85"></a>
+<FONT color="green">086</FONT>    <a name="line.86"></a>
+<FONT color="green">087</FONT>        /**<a name="line.87"></a>
+<FONT color="green">088</FONT>         * Constructs this worker thread.<a name="line.88"></a>
+<FONT color="green">089</FONT>         * @param host The sensorbase host.<a name="line.89"></a>
+<FONT color="green">090</FONT>         * @param email The client email.<a name="line.90"></a>
+<FONT color="green">091</FONT>         * @param password The client password.<a name="line.91"></a>
+<FONT color="green">092</FONT>         */<a name="line.92"></a>
+<FONT color="green">093</FONT>        public PingWorkerThread(String host, String email, String password) {<a name="line.93"></a>
+<FONT color="green">094</FONT>          setDaemon(true); //want VM to terminate even if this thread is alive.<a name="line.94"></a>
+<FONT color="green">095</FONT>          this.host = host;<a name="line.95"></a>
+<FONT color="green">096</FONT>          this.email = email;<a name="line.96"></a>
+<FONT color="green">097</FONT>          this.password = password;<a name="line.97"></a>
+<FONT color="green">098</FONT>        }<a name="line.98"></a>
+<FONT color="green">099</FONT>    <a name="line.99"></a>
+<FONT color="green">100</FONT>        /** Pings the server synchronously. */<a name="line.100"></a>
+<FONT color="green">101</FONT>        @Override<a name="line.101"></a>
+<FONT color="green">102</FONT>        public void run() {<a name="line.102"></a>
+<FONT color="green">103</FONT>          this.serverPingable = SensorBaseClient.isRegistered(this.host, this.email, this.password);<a name="line.103"></a>
+<FONT color="green">104</FONT>        }<a name="line.104"></a>
+<FONT color="green">105</FONT>      }<a name="line.105"></a>
+<FONT color="green">106</FONT>    <a name="line.106"></a>
+<FONT color="green">107</FONT>    }<a name="line.107"></a>
 
 
 

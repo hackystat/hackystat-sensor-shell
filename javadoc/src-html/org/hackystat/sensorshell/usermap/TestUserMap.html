@@ -39,7 +39,22 @@
 <FONT color="green">036</FONT>        assertEquals("Check sensorbase", sensorbase, userMap.get(tool, toolAccount,<a name="line.36"></a>
 <FONT color="green">037</FONT>            UserMapKey.SENSORBASE));<a name="line.37"></a>
 <FONT color="green">038</FONT>      }<a name="line.38"></a>
-<FONT color="green">039</FONT>    }<a name="line.39"></a>
+<FONT color="green">039</FONT>      <a name="line.39"></a>
+<FONT color="green">040</FONT>      /** <a name="line.40"></a>
+<FONT color="green">041</FONT>       * Test that the tool in the user map is treated case-insensitive.<a name="line.41"></a>
+<FONT color="green">042</FONT>       * <a name="line.42"></a>
+<FONT color="green">043</FONT>       *  @throws Exception if an error occurs.<a name="line.43"></a>
+<FONT color="green">044</FONT>       */<a name="line.44"></a>
+<FONT color="green">045</FONT>      public void testToolCaseInsensitive() throws Exception {<a name="line.45"></a>
+<FONT color="green">046</FONT>        UserMap userMap = null;<a name="line.46"></a>
+<FONT color="green">047</FONT>        userMap = new UserMap(new File(System.getProperty("usermaptestfile")));<a name="line.47"></a>
+<FONT color="green">048</FONT>        assertNotNull("Checking that the UserMap is not null", userMap);<a name="line.48"></a>
+<FONT color="green">049</FONT>        String lowercaseToolUser = userMap.get(tool, toolAccount, UserMapKey.USER);<a name="line.49"></a>
+<FONT color="green">050</FONT>        assertEquals("Check user", user, lowercaseToolUser);<a name="line.50"></a>
+<FONT color="green">051</FONT>        String uppercaseToolUser = userMap.get(tool.toUpperCase(), toolAccount, UserMapKey.USER);<a name="line.51"></a>
+<FONT color="green">052</FONT>        assertEquals("Check user", lowercaseToolUser, uppercaseToolUser);<a name="line.52"></a>
+<FONT color="green">053</FONT>      }<a name="line.53"></a>
+<FONT color="green">054</FONT>    }<a name="line.54"></a>
 
 
 

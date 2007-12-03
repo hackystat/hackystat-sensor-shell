@@ -6,204 +6,172 @@
 <FONT color="green">003</FONT>    import java.util.ArrayList;<a name="line.3"></a>
 <FONT color="green">004</FONT>    import java.util.Map;<a name="line.4"></a>
 <FONT color="green">005</FONT>    import java.util.Random;<a name="line.5"></a>
-<FONT color="green">006</FONT>    import java.util.logging.Level;<a name="line.6"></a>
-<FONT color="green">007</FONT>    <a name="line.7"></a>
-<FONT color="green">008</FONT>    import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;<a name="line.8"></a>
-<FONT color="green">009</FONT>    <a name="line.9"></a>
-<FONT color="green">010</FONT>    /**<a name="line.10"></a>
-<FONT color="green">011</FONT>     * MultiSensorShell is a wrapper around SensorShell that is designed to support high performance<a name="line.11"></a>
-<FONT color="green">012</FONT>     * transmission of sensor data instances from a client to a server. Prior research has determined<a name="line.12"></a>
-<FONT color="green">013</FONT>     * that when a single SensorShell is used to transmit a large amount of data in a short period of<a name="line.13"></a>
-<FONT color="green">014</FONT>     * time, it can spend a substantial portion of its time blocked while waiting for an HTTP PUT to<a name="line.14"></a>
-<FONT color="green">015</FONT>     * complete. MultiSensorShell overcomes this problem by instantiating multiple SensorShell instances<a name="line.15"></a>
-<FONT color="green">016</FONT>     * internally and then passing sensor data to them in a round-robin fashion. Each SensorShell is<a name="line.16"></a>
-<FONT color="green">017</FONT>     * passed an autoSendTimeInterval value, which results in a separate thread for each SensorShell<a name="line.17"></a>
-<FONT color="green">018</FONT>     * instance that will concurrently send any buffered data at regular time intervals. This<a name="line.18"></a>
-<FONT color="green">019</FONT>     * significantly reduces blocked time for MultiSensorShell, because when any individual SensorShell<a name="line.19"></a>
-<FONT color="green">020</FONT>     * instance is performing its HTTP PUT call, the MultiSensorShell can be concurrently adding data to<a name="line.20"></a>
-<FONT color="green">021</FONT>     * one of the other SensorShell instances.<a name="line.21"></a>
-<FONT color="green">022</FONT>     * &lt;p&gt;<a name="line.22"></a>
-<FONT color="green">023</FONT>     * MultiSensorShell provides a number of "tuning parameters", including the number of SensorShells<a name="line.23"></a>
-<FONT color="green">024</FONT>     * to be created, the number of SensorData instances to be sent to a single SensorShell before<a name="line.24"></a>
-<FONT color="green">025</FONT>     * moving on to the next SensorShell (the "batchSize"), and the autoSendInterval for each<a name="line.25"></a>
-<FONT color="green">026</FONT>     * SensorShell. There is a MultiSensorShell constructor that provides reasonable default values for<a name="line.26"></a>
-<FONT color="green">027</FONT>     * these tuning parameters and that should result in good performance under most conditions.<a name="line.27"></a>
-<FONT color="green">028</FONT>     * &lt;p&gt;<a name="line.28"></a>
-<FONT color="green">029</FONT>     * The TestMultiSensorShell class provides a main() method that we have used to do some simple<a name="line.29"></a>
-<FONT color="green">030</FONT>     * performance evaluation, which we report on next. All results were obtained using a MacBook Pro<a name="line.30"></a>
-<FONT color="green">031</FONT>     * with a 2.33 Ghz Intel Core Duo processor and 3 GB of 667 Mhz DDR2 SDRAM. Both the client and<a name="line.31"></a>
-<FONT color="green">032</FONT>     * SensorBase server were running on this computer to minimize network latency issues.<a name="line.32"></a>
-<FONT color="green">033</FONT>     * &lt;p&gt;<a name="line.33"></a>
-<FONT color="green">034</FONT>     * If you instantiate a MultiSensorShell with the number of SensorShells set to 1, you effectively<a name="line.34"></a>
-<FONT color="green">035</FONT>     * get the default case. In this situation, we have found that the average time to send a single<a name="line.35"></a>
-<FONT color="green">036</FONT>     * SensorData instance is approximately 6 milliseconds, almost independent of the settings for<a name="line.36"></a>
-<FONT color="green">037</FONT>     * batchSize and the autoSendInterval. Increasing the number of SensorShell instances to 5 doubles<a name="line.37"></a>
-<FONT color="green">038</FONT>     * the throughput, to approximately 3 milliseconds per instance. At this point, some kind of<a name="line.38"></a>
-<FONT color="green">039</FONT>     * performance plateau is reached, with further tweaking of the tuning parameters seeming to have<a name="line.39"></a>
-<FONT color="green">040</FONT>     * little effect. We do not know whether this is a "real" limit or an artificial limit based upon<a name="line.40"></a>
-<FONT color="green">041</FONT>     * some environmental feature (such as the logging mechanism.)<a name="line.41"></a>
-<FONT color="green">042</FONT>     * &lt;p&gt;<a name="line.42"></a>
-<FONT color="green">043</FONT>     * With totalData = 500,000, numShells = 10, autoSendInterval = 0.05, and batchSize = 200, we have<a name="line.43"></a>
-<FONT color="green">044</FONT>     * achieved throughput of 2.8 milliseconds per instance (which is equivalent to 360 instances per<a name="line.44"></a>
-<FONT color="green">045</FONT>     * second and 1.2M instances per hour.)<a name="line.45"></a>
-<FONT color="green">046</FONT>     * &lt;p&gt;<a name="line.46"></a>
-<FONT color="green">047</FONT>     * We have also found that we can store around 350,000 sensor data instances per GB of disk space.<a name="line.47"></a>
-<FONT color="green">048</FONT>     * &lt;p&gt;<a name="line.48"></a>
-<FONT color="green">049</FONT>     * Note that although autoSendBatchSize is provided as a tuning parameter, you will probably want<a name="line.49"></a>
-<FONT color="green">050</FONT>     * to set this to a high value (20,000 or 30,000) to effectively disable it. This is because <a name="line.50"></a>
-<FONT color="green">051</FONT>     * reaching the batchSize limit forces to blocking send() of the data, which is precisely what we<a name="line.51"></a>
-<FONT color="green">052</FONT>     * want to avoid in MultiSensorShell.  Instead, we want to tune the autoSendTimeInterval so that all<a name="line.52"></a>
-<FONT color="green">053</FONT>     * of our send() invocations occur asynchronously in a separate thread. <a name="line.53"></a>
-<FONT color="green">054</FONT>     * &lt;p&gt;<a name="line.54"></a>
-<FONT color="green">055</FONT>     * Note that a single SensorShell instance is simpler, creates less processing overhead, and has<a name="line.55"></a>
-<FONT color="green">056</FONT>     * equivalent performance to MultiSensorShell for transmission loads up to a dozen or so sensor data<a name="line.56"></a>
-<FONT color="green">057</FONT>     * instances per second. We recommend using a single SensorShell instance rather than<a name="line.57"></a>
-<FONT color="green">058</FONT>     * MultiSensorShell unless optimizing data transmission throughput is an important requirement.<a name="line.58"></a>
-<FONT color="green">059</FONT>     * <a name="line.59"></a>
-<FONT color="green">060</FONT>     * @author Philip Johnson<a name="line.60"></a>
-<FONT color="green">061</FONT>     */<a name="line.61"></a>
-<FONT color="green">062</FONT>    public class MultiSensorShell implements Shell {<a name="line.62"></a>
-<FONT color="green">063</FONT>      /** The internal SensorShells managed by this MultiSensorShell. */<a name="line.63"></a>
-<FONT color="green">064</FONT>      private ArrayList&lt;SensorShell&gt; shells;<a name="line.64"></a>
-<FONT color="green">065</FONT>      /** The total number of shells. */<a name="line.65"></a>
-<FONT color="green">066</FONT>      private int numShells;<a name="line.66"></a>
-<FONT color="green">067</FONT>      /** The number of SensorData instances to be sent to a single Shell before going to the next. */<a name="line.67"></a>
-<FONT color="green">068</FONT>      private int batchSize;<a name="line.68"></a>
-<FONT color="green">069</FONT>      /** A counter that indicates how many instances have been sent to the current SensorShell. */<a name="line.69"></a>
-<FONT color="green">070</FONT>      private int batchCounter = 0;<a name="line.70"></a>
-<FONT color="green">071</FONT>      /** A pointer to the current Shell that is receiving SensorData instances. */<a name="line.71"></a>
-<FONT color="green">072</FONT>      private int currShellIndex = 0;<a name="line.72"></a>
-<FONT color="green">073</FONT>      /** Used when batchSize == 0 */<a name="line.73"></a>
-<FONT color="green">074</FONT>      private Random generator = new Random(0L);<a name="line.74"></a>
-<FONT color="green">075</FONT>    <a name="line.75"></a>
-<FONT color="green">076</FONT>      /**<a name="line.76"></a>
-<FONT color="green">077</FONT>       * Creates a new MultiSensorShell for multi-threaded transmission of SensorData instances to a<a name="line.77"></a>
-<FONT color="green">078</FONT>       * SensorBase.<a name="line.78"></a>
-<FONT color="green">079</FONT>       * <a name="line.79"></a>
-<FONT color="green">080</FONT>       * @param properties A SensorProperties instance.<a name="line.80"></a>
-<FONT color="green">081</FONT>       * @param toolName The name of the tool, used to name the log file.<a name="line.81"></a>
-<FONT color="green">082</FONT>       * @param enableOfflineData Whether or not to save/restore offline data.<a name="line.82"></a>
-<FONT color="green">083</FONT>       * @param autoSendTimeInterval The time in minutes between autoSends for each shell.<a name="line.83"></a>
-<FONT color="green">084</FONT>       * @param autoSendBatchSize The maximum buffer size for each shell.<a name="line.84"></a>
-<FONT color="green">085</FONT>       * @param numShells The total number of SensorShell instances to create. Must be greater than 0.<a name="line.85"></a>
-<FONT color="green">086</FONT>       * @param batchSize The number of SensorData instances to send in a row to a single SensorShell.<a name="line.86"></a>
-<FONT color="green">087</FONT>       * Must be greater than or equal to 0. If equal to 0, each instance is sent to a shell picked at <a name="line.87"></a>
-<FONT color="green">088</FONT>       * random.<a name="line.88"></a>
-<FONT color="green">089</FONT>       * @throws Exception If numShells or batchSize values are illegal, or other problems occur.<a name="line.89"></a>
-<FONT color="green">090</FONT>       */<a name="line.90"></a>
-<FONT color="green">091</FONT>      public MultiSensorShell(SensorProperties properties, String toolName, boolean enableOfflineData,<a name="line.91"></a>
-<FONT color="green">092</FONT>          double autoSendTimeInterval, int autoSendBatchSize, int numShells, int batchSize)<a name="line.92"></a>
-<FONT color="green">093</FONT>          throws Exception {<a name="line.93"></a>
-<FONT color="green">094</FONT>        if (numShells &lt; 1) {<a name="line.94"></a>
-<FONT color="green">095</FONT>          throw new Exception("Number of shells must be greater than 0.");<a name="line.95"></a>
-<FONT color="green">096</FONT>        }<a name="line.96"></a>
-<FONT color="green">097</FONT>        if (batchSize &lt; 0) {<a name="line.97"></a>
-<FONT color="green">098</FONT>          throw new Exception("Batch size must be greater than or equal to 0.");<a name="line.98"></a>
-<FONT color="green">099</FONT>        }<a name="line.99"></a>
-<FONT color="green">100</FONT>        this.shells = new ArrayList&lt;SensorShell&gt;();<a name="line.100"></a>
-<FONT color="green">101</FONT>        this.numShells = numShells;<a name="line.101"></a>
-<FONT color="green">102</FONT>        this.batchSize = batchSize;<a name="line.102"></a>
-<FONT color="green">103</FONT>        for (int i = 0; i &lt; numShells; i++) {<a name="line.103"></a>
-<FONT color="green">104</FONT>          // MultiSensorShells must always be non-interactive.<a name="line.104"></a>
-<FONT color="green">105</FONT>          boolean isInteractive = false;<a name="line.105"></a>
-<FONT color="green">106</FONT>          SensorShell shell = new SensorShell(properties, isInteractive, toolName, enableOfflineData);<a name="line.106"></a>
-<FONT color="green">107</FONT>          shell.setAutoSendTimeInterval(autoSendTimeInterval);<a name="line.107"></a>
-<FONT color="green">108</FONT>          //autoSendTimeInterval += 0.001; // see if slightly changing send times helps. It doesn't.<a name="line.108"></a>
-<FONT color="green">109</FONT>          shell.setAutoSendBufferSize(autoSendBatchSize);<a name="line.109"></a>
-<FONT color="green">110</FONT>          this.shells.add(shell);<a name="line.110"></a>
-<FONT color="green">111</FONT>        }<a name="line.111"></a>
-<FONT color="green">112</FONT>      }<a name="line.112"></a>
-<FONT color="green">113</FONT>    <a name="line.113"></a>
-<FONT color="green">114</FONT>      /**<a name="line.114"></a>
-<FONT color="green">115</FONT>       * Constructs a new MultiSensorShell instance with reasonable default values for enableOfflineData<a name="line.115"></a>
-<FONT color="green">116</FONT>       * (true), autoSendTimeInterval (6 seconds), autoSendBatchSize (1000), numShells (10), and<a name="line.116"></a>
-<FONT color="green">117</FONT>       * batchSize (1000).<a name="line.117"></a>
+<FONT color="green">006</FONT>    <a name="line.6"></a>
+<FONT color="green">007</FONT>    import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;<a name="line.7"></a>
+<FONT color="green">008</FONT>    <a name="line.8"></a>
+<FONT color="green">009</FONT>    /**<a name="line.9"></a>
+<FONT color="green">010</FONT>     * MultiSensorShell is a wrapper around SingleSensorShell that is designed for high performance<a name="line.10"></a>
+<FONT color="green">011</FONT>     * transmission of sensor data instances from a client to a server. Prior research has determined<a name="line.11"></a>
+<FONT color="green">012</FONT>     * that when a single SensorShell is used to transmit a large amount of data in a short period of<a name="line.12"></a>
+<FONT color="green">013</FONT>     * time, it can spend a substantial portion of its time blocked while waiting for an HTTP PUT to<a name="line.13"></a>
+<FONT color="green">014</FONT>     * complete. MultiSensorShell overcomes this problem by instantiating multiple SensorShell instances<a name="line.14"></a>
+<FONT color="green">015</FONT>     * internally and then passing sensor data to them in a round-robin fashion. Each SensorShell is<a name="line.15"></a>
+<FONT color="green">016</FONT>     * passed an autoSendTimeInterval value, which results in a separate thread for each SensorShell<a name="line.16"></a>
+<FONT color="green">017</FONT>     * instance that will concurrently send any buffered data at regular time intervals. This<a name="line.17"></a>
+<FONT color="green">018</FONT>     * significantly reduces blocked time for MultiSensorShell, because when any individual SensorShell<a name="line.18"></a>
+<FONT color="green">019</FONT>     * instance is performing its HTTP PUT call, the MultiSensorShell can be concurrently adding data to<a name="line.19"></a>
+<FONT color="green">020</FONT>     * one of the other SensorShell instances.<a name="line.20"></a>
+<FONT color="green">021</FONT>     * &lt;p&gt;<a name="line.21"></a>
+<FONT color="green">022</FONT>     * The sensorshell.properties file provides a number of tuning parameters for MultiSensorShell<a name="line.22"></a>
+<FONT color="green">023</FONT>     * processing. We currently recommend the following settings for best performance:<a name="line.23"></a>
+<FONT color="green">024</FONT>     * &lt;ul&gt;<a name="line.24"></a>
+<FONT color="green">025</FONT>     * &lt;li&gt;sensorshell.multishell.enabled = true<a name="line.25"></a>
+<FONT color="green">026</FONT>     * &lt;li&gt;sensorshell.multishell.numshells = 10<a name="line.26"></a>
+<FONT color="green">027</FONT>     * &lt;li&gt;sensorshell.multishell.batchsize = 250<a name="line.27"></a>
+<FONT color="green">028</FONT>     * &lt;li&gt;sensorshell.multishell.autosend.timeinterval = 0.05<a name="line.28"></a>
+<FONT color="green">029</FONT>     * &lt;li&gt;sensorshell.offline.cache.enabled = false<a name="line.29"></a>
+<FONT color="green">030</FONT>     * &lt;li&gt;sensorshell.offline.recovery.enabled = false<a name="line.30"></a>
+<FONT color="green">031</FONT>     * &lt;li&gt;sensorshell.autosend.maxbuffer = 30000<a name="line.31"></a>
+<FONT color="green">032</FONT>     * &lt;li&gt;sensorshell.logging.level = OFF<a name="line.32"></a>
+<FONT color="green">033</FONT>     * &lt;li&gt;sensorshell.timeout = 30<a name="line.33"></a>
+<FONT color="green">034</FONT>     * &lt;/ul&gt;<a name="line.34"></a>
+<FONT color="green">035</FONT>     * &lt;p&gt;<a name="line.35"></a>
+<FONT color="green">036</FONT>     * The TestMultiSensorShell class provides a main() method that we have used to do some simple<a name="line.36"></a>
+<FONT color="green">037</FONT>     * performance evaluation, which we report on next. All results were obtained using a MacBook Pro<a name="line.37"></a>
+<FONT color="green">038</FONT>     * with a 2.33 Ghz Intel Core Duo processor and 3 GB of 667 Mhz DDR2 SDRAM. Both the client and<a name="line.38"></a>
+<FONT color="green">039</FONT>     * SensorBase server were running on this computer to minimize network latency issues.<a name="line.39"></a>
+<FONT color="green">040</FONT>     * &lt;p&gt;<a name="line.40"></a>
+<FONT color="green">041</FONT>     * If you instantiate a MultiSensorShell with the number of SensorShells set to 1, you effectively<a name="line.41"></a>
+<FONT color="green">042</FONT>     * get the default case. In this situation, we have found that the average time to send a single<a name="line.42"></a>
+<FONT color="green">043</FONT>     * SensorData instance is approximately 6 milliseconds, almost independent of the settings for<a name="line.43"></a>
+<FONT color="green">044</FONT>     * batchSize and the autoSendInterval. Increasing the number of SensorShell instances to 5 doubles<a name="line.44"></a>
+<FONT color="green">045</FONT>     * the throughput, to approximately 3 milliseconds per instance. At this point, some kind of<a name="line.45"></a>
+<FONT color="green">046</FONT>     * performance plateau is reached, with further tweaking of the tuning parameters seeming to have<a name="line.46"></a>
+<FONT color="green">047</FONT>     * little effect. We do not know whether this is a "real" limit or an artificial limit based upon<a name="line.47"></a>
+<FONT color="green">048</FONT>     * some environmental feature.<a name="line.48"></a>
+<FONT color="green">049</FONT>     * &lt;p&gt;<a name="line.49"></a>
+<FONT color="green">050</FONT>     * With the sensorshell.properties settings listed above, we have <a name="line.50"></a>
+<FONT color="green">051</FONT>     * achieved throughput of 2.8 milliseconds per instance (which is equivalent to 360 instances per<a name="line.51"></a>
+<FONT color="green">052</FONT>     * second and 1.2M instances per hour.)<a name="line.52"></a>
+<FONT color="green">053</FONT>     * &lt;p&gt;<a name="line.53"></a>
+<FONT color="green">054</FONT>     * We have also found that we can store around 350,000 sensor data instances per GB of disk space.<a name="line.54"></a>
+<FONT color="green">055</FONT>     * &lt;p&gt;<a name="line.55"></a>
+<FONT color="green">056</FONT>     * Note that we are effectively disabling autosend.batchsize by setting it<a name="line.56"></a>
+<FONT color="green">057</FONT>     * to a high value (30,000). This is because <a name="line.57"></a>
+<FONT color="green">058</FONT>     * reaching the batchSize limit forces a blocking send() of the data, which is precisely what we<a name="line.58"></a>
+<FONT color="green">059</FONT>     * want to avoid in MultiSensorShell.  Instead, we try to tune the autosend.timeinterval so that as<a name="line.59"></a>
+<FONT color="green">060</FONT>     * many of our send() invocations as possible occur asynchronously in a separate thread. <a name="line.60"></a>
+<FONT color="green">061</FONT>     * &lt;p&gt;<a name="line.61"></a>
+<FONT color="green">062</FONT>     * Note that a single SensorShell instance is simpler, creates less processing overhead, and has<a name="line.62"></a>
+<FONT color="green">063</FONT>     * equivalent performance to MultiSensorShell for transmission loads up to a dozen or so sensor data<a name="line.63"></a>
+<FONT color="green">064</FONT>     * instances per second. We recommend using a single SensorShell instance rather than<a name="line.64"></a>
+<FONT color="green">065</FONT>     * MultiSensorShell unless optimizing data transmission throughput is an important requirement.<a name="line.65"></a>
+<FONT color="green">066</FONT>     * <a name="line.66"></a>
+<FONT color="green">067</FONT>     * @author Philip Johnson<a name="line.67"></a>
+<FONT color="green">068</FONT>     */<a name="line.68"></a>
+<FONT color="green">069</FONT>    public class MultiSensorShell implements Shell {<a name="line.69"></a>
+<FONT color="green">070</FONT>      /** The internal SensorShells managed by this MultiSensorShell. */<a name="line.70"></a>
+<FONT color="green">071</FONT>      private ArrayList&lt;SingleSensorShell&gt; shells;<a name="line.71"></a>
+<FONT color="green">072</FONT>      /** The total number of shells. */<a name="line.72"></a>
+<FONT color="green">073</FONT>      private int numShells;<a name="line.73"></a>
+<FONT color="green">074</FONT>      /** The number of SensorData instances to be sent to a single Shell before going to the next. */<a name="line.74"></a>
+<FONT color="green">075</FONT>      private int batchSize;<a name="line.75"></a>
+<FONT color="green">076</FONT>      /** A counter that indicates how many instances have been sent to the current SensorShell. */<a name="line.76"></a>
+<FONT color="green">077</FONT>      private int batchCounter = 0;<a name="line.77"></a>
+<FONT color="green">078</FONT>      /** A pointer to the current Shell that is receiving SensorData instances. */<a name="line.78"></a>
+<FONT color="green">079</FONT>      private int currShellIndex = 0;<a name="line.79"></a>
+<FONT color="green">080</FONT>      /** Used when batchSize == 0 */<a name="line.80"></a>
+<FONT color="green">081</FONT>      private Random generator = new Random(0L);<a name="line.81"></a>
+<FONT color="green">082</FONT>    <a name="line.82"></a>
+<FONT color="green">083</FONT>      /**<a name="line.83"></a>
+<FONT color="green">084</FONT>       * Creates a new MultiSensorShell for multi-threaded transmission of SensorData instances to a<a name="line.84"></a>
+<FONT color="green">085</FONT>       * SensorBase.<a name="line.85"></a>
+<FONT color="green">086</FONT>       * <a name="line.86"></a>
+<FONT color="green">087</FONT>       * @param properties A SensorProperties instance.<a name="line.87"></a>
+<FONT color="green">088</FONT>       * @param toolName The name of the tool, used to name the log file.<a name="line.88"></a>
+<FONT color="green">089</FONT>       */<a name="line.89"></a>
+<FONT color="green">090</FONT>      public MultiSensorShell(SensorShellProperties properties, String toolName) {<a name="line.90"></a>
+<FONT color="green">091</FONT>        this.shells = new ArrayList&lt;SingleSensorShell&gt;(properties.getMultiShellNumShells());<a name="line.91"></a>
+<FONT color="green">092</FONT>        this.numShells = properties.getMultiShellNumShells();<a name="line.92"></a>
+<FONT color="green">093</FONT>        this.batchSize = properties.getMultiShellBatchSize();<a name="line.93"></a>
+<FONT color="green">094</FONT>        properties.switchToMultiShellMode();<a name="line.94"></a>
+<FONT color="green">095</FONT>        for (int i = 0; i &lt; numShells; i++) { <a name="line.95"></a>
+<FONT color="green">096</FONT>          // MultiSensorShells must always be non-interactive.<a name="line.96"></a>
+<FONT color="green">097</FONT>          boolean isInteractive = false;<a name="line.97"></a>
+<FONT color="green">098</FONT>          SingleSensorShell shell = new SingleSensorShell(properties, isInteractive, toolName);<a name="line.98"></a>
+<FONT color="green">099</FONT>          this.shells.add(shell);<a name="line.99"></a>
+<FONT color="green">100</FONT>        }<a name="line.100"></a>
+<FONT color="green">101</FONT>      }<a name="line.101"></a>
+<FONT color="green">102</FONT>    <a name="line.102"></a>
+<FONT color="green">103</FONT>      /** {@inheritDoc} */<a name="line.103"></a>
+<FONT color="green">104</FONT>      public void add(SensorData sensorData) throws SensorShellException {<a name="line.104"></a>
+<FONT color="green">105</FONT>        this.shells.get(getCurrShellIndex()).add(sensorData);<a name="line.105"></a>
+<FONT color="green">106</FONT>      }<a name="line.106"></a>
+<FONT color="green">107</FONT>    <a name="line.107"></a>
+<FONT color="green">108</FONT>      /** {@inheritDoc} */<a name="line.108"></a>
+<FONT color="green">109</FONT>      public void add(Map&lt;String, String&gt; keyValMap) throws SensorShellException {<a name="line.109"></a>
+<FONT color="green">110</FONT>        this.shells.get(getCurrShellIndex()).add(keyValMap);<a name="line.110"></a>
+<FONT color="green">111</FONT>      }<a name="line.111"></a>
+<FONT color="green">112</FONT>    <a name="line.112"></a>
+<FONT color="green">113</FONT>      /**<a name="line.113"></a>
+<FONT color="green">114</FONT>       * Returns an index to the current SensorShell index to be used for data transmission. Internally<a name="line.114"></a>
+<FONT color="green">115</FONT>       * updates the batchCounter.<a name="line.115"></a>
+<FONT color="green">116</FONT>       * If batchSize is 0, then an index is returned at random. In our initial trials, this was found<a name="line.116"></a>
+<FONT color="green">117</FONT>       * to be a suboptimal strategy; it is better to set the batchSize to something like 200.<a name="line.117"></a>
 <FONT color="green">118</FONT>       * <a name="line.118"></a>
-<FONT color="green">119</FONT>       * @param sensorProperties The sensor properties instance for this run.<a name="line.119"></a>
-<FONT color="green">120</FONT>       * @param toolName Indicates the invoking tool that is added to the log file name.<a name="line.120"></a>
-<FONT color="green">121</FONT>       * @throws Exception If problems occur.<a name="line.121"></a>
-<FONT color="green">122</FONT>       */<a name="line.122"></a>
-<FONT color="green">123</FONT>      public MultiSensorShell(SensorProperties sensorProperties, String toolName) throws Exception {<a name="line.123"></a>
-<FONT color="green">124</FONT>        this(sensorProperties, toolName, true, 0.1, 1000, 10, 200);<a name="line.124"></a>
-<FONT color="green">125</FONT>      }<a name="line.125"></a>
-<FONT color="green">126</FONT>    <a name="line.126"></a>
-<FONT color="green">127</FONT>      /** {@inheritDoc} */<a name="line.127"></a>
-<FONT color="green">128</FONT>      public void add(SensorData sensorData) {<a name="line.128"></a>
-<FONT color="green">129</FONT>        this.shells.get(getCurrShellIndex()).add(sensorData);<a name="line.129"></a>
-<FONT color="green">130</FONT>      }<a name="line.130"></a>
-<FONT color="green">131</FONT>    <a name="line.131"></a>
-<FONT color="green">132</FONT>      /** {@inheritDoc} */<a name="line.132"></a>
-<FONT color="green">133</FONT>      public void add(Map&lt;String, String&gt; keyValMap) throws Exception {<a name="line.133"></a>
-<FONT color="green">134</FONT>        this.shells.get(getCurrShellIndex()).add(keyValMap);<a name="line.134"></a>
-<FONT color="green">135</FONT>      }<a name="line.135"></a>
-<FONT color="green">136</FONT>    <a name="line.136"></a>
-<FONT color="green">137</FONT>      /**<a name="line.137"></a>
-<FONT color="green">138</FONT>       * Returns an index to the current SensorShell index to be used for data transmission. Internally<a name="line.138"></a>
-<FONT color="green">139</FONT>       * updates the batchCounter.<a name="line.139"></a>
-<FONT color="green">140</FONT>       * If batchSize is 0, then an index is returned at random. In our initial trials, this was found<a name="line.140"></a>
-<FONT color="green">141</FONT>       * to be a suboptimal strategy; it is better to set the batchSize to something like 200.<a name="line.141"></a>
-<FONT color="green">142</FONT>       * <a name="line.142"></a>
-<FONT color="green">143</FONT>       * @return The index to the current SensorShell instance.<a name="line.143"></a>
-<FONT color="green">144</FONT>       */<a name="line.144"></a>
-<FONT color="green">145</FONT>      private int getCurrShellIndex() {<a name="line.145"></a>
-<FONT color="green">146</FONT>        // If batchSize is 0, then we return a shell index chosen randomly.<a name="line.146"></a>
-<FONT color="green">147</FONT>        if (batchSize == 0) {<a name="line.147"></a>
-<FONT color="green">148</FONT>          return generator.nextInt(numShells);<a name="line.148"></a>
-<FONT color="green">149</FONT>        }<a name="line.149"></a>
-<FONT color="green">150</FONT>        // Now, update the batchCounter and change the currShellIndex if necessary.<a name="line.150"></a>
-<FONT color="green">151</FONT>        // batchCounter goes from 1 to batchSize.<a name="line.151"></a>
-<FONT color="green">152</FONT>        // currShellIndex goes from 0 to numShells -1<a name="line.152"></a>
-<FONT color="green">153</FONT>        batchCounter++;<a name="line.153"></a>
-<FONT color="green">154</FONT>        if (this.batchCounter &gt; batchSize) {<a name="line.154"></a>
-<FONT color="green">155</FONT>          batchCounter = 0;<a name="line.155"></a>
-<FONT color="green">156</FONT>          this.currShellIndex++;<a name="line.156"></a>
-<FONT color="green">157</FONT>          if (this.currShellIndex &gt;= this.numShells) {<a name="line.157"></a>
-<FONT color="green">158</FONT>            this.currShellIndex = 0;<a name="line.158"></a>
-<FONT color="green">159</FONT>          }<a name="line.159"></a>
-<FONT color="green">160</FONT>        }<a name="line.160"></a>
-<FONT color="green">161</FONT>        return currShellIndex;<a name="line.161"></a>
-<FONT color="green">162</FONT>      }<a name="line.162"></a>
-<FONT color="green">163</FONT>    <a name="line.163"></a>
-<FONT color="green">164</FONT>      /**<a name="line.164"></a>
-<FONT color="green">165</FONT>       * Returns true if the host can be pinged and the email/password combination is valid.<a name="line.165"></a>
-<FONT color="green">166</FONT>       * <a name="line.166"></a>
-<FONT color="green">167</FONT>       * @return True if the host can be pinged and the user credentials are valid.<a name="line.167"></a>
-<FONT color="green">168</FONT>       */<a name="line.168"></a>
-<FONT color="green">169</FONT>      public boolean ping() {<a name="line.169"></a>
-<FONT color="green">170</FONT>        return this.shells.get(0).ping();<a name="line.170"></a>
-<FONT color="green">171</FONT>      }<a name="line.171"></a>
-<FONT color="green">172</FONT>    <a name="line.172"></a>
-<FONT color="green">173</FONT>      /** {@inheritDoc} */<a name="line.173"></a>
-<FONT color="green">174</FONT>      public int send() {<a name="line.174"></a>
-<FONT color="green">175</FONT>        int totalSent = 0;<a name="line.175"></a>
-<FONT color="green">176</FONT>        for (int i = 0; i &lt; numShells; i++) {<a name="line.176"></a>
-<FONT color="green">177</FONT>          totalSent += this.shells.get(i).send();<a name="line.177"></a>
-<FONT color="green">178</FONT>        }<a name="line.178"></a>
-<FONT color="green">179</FONT>        return totalSent;<a name="line.179"></a>
-<FONT color="green">180</FONT>      }<a name="line.180"></a>
-<FONT color="green">181</FONT>    <a name="line.181"></a>
-<FONT color="green">182</FONT>      /** {@inheritDoc} */<a name="line.182"></a>
-<FONT color="green">183</FONT>      public void quit() {<a name="line.183"></a>
-<FONT color="green">184</FONT>        for (int i = 0; i &lt; numShells; i++) {<a name="line.184"></a>
-<FONT color="green">185</FONT>          this.shells.get(i).quit();<a name="line.185"></a>
-<FONT color="green">186</FONT>        }<a name="line.186"></a>
-<FONT color="green">187</FONT>      }<a name="line.187"></a>
-<FONT color="green">188</FONT>      <a name="line.188"></a>
-<FONT color="green">189</FONT>      /** {@inheritDoc} */<a name="line.189"></a>
-<FONT color="green">190</FONT>      public void setLoggingLevel(String level) {<a name="line.190"></a>
-<FONT color="green">191</FONT>        Level newLevel = Level.INFO;<a name="line.191"></a>
-<FONT color="green">192</FONT>        try {<a name="line.192"></a>
-<FONT color="green">193</FONT>          newLevel = Level.parse(level);<a name="line.193"></a>
-<FONT color="green">194</FONT>        }<a name="line.194"></a>
-<FONT color="green">195</FONT>        catch (Exception e) {<a name="line.195"></a>
-<FONT color="green">196</FONT>          this.shells.get(0).getLogger().warning("Couldn't set Logging level to: " + level);<a name="line.196"></a>
-<FONT color="green">197</FONT>        }<a name="line.197"></a>
-<FONT color="green">198</FONT>        for (int i = 0; i &lt; numShells; i++) {<a name="line.198"></a>
-<FONT color="green">199</FONT>          this.shells.get(i).getLogger().setLevel(newLevel);<a name="line.199"></a>
-<FONT color="green">200</FONT>          this.shells.get(i).getLogger().getHandlers()[0].setLevel(newLevel);<a name="line.200"></a>
-<FONT color="green">201</FONT>        }<a name="line.201"></a>
-<FONT color="green">202</FONT>      }<a name="line.202"></a>
-<FONT color="green">203</FONT>    }<a name="line.203"></a>
+<FONT color="green">119</FONT>       * @return The index to the current SensorShell instance.<a name="line.119"></a>
+<FONT color="green">120</FONT>       */<a name="line.120"></a>
+<FONT color="green">121</FONT>      private int getCurrShellIndex() {<a name="line.121"></a>
+<FONT color="green">122</FONT>        // If batchSize is 0, then we return a shell index chosen randomly.<a name="line.122"></a>
+<FONT color="green">123</FONT>        if (batchSize == 0) {<a name="line.123"></a>
+<FONT color="green">124</FONT>          return generator.nextInt(numShells);<a name="line.124"></a>
+<FONT color="green">125</FONT>        }<a name="line.125"></a>
+<FONT color="green">126</FONT>        // Now, update the batchCounter and change the currShellIndex if necessary.<a name="line.126"></a>
+<FONT color="green">127</FONT>        // batchCounter goes from 1 to batchSize.<a name="line.127"></a>
+<FONT color="green">128</FONT>        // currShellIndex goes from 0 to numShells -1<a name="line.128"></a>
+<FONT color="green">129</FONT>        batchCounter++;<a name="line.129"></a>
+<FONT color="green">130</FONT>        if (this.batchCounter &gt; batchSize) {<a name="line.130"></a>
+<FONT color="green">131</FONT>          batchCounter = 0;<a name="line.131"></a>
+<FONT color="green">132</FONT>          this.currShellIndex++;<a name="line.132"></a>
+<FONT color="green">133</FONT>          if (this.currShellIndex &gt;= this.numShells) {<a name="line.133"></a>
+<FONT color="green">134</FONT>            this.currShellIndex = 0;<a name="line.134"></a>
+<FONT color="green">135</FONT>          }<a name="line.135"></a>
+<FONT color="green">136</FONT>        }<a name="line.136"></a>
+<FONT color="green">137</FONT>        return currShellIndex;<a name="line.137"></a>
+<FONT color="green">138</FONT>      }<a name="line.138"></a>
+<FONT color="green">139</FONT>    <a name="line.139"></a>
+<FONT color="green">140</FONT>      /** {@inheritDoc} */<a name="line.140"></a>
+<FONT color="green">141</FONT>      public boolean ping() {<a name="line.141"></a>
+<FONT color="green">142</FONT>        return this.shells.get(0).ping();<a name="line.142"></a>
+<FONT color="green">143</FONT>      }<a name="line.143"></a>
+<FONT color="green">144</FONT>    <a name="line.144"></a>
+<FONT color="green">145</FONT>      /** {@inheritDoc} */<a name="line.145"></a>
+<FONT color="green">146</FONT>      public int send() throws SensorShellException {<a name="line.146"></a>
+<FONT color="green">147</FONT>        int totalSent = 0;<a name="line.147"></a>
+<FONT color="green">148</FONT>        for (int i = 0; i &lt; numShells; i++) {<a name="line.148"></a>
+<FONT color="green">149</FONT>          totalSent += this.shells.get(i).send();<a name="line.149"></a>
+<FONT color="green">150</FONT>        }<a name="line.150"></a>
+<FONT color="green">151</FONT>        return totalSent;<a name="line.151"></a>
+<FONT color="green">152</FONT>      }<a name="line.152"></a>
+<FONT color="green">153</FONT>    <a name="line.153"></a>
+<FONT color="green">154</FONT>      /** {@inheritDoc} */<a name="line.154"></a>
+<FONT color="green">155</FONT>      public void quit() {<a name="line.155"></a>
+<FONT color="green">156</FONT>        for (int i = 0; i &lt; numShells; i++) {<a name="line.156"></a>
+<FONT color="green">157</FONT>          this.shells.get(i).quit();<a name="line.157"></a>
+<FONT color="green">158</FONT>        }<a name="line.158"></a>
+<FONT color="green">159</FONT>      }<a name="line.159"></a>
+<FONT color="green">160</FONT>      <a name="line.160"></a>
+<FONT color="green">161</FONT>      /** {@inheritDoc} */<a name="line.161"></a>
+<FONT color="green">162</FONT>      public void statechange(long resourceCheckSum, Map&lt;String, String&gt; keyValMap) throws Exception {<a name="line.162"></a>
+<FONT color="green">163</FONT>        // The same SingleSensorShell always has to process statechange events.  <a name="line.163"></a>
+<FONT color="green">164</FONT>        this.shells.get(0).statechange(resourceCheckSum, keyValMap);<a name="line.164"></a>
+<FONT color="green">165</FONT>      }<a name="line.165"></a>
+<FONT color="green">166</FONT>      <a name="line.166"></a>
+<FONT color="green">167</FONT>      /** {@inheritDoc} */<a name="line.167"></a>
+<FONT color="green">168</FONT>      public SensorShellProperties getProperties() {<a name="line.168"></a>
+<FONT color="green">169</FONT>        return this.shells.get(0).getProperties();<a name="line.169"></a>
+<FONT color="green">170</FONT>      }<a name="line.170"></a>
+<FONT color="green">171</FONT>    }<a name="line.171"></a>
 
 
 
