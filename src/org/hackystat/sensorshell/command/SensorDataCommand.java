@@ -1,6 +1,8 @@
 package org.hackystat.sensorshell.command;
 
 import java.util.Map;
+import java.util.logging.Level;
+
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.hackystat.sensorbase.client.SensorBaseClient;
@@ -163,8 +165,9 @@ public class SensorDataCommand extends Command {
    */
   public void add(SensorData data) throws SensorShellException {
     sensorDatas.getSensorData().add(data);
-    this.shell.println("Adding: " + formatSensorData(data));
-    
+    if (this.shell.getLogger().isLoggable(Level.FINE)) {
+      this.shell.println("Adding: " + formatSensorData(data));
+    }
     // If that makes the buffer size too big, then send this data. 
     if (sensorDatas.getSensorData().size() > properties.getAutoSendMaxBuffer()) {
       this.shell.println("Invoking send(); buffer size > " + properties.getAutoSendMaxBuffer());

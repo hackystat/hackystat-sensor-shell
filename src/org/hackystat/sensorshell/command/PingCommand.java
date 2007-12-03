@@ -1,7 +1,5 @@
 package org.hackystat.sensorshell.command;
 
-import java.util.logging.Level;
-
 import org.hackystat.sensorbase.client.SensorBaseClient;
 import org.hackystat.sensorshell.SensorShellProperties;
 import org.hackystat.sensorshell.SingleSensorShell;
@@ -51,9 +49,7 @@ public class PingCommand extends Command {
   public boolean isPingable(int timeout) {
     boolean result = false;
     int waitTime = timeout <= 0 ? 0 : timeout;
-    if (this.shell.getLogger().isLoggable(Level.FINE)) {
-      this.shell.println("Starting a ping...");
-    }
+    this.shell.println("Starting a ping...");
     PingWorkerThread workThread = new PingWorkerThread(this.host, this.email, this.password);
     workThread.start();
     try {
@@ -66,9 +62,7 @@ public class PingCommand extends Command {
     if (!workThread.isAlive()) {
       result = workThread.serverPingable;
     }
-    if (this.shell.getLogger().isLoggable(Level.FINE)) {
-      this.shell.println("Finished the ping... result is: " + result);
-    }
+    this.shell.println("Finished the ping... result is: " + result);
     return result;
   }
 
