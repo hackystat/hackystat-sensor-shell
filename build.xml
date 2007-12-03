@@ -69,20 +69,7 @@
   <path id="compile.classpath">
     <fileset file="${env.JUNIT_HOME}/junit-${junit.version}.jar"/>
     <fileset file="${env.FINDBUGS_HOME}/lib/annotations.jar"/> 
-    <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/stacktrace.lib.jar"/> 
-    <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/hackystatlogger.lib.jar"/> 
-    <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/tstamp.lib.jar"/> 
-    <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/time.lib.jar"/>
-    <fileset file="${env.HACKYSTAT_UTILITIES_HOME}/uricache.lib.jar"/> 
-    <fileset file="${env.HACKYSTAT_SENSORBASE_HOME}/sensorbase.lib.jar"/> 
-    <fileset file="${env.RESTLET_HOME}/lib/org.restlet.jar" />
-    <fileset file="${env.RESTLET_HOME}/lib/com.noelios.restlet.jar" />
-    <fileset file="${env.RESTLET_HOME}/lib/com.noelios.restlet.ext.net.jar" />
-    
-    <!-- The remaining jar files needed only for running the JUnit tests, which run a server. -->
-    <fileset file="${env.RESTLET_HOME}/lib/com.noelios.restlet.ext.simple_3.1.jar" />
-    <fileset file="${env.RESTLET_HOME}/lib/org.simpleframework_3.1/org.simpleframework.jar" />
-    <fileset file="${env.DERBY_HOME}/lib/derby.jar" />
+    <fileset file="${env.HACKYSTAT_SENSORBASE_HOME}/sensorbase.jar"/> 
     <fileset file="${env.JAVAMAIL_HOME}/mail.jar"/> 
   </path> 
 

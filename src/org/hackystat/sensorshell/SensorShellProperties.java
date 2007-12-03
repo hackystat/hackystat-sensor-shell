@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.hackystat.utilities.logger.HackystatLogger;
+import org.hackystat.utilities.home.HackystatUserHome;
 
 /**
  * Provides Hackystat sensors with access to standard Hackystat sensorshell properties.  These 
@@ -140,12 +141,10 @@ public class SensorShellProperties {
   /** The internal properties object. */
   private Properties sensorProps = new Properties();
   
-  private String sensorShellPropertiesFilePath = System.getProperty("user.home") + 
-  "/.hackystat/sensorshell/sensorshell.properties";
+  private File sensorShellPropertiesFile = new File(HackystatUserHome.getHome(), 
+      ".hackystat/sensorshell/sensorshell.properties");
   
-  private File sensorShellPropertiesFile = new File(sensorShellPropertiesFilePath);
-  
-  private Logger logger = HackystatLogger.getLogger("org.hackystat.sensorshell.properties");
+  private Logger logger = HackystatLogger.getLogger("properties", "sensorshell");
 
   /** The default timeout in seconds. */
   private int timeout = 10;
@@ -178,14 +177,15 @@ public class SensorShellProperties {
 
 
   /**
-   * Initializes SensorShell properties using the default file 
-   * ~/.hackystat/sensorshell/sensorshell.properties.
+   * Initializes SensorShell properties using the default sensorshell.properties file.
+   * It could be located in user.home, or hackystat.user.home (if the user has set the 
+   * latter in the System properties before invoking this constructor.)
    * @throws SensorShellException If the SensorProperties instance cannot be 
    * instantiated due to a missing host, user, and/or password properties. 
    */
   public SensorShellProperties() throws SensorShellException {
-    this(new File(System.getProperty("user.home") + 
-        "/.hackystat/sensorshell/sensorshell.properties"));
+    this(new File(HackystatUserHome.getHome(), 
+    ".hackystat/sensorshell/sensorshell.properties"));
   }
 
   /**
@@ -236,7 +236,8 @@ public class SensorShellProperties {
    */
   public SensorShellProperties(String host, String email, String password) 
   throws SensorShellException {
-    setDefaultSensorShellProperties(true);
+    this.setPropertiesFromFile(sensorShellPropertiesFile);
+    setDefaultSensorShellProperties(false);
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_HOST_KEY, host);
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
@@ -246,7 +247,7 @@ public class SensorShellProperties {
   /**
    * Constructs an instance with the supplied three required properties and any other
    * properties provided in the properties argument.
-   * All other properties are assigned values from sensorshell.properties, or the 
+   * Any remaining properties are assigned values from sensorshell.properties, or the 
    * built-in defaults if not specified there. 
    * @param host The hackystat host.
    * @param email The user's email.
@@ -259,13 +260,13 @@ public class SensorShellProperties {
   public SensorShellProperties(String host, String email, String password, Properties properties, 
       boolean overrideFile) throws SensorShellException {
     if (overrideFile) {
-      this.setPropertiesFromFile(new File(sensorShellPropertiesFilePath));
+      this.setPropertiesFromFile(sensorShellPropertiesFile);
       this.sensorProps.putAll(properties);
       this.setDefaultSensorShellProperties(false);
     }
     else {
       this.sensorProps.putAll(properties);
-      this.setPropertiesFromFile(new File(sensorShellPropertiesFilePath));
+      this.setPropertiesFromFile(sensorShellPropertiesFile);
       this.setDefaultSensorShellProperties(false);
     }
     this.sensorProps.setProperty(SENSORSHELL_SENSORBASE_HOST_KEY, host);
@@ -326,7 +327,6 @@ public class SensorShellProperties {
     props.setProperty(SENSORSHELL_STATECHANGE_INTERVAL_KEY, "30");
     props.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "250");
     props.setProperty(SENSORSHELL_AUTOSEND_TIMEINTERVAL_KEY, "1.0");
-    //this.addToSystemProperties(this.sensorProps);
     return new SensorShellProperties(props, true);
   }
   
@@ -357,17 +357,16 @@ public class SensorShellProperties {
   public SensorShellProperties(Properties properties, boolean overrideFile) 
   throws SensorShellException {
     if (overrideFile) {
-      this.setPropertiesFromFile(new File(sensorShellPropertiesFilePath));
+      this.setPropertiesFromFile(sensorShellPropertiesFile);
       this.sensorProps.putAll(properties);
       this.setDefaultSensorShellProperties(false);
     }
     else {
       this.sensorProps.putAll(properties);
-      this.setPropertiesFromFile(new File(sensorShellPropertiesFilePath));
+      this.setPropertiesFromFile(sensorShellPropertiesFile);
       this.setDefaultSensorShellProperties(false);
     }
     validateProperties();
-    //this.addToSystemProperties(this.sensorProps);
   }
   
   
@@ -591,7 +590,8 @@ public class SensorShellProperties {
       this.sensorProps.setProperty(SENSORSHELL_LOGGING_LEVEL_KEY, origValue);
     }
     
-    String errInfo = " You might wish to check the settings in " + sensorShellPropertiesFilePath;
+    String errInfo = " You might wish to check the settings in " + 
+    sensorShellPropertiesFile.getAbsolutePath();
     
     
     // SENSORBASE_HOST
@@ -794,7 +794,7 @@ public class SensorShellProperties {
    */
   @Override
   public String toString() {
-    StringBuffer buff = new StringBuffer(50);
+    StringBuffer buff = new StringBuffer(100);
     // It turns out to be much, much more usable to get these properties alphabetized.
     TreeMap<String, String> map = new TreeMap<String, String>();
     for (Object key : this.sensorProps.keySet()) {
@@ -809,6 +809,8 @@ public class SensorShellProperties {
       buff.append((entry.getKey().equals(SENSORSHELL_SENSORBASE_PASSWORD_KEY)) ? 
           "<password hidden>" : entry.getValue());
     }
+    buff.append("\n  sensorshell.properties file location: ");
+    buff.append(this.sensorShellPropertiesFile.getAbsolutePath());
     return buff.toString();
   }
  

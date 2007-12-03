@@ -22,6 +22,7 @@ import org.hackystat.sensorshell.command.SensorDataCommand;
 import org.hackystat.sensorshell.command.AutoSendCommand;
 import org.hackystat.sensorshell.command.PingCommand;
 import org.hackystat.sensorshell.command.QuitCommand;
+import org.hackystat.utilities.home.HackystatUserHome;
 import org.hackystat.utilities.logger.OneLineFormatter;
 
 /**
@@ -185,12 +186,13 @@ public class SingleSensorShell implements Shell {
 
   /**
    * Initializes SensorShell logging. All client input is recorded to a log file
-   * in .hackystat/logs/.
+   * in [user.home]/.hackystat/sensorshell/logs.  Note that [user.home] is obtained 
+   * from HackystatUserHome.getHome().
    */
   private void initializeLogger() {
     try {
       // First, create the logs directory.
-      File logDir = new File(System.getProperty("user.home") + "/.hackystat/sensorshell/logs");
+      File logDir = new File(HackystatUserHome.getHome() + ".hackystat/sensorshell/logs");
       logDir.mkdirs();
 
       // Now set up logging to a file in that directory.
