@@ -805,13 +805,15 @@ public class SensorShellProperties {
     // Now print them out in alphabetical order.
     buff.append("SensorProperties");
     for (Entry<String, String> entry : map.entrySet()) {
-      buff.append(cr + "  ");
+      buff.append(cr);
+      buff.append("  ");
       buff.append(entry.getKey());
       buff.append(" : "); 
       buff.append((entry.getKey().equals(SENSORSHELL_SENSORBASE_PASSWORD_KEY)) ? 
           "<password hidden>" : entry.getValue());
     }
-    buff.append(cr + "  sensorshell.properties file location: ");
+    buff.append(cr);
+    buff.append("  sensorshell.properties file location: ");
     buff.append(this.sensorShellPropertiesFile.getAbsolutePath());
     return buff.toString();
   }
