@@ -144,7 +144,8 @@ public class SensorShellProperties {
   private File sensorShellPropertiesFile = new File(HackystatUserHome.getHome(), 
       ".hackystat/sensorshell/sensorshell.properties");
   
-  private Logger logger = HackystatLogger.getLogger("properties", "sensorshell");
+  private Logger logger = HackystatLogger.getLogger("org.hackystat.sensorshell.properties", 
+      "sensorshell");
 
   /** The default timeout in seconds. */
   private int timeout = 10;
@@ -794,6 +795,7 @@ public class SensorShellProperties {
    */
   @Override
   public String toString() {
+    String cr = System.getProperty("line.separator");
     StringBuffer buff = new StringBuffer(100);
     // It turns out to be much, much more usable to get these properties alphabetized.
     TreeMap<String, String> map = new TreeMap<String, String>();
@@ -803,13 +805,13 @@ public class SensorShellProperties {
     // Now print them out in alphabetical order.
     buff.append("SensorProperties");
     for (Entry<String, String> entry : map.entrySet()) {
-      buff.append("\n  ");
+      buff.append(cr + "  ");
       buff.append(entry.getKey());
       buff.append(" : "); 
       buff.append((entry.getKey().equals(SENSORSHELL_SENSORBASE_PASSWORD_KEY)) ? 
           "<password hidden>" : entry.getValue());
     }
-    buff.append("\n  sensorshell.properties file location: ");
+    buff.append(cr + "  sensorshell.properties file location: ");
     buff.append(this.sensorShellPropertiesFile.getAbsolutePath());
     return buff.toString();
   }

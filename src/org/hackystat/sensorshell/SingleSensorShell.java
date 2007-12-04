@@ -192,7 +192,7 @@ public class SingleSensorShell implements Shell {
   private void initializeLogger() {
     try {
       // First, create the logs directory.
-      File logDir = new File(HackystatUserHome.getHome() + ".hackystat/sensorshell/logs");
+      File logDir = new File(HackystatUserHome.getHome(), ".hackystat/sensorshell/logs/");
       logDir.mkdirs();
 
       // Now set up logging to a file in that directory.
@@ -424,7 +424,7 @@ public class SingleSensorShell implements Shell {
    *
    * @param line  The line to be printed.
    */
-  private void print(String line) {
+  public final synchronized void print(String line) {
     logger.info(line);
     if (isInteractive) {
       SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd HH:mm:ss", Locale.US);
