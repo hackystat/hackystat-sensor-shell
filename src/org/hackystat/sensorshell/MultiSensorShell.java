@@ -28,7 +28,7 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
  * <li>sensorshell.multishell.autosend.timeinterval = 0.05
  * <li>sensorshell.offline.cache.enabled = false
  * <li>sensorshell.offline.recovery.enabled = false
- * <li>sensorshell.autosend.maxbuffer = 30000
+ * <li>sensorshell.autosend.maxbuffer = 1000
  * <li>sensorshell.logging.level = OFF
  * <li>sensorshell.timeout = 30
  * </ul>

@@ -74,7 +74,7 @@ public class SensorShellProperties {
   /**
    * The property key retrieving an integer indicating the number of instances to send to a single
    * shell in the MultiSensorShell at once. 
-   * Default: "250".
+   * Default: "499".
    */
   public static final String SENSORSHELL_MULTISHELL_BATCHSIZE_KEY = 
     "sensorshell.multishell.batchsize";
@@ -154,7 +154,7 @@ public class SensorShellProperties {
   /** If MultiShell processing is enabled, then the default number of shells is 10. */
   private int multiShellNumShells = 10;
   /** If MultiShell processing is enabled, then the default num instances in a row is 250. */
-  private int multiShellBatchSize = 250;
+  private int multiShellBatchSize = 499;
   /** If MultiShell processing is enabled, then the default autosend time interval is 0.10 . */
   private double multiShellAutoSendTimeInterval = 0.05;
   /** Offline caching of data is enabled by default. */
@@ -324,7 +324,7 @@ public class SensorShellProperties {
     props.setProperty(SENSORSHELL_MULTISHELL_ENABLED_KEY, "false");
     props.setProperty(SENSORSHELL_TIMEOUT_KEY, "10");
     props.setProperty(SENSORSHELL_MULTISHELL_NUMSHELLS_KEY, "10");
-    props.setProperty(SENSORSHELL_MULTISHELL_BATCHSIZE_KEY, "250");
+    props.setProperty(SENSORSHELL_MULTISHELL_BATCHSIZE_KEY, "499");
     props.setProperty(SENSORSHELL_MULTISHELL_AUTOSEND_TIMEINTERVAL_KEY, "0.05");
     props.setProperty(SENSORSHELL_STATECHANGE_INTERVAL_KEY, "30");
     props.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "250");
@@ -820,7 +820,7 @@ public class SensorShellProperties {
   }
  
   /**
-   * Sets the autosend time interval to the multishell version, and sets autoSendMaxBuffer to 30K. 
+   * Sets the autosend time interval to the multishell version, and sets autoSendMaxBuffer to 500. 
    * Invoked by the multishell just before instantiating its child SingleSensorShells so that
    * they are set up with the appropriate multishell time interval. 
    */
@@ -828,8 +828,8 @@ public class SensorShellProperties {
     this.sensorProps.setProperty(SENSORSHELL_AUTOSEND_TIMEINTERVAL_KEY, 
         String.valueOf(this.getMultiShellAutoSendTimeInterval()));
     this.autosendTimeInterval = this.multiShellAutoSendTimeInterval;
-    this.sensorProps.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "30000");
-    this.autosendMaxBuffer = 30000;
+    this.sensorProps.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "500");
+    this.autosendMaxBuffer = 500;
   }
 }
 
