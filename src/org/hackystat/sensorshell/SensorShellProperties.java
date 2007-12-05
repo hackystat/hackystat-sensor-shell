@@ -73,11 +73,21 @@ public class SensorShellProperties {
   
   /**
    * The property key retrieving an integer indicating the number of instances to send to a single
-   * shell in the MultiSensorShell at once. 
+   * shell in the MultiSensorShell at once. We make this one less than the default multishell 
+   * maxbuffer value so that the non-blocking autosend has chance to run rather than the 
+   * blocking send() resulting from hitting the maxbuffer size. 
    * Default: "499".
    */
   public static final String SENSORSHELL_MULTISHELL_BATCHSIZE_KEY = 
     "sensorshell.multishell.batchsize";
+  
+  /**
+   * The property key retrieving an integer indicating the maximum number of instances to buffer
+   * in each shell in the MultiSensorShell before a blocking send() is invoked.
+   * Default: "500".
+   */
+  public static final String SENSORSHELL_MULTISHELL_MAXBUFFER_KEY = 
+    "sensorshell.multishell.maxbuffer";
   
   /**
    * The property key retrieving a double indicating how many minutes between autosends of 
@@ -127,7 +137,8 @@ public class SensorShellProperties {
   /**
    * The property key retrieving an integer indicating the maximum number of sensor instances to 
    * buffer locally between autosends of sensor data.  If "0", then no maximum size is defined.
-   * Default: "250".
+   * Default: "250". Note that this is the value used when multishell is not enabled, otherwise
+   * the value associated with SENSORSHELL_MULTISHELL_MAXBUFFER_KEY is used.
    */
   public static final String SENSORSHELL_AUTOSEND_MAXBUFFER_KEY = 
     "sensorshell.autosend.maxbuffer";
@@ -153,8 +164,10 @@ public class SensorShellProperties {
   private boolean multiShellEnabled = false;
   /** If MultiShell processing is enabled, then the default number of shells is 10. */
   private int multiShellNumShells = 10;
-  /** If MultiShell processing is enabled, then the default num instances in a row is 250. */
+  /** If MultiShell processing is enabled, then the default num instances in a row is 499. */
   private int multiShellBatchSize = 499;
+  /** If MultiShell processing is enabled, then the default max buffer is 500. */
+  private int multiShellMaxBuffer = 500;
   /** If MultiShell processing is enabled, then the default autosend time interval is 0.10 . */
   private double multiShellAutoSendTimeInterval = 0.05;
   /** Offline caching of data is enabled by default. */
@@ -315,20 +328,21 @@ public class SensorShellProperties {
   public static SensorShellProperties getTestInstance(String host, String email, String password) 
   throws SensorShellException {
     Properties props = new Properties();
-    props.setProperty(SENSORSHELL_SENSORBASE_HOST_KEY, host);
-    props.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
-    props.setProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
-    props.setProperty(SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, "false");
-    props.setProperty(SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, "false");
-    props.setProperty(SENSORSHELL_LOGGING_LEVEL_KEY, "OFF");
-    props.setProperty(SENSORSHELL_MULTISHELL_ENABLED_KEY, "false");
-    props.setProperty(SENSORSHELL_TIMEOUT_KEY, "10");
-    props.setProperty(SENSORSHELL_MULTISHELL_NUMSHELLS_KEY, "10");
-    props.setProperty(SENSORSHELL_MULTISHELL_BATCHSIZE_KEY, "499");
-    props.setProperty(SENSORSHELL_MULTISHELL_AUTOSEND_TIMEINTERVAL_KEY, "0.05");
-    props.setProperty(SENSORSHELL_STATECHANGE_INTERVAL_KEY, "30");
     props.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "250");
     props.setProperty(SENSORSHELL_AUTOSEND_TIMEINTERVAL_KEY, "1.0");
+    props.setProperty(SENSORSHELL_LOGGING_LEVEL_KEY, "OFF");
+    props.setProperty(SENSORSHELL_MULTISHELL_AUTOSEND_TIMEINTERVAL_KEY, "0.05");
+    props.setProperty(SENSORSHELL_MULTISHELL_BATCHSIZE_KEY, "499");
+    props.setProperty(SENSORSHELL_MULTISHELL_ENABLED_KEY, "false");
+    props.setProperty(SENSORSHELL_MULTISHELL_MAXBUFFER_KEY, "500");
+    props.setProperty(SENSORSHELL_MULTISHELL_NUMSHELLS_KEY, "10");
+    props.setProperty(SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, "false");
+    props.setProperty(SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, "false");
+    props.setProperty(SENSORSHELL_SENSORBASE_HOST_KEY, host);
+    props.setProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
+    props.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
+    props.setProperty(SENSORSHELL_STATECHANGE_INTERVAL_KEY, "30");
+    props.setProperty(SENSORSHELL_TIMEOUT_KEY, "10");
     return new SensorShellProperties(props, true);
   }
   
@@ -413,6 +427,8 @@ public class SensorShellProperties {
         String.valueOf(multiShellNumShells), overridePreexisting);
     setDefaultProperty(SENSORSHELL_MULTISHELL_BATCHSIZE_KEY, 
         String.valueOf(multiShellBatchSize), overridePreexisting);
+    setDefaultProperty(SENSORSHELL_MULTISHELL_MAXBUFFER_KEY, 
+        String.valueOf(multiShellMaxBuffer), overridePreexisting);
     setDefaultProperty(SENSORSHELL_MULTISHELL_AUTOSEND_TIMEINTERVAL_KEY, 
         String.valueOf(multiShellAutoSendTimeInterval), overridePreexisting);
     setDefaultProperty(SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, 
@@ -501,6 +517,21 @@ public class SensorShellProperties {
       this.logger.warning(errMsg + SENSORSHELL_MULTISHELL_BATCHSIZE_KEY + " " + newValue); 
       this.sensorProps.setProperty(SENSORSHELL_MULTISHELL_BATCHSIZE_KEY, origValue);
     }
+    // MULTISHELL_MAXBUFFER
+    try {
+      origValue = String.valueOf(multiShellMaxBuffer);
+      newValue = this.getProperty(SENSORSHELL_MULTISHELL_MAXBUFFER_KEY);
+      this.multiShellMaxBuffer = Integer.parseInt(newValue);
+      if (this.multiShellMaxBuffer < 1) {
+        this.logger.warning(errMsg + SENSORSHELL_MULTISHELL_MAXBUFFER_KEY + " " + newValue); 
+        this.sensorProps.setProperty(SENSORSHELL_MULTISHELL_MAXBUFFER_KEY, origValue);
+        this.multiShellMaxBuffer = Integer.parseInt(origValue);
+      }
+    }
+    catch (Exception e) {
+      this.logger.warning(errMsg + SENSORSHELL_MULTISHELL_MAXBUFFER_KEY + " " + newValue); 
+      this.sensorProps.setProperty(SENSORSHELL_MULTISHELL_MAXBUFFER_KEY, origValue);
+    }    
     // MULTISHELL_AUTOSEND_TIMEINTERVAL
     try {
       origValue = String.valueOf(multiShellAutoSendTimeInterval);
@@ -741,6 +772,15 @@ public class SensorShellProperties {
   }
   
   /**
+   * Returns the maximum number of instances to buffer before a blocking send is invoked in
+   * multishell mode.
+   * @return The maximum number of instances to buffer.
+   */
+  public int getMultiShellMaxBuffer() {
+    return this.multiShellMaxBuffer;
+  }
+  
+  /**
    * Returns the MultiShell AutoSend time interval, such as 0.10.
    * @return The multishell autosend interval.
    */
@@ -764,29 +804,6 @@ public class SensorShellProperties {
    */
   public boolean isOfflineRecoveryEnabled () {
     return this.offlineRecoveryEnabled;
-  }
-
-  /**
-   * NOTE: We are not currently adding these values to the System properties object. The reason
-   * is that there can be multiple SensorShell (and the SensorShellProperties) instances active
-   * within a single JVM, either due to MultiShell or UserMaps.  These can have potentially
-   * different properties settings, leading to unpredictable values in the System Properties
-   * instance. Thus, it is safer to not rely on the System Properties instance to store any
-   * of these values. 
-   * 
-   * Updates the System properties object with the contents of the passed Hackystat
-   * properties instance.  This method is declared static so that it can be invoked
-   * from both SensorProperties and ServerProperties.  The hackystat properties added from
-   * SensorProperties were found in sensor.properties. The hackystat properties added from
-   * ServerProperties were found in hackystat.server.properties.  
-   * This method is package-private for access by SensorProperties.
-   * @param hackyProperties A Properties instance containing hackystat properties.
-   */
-  @SuppressWarnings("unused")
-  private void addToSystemProperties(Properties hackyProperties) {
-    Properties systemProperties = System.getProperties();
-    systemProperties.putAll(hackyProperties);
-    System.setProperties(systemProperties);
   }
   
   /**
@@ -820,7 +837,7 @@ public class SensorShellProperties {
   }
  
   /**
-   * Sets the autosend time interval to the multishell version, and sets autoSendMaxBuffer to 500. 
+   * Sets the autosend time interval and autosend max buffer size to the multishell versions.
    * Invoked by the multishell just before instantiating its child SingleSensorShells so that
    * they are set up with the appropriate multishell time interval. 
    */
@@ -828,8 +845,9 @@ public class SensorShellProperties {
     this.sensorProps.setProperty(SENSORSHELL_AUTOSEND_TIMEINTERVAL_KEY, 
         String.valueOf(this.getMultiShellAutoSendTimeInterval()));
     this.autosendTimeInterval = this.multiShellAutoSendTimeInterval;
-    this.sensorProps.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "500");
-    this.autosendMaxBuffer = 500;
+    this.sensorProps.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, 
+        String.valueOf(this.getMultiShellMaxBuffer()));
+    this.autosendMaxBuffer = this.getMultiShellMaxBuffer();
   }
 }
 

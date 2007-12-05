@@ -17,17 +17,6 @@ import org.junit.Test;
 
 /**
  * Provides testing classes and a main method for experimenting with MultiSensorShell performance.
- * <p>
- * The main() method provides a simple experimental interface.  To use it, bring up a SensorBase.
- * Then invoke the main() method, editing the initial local variables as you wish. The system
- * will run, printing out the elapsed time in milliseconds required for each add() of an 
- * individual SensorData instance.  At the end of the run, it will print out the total elapsed
- * time and the average time to send each SensorData instance to the server.  Note that I have
- * seen a variance of around 0.5 milliseconds in the average time per instance send. So, for
- * example, when repeatedly running under the same settings, I have obtained values 
- * varying between 3.1 to about 3.7 milliseconds per instance.  This is with totalData = 5000.
- * It appears that the variance decreases if you increase totalData to about 50,000. At that 
- * point, I get relatively consistent throughput of around 2.8 milliseconds per instance. 
  *
  * @author Philip Johnson
  *

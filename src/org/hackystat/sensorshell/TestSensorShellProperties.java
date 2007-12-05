@@ -36,6 +36,7 @@ public class TestSensorShellProperties {
     assertFalse("Check multishell enabled", properties.isMultiShellEnabled());
     assertEquals("Check multishell numshells", 10, properties.getMultiShellNumShells());
     assertEquals("Check multishell batch size", 499, properties.getMultiShellBatchSize());
+    assertEquals("Check multishell max buffer", 500, properties.getMultiShellMaxBuffer());
     assertFalse("Check offline caching", properties.isOfflineCacheEnabled());
     assertFalse("Check offline recovery", properties.isOfflineRecoveryEnabled());
     assertEquals("Check timeout", 10, properties.getTimeout());
