@@ -288,6 +288,7 @@ public class SensorShellProperties {
   public SensorShellProperties(SensorShellProperties orig, Properties newProps) 
   throws SensorShellException {
     this.sensorProps = orig.sensorProps;
+    this.sensorShellPropertiesFile = orig.sensorShellPropertiesFile;
     this.sensorProps.putAll(newProps);
     validateProperties();
   }
