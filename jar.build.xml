@@ -25,6 +25,14 @@
          <attribute name="Implementation-Vendor" value="Collaborative Software Development Laboratory, University of Hawaii"/>
        </manifest>
      </jar>
+    <jar destfile="${basedir}/shellperfeval.jar" basedir="${tmp.dir}">
+      <manifest>
+        <attribute name="Main-Class" value="org.hackystat.sensorshell.ShellPerfEval"/>
+        <attribute name="Implementation-Title" value="ShellPerfEval"/>
+        <attribute name="Implementation-Version" value="${version}"/>
+        <attribute name="Implementation-Vendor" value="Collaborative Software Development Laboratory, University of Hawaii"/>
+      </manifest>
+    </jar>
      <delete dir="${tmp.dir}" />
    </target>  
 </project>

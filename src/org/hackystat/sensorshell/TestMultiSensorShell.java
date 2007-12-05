@@ -1,13 +1,10 @@
 package org.hackystat.sensorshell;
 
 import static org.junit.Assert.assertEquals;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.datatype.XMLGregorianCalendar;
 import org.hackystat.sensorbase.client.SensorBaseClient;
-import org.hackystat.sensorbase.resource.sensordata.jaxb.Properties;
-import org.hackystat.sensorbase.resource.sensordata.jaxb.Property;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDataIndex;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDataRef;
@@ -100,87 +97,6 @@ public class TestMultiSensorShell {
     // Now, get the data, dude. 
     SensorData data = client.getSensorData(user, tstamp);
     assertEquals("Checking data", tool, data.getTool());
-  }
-  
-  /**
-   * Creates a sample SensorData instance given a user. 
-   * @param user The user.
-   * @return The new SensorData instance. 
-   */
-  private static SensorData makeSensorData(String user) {
-    String sdt = "TestSdt";
-    SensorData data = new SensorData();
-    String tool = "Subversion";
-    data.setTool(tool);
-    data.setOwner(user);
-    data.setSensorDataType(sdt);
-    data.setTimestamp(Tstamp.makeTimestamp());
-    data.setResource("file://foo/bar/baz.txt");
-    data.setRuntime(Tstamp.makeTimestamp());
-    Property property = new Property();
-    property.setKey("SampleField");
-    property.setValue("The test value for Sample Field");
-    Properties properties = new Properties();
-    properties.getProperty().add(property);
-    data.setProperties(properties);
-    return data;
-  }
-  
-  /**
-   * A simple main class that illustrates how to invoke the MultiSensorShell to explore 
-   * performance improvements related to throughput of SensorData instances.  The idea is 
-   * bring up a local SensorBase, edit the local variables of this method, then run this 
-   * main() to see how fast you can transmit the SensorData to the SensorBase.  On our system, 
-   * the average time was around 3 ms/instance. 
-   * @param args Ignored.
-   * @throws Exception If things go wrong. 
-   */
-  public static void main(String[] args) throws Exception {
-    long totalData = 5000;
-    String host = "http://localhost:9876/sensorbase";
-    String user = "TestUser@hackystat.org";
-    String numShells = "10";
-    String batchSize = "250";
-    String interval = "0.05";
-    // Create the custom SensorProperties instance for this test.
-    java.util.Properties properties = new java.util.Properties();
-    properties.setProperty(SensorShellProperties.SENSORSHELL_SENSORBASE_HOST_KEY, host);
-    properties.setProperty(SensorShellProperties.SENSORSHELL_SENSORBASE_USER_KEY, user);
-    properties.setProperty(SensorShellProperties.SENSORSHELL_SENSORBASE_PASSWORD_KEY, user);
-    properties.setProperty(SensorShellProperties.SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, "false");
-    properties.setProperty(SensorShellProperties.SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, "false");
-    properties.setProperty(SensorShellProperties.SENSORSHELL_LOGGING_LEVEL_KEY, "OFF");
-    properties.setProperty(SensorShellProperties.SENSORSHELL_MULTISHELL_ENABLED_KEY, "true");
-    properties.setProperty(SensorShellProperties.SENSORSHELL_MULTISHELL_NUMSHELLS_KEY, numShells);
-    properties.setProperty(SensorShellProperties.SENSORSHELL_MULTISHELL_BATCHSIZE_KEY, batchSize);
-    properties.setProperty(SensorShellProperties.SENSORSHELL_MULTISHELL_AUTOSEND_TIMEINTERVAL_KEY, 
-        interval);
-    properties.setProperty(SensorShellProperties.SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "30000");
-    properties.setProperty(SensorShellProperties.SENSORSHELL_TIMEOUT_KEY, "30");
-    SensorShellProperties shellProps = new SensorShellProperties(properties, true);
-
-    
-    System.out.println("Starting run with: totalData: " + totalData + ", numShells: " + numShells + 
-        ", autoSendTimeInterval: " + interval + ", batchSize: " + batchSize);
-    MultiSensorShell multiShell = new MultiSensorShell(shellProps, "MultiTest");
-    // Make sure the user remembers to get the SensorBase running. :-)
-    if (!multiShell.ping()) {
-      throw new Exception("Before running MultiShell, you probably want to run SensorBase!");
-    }
-    Date startTime = new Date();
-    for (int i = 0; i < totalData; i++) {
-      long time1 = new Date().getTime();
-      SensorData data = makeSensorData(user);
-      multiShell.add(data);
-      long time2 = new Date().getTime();
-      System.out.println("Elapsed millis for add " + i + " : " + (time2 - time1));
-    }
-    multiShell.quit();
-    long totalTime = (new Date().getTime() - startTime.getTime());
-    System.out.println("Total time: " + totalTime + " milliseconds.");
-    double timePerData = (double)totalTime / (double)totalData;
-    System.out.println("Milliseconds/sensordata instance: " + timePerData);
-
   }
   
 }
