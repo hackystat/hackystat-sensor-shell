@@ -18,6 +18,7 @@
   <import file="checkstyle.build.xml"/>
   <import file="junit.build.xml"/>
   <import file="emma.build.xml"/>
+  <import file="sclc.build.xml"/>
   
   <echo>
     Hackystat Utilities Verification Task
@@ -48,8 +49,8 @@
   </echo>
       
   <target name="verify" 
-    depends="clean, compile, checkstyle.tool,  junit.tool, javadoc, findbugs.tool,
-    emma.tool, pmd.tool, emma.echo" 
+    depends="clean, compile, checkstyle,  junit, javadoc, findbugs,
+    emma, pmd, sclc, emma.echo" 
     description="Invoke analyzers, fail if any errors found.">
       <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
   </target>

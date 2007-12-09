@@ -12,7 +12,7 @@
   <property name="pmd.version" value="4.0"/>
   <property name="pmd.jar" value="pmd-${pmd.version}.jar"/>
 
-  <target name="pmd" depends="pmd.tool, pmd.report" description="Runs the PMD tool, report, and sensor."/>
+  <target name="pmd" depends="pmd.tool, pmd.report, pmd.sensor" description="Runs the PMD tool, report, and sensor."/>
 
   <target name="pmd.tool" description="Runs PMD over the source code to check for problems.">
     <!-- Fail this target if PMD is not installed. -->
@@ -40,17 +40,13 @@
   <target name="pmd.report" description="Generates HTML reports on the PMD output.">
     <xslt in="${pmd.dir}/pmd.xml" style="${env.PMD_HOME}/etc/xslt/pmd-report-per-class.xslt" out="${pmd.dir}/pmd-report-per-class.html" />
   </target>
+	
+  <target name="pmd.sensor" description="Send hackystat data about this PMD invocation." if="hackystat.enabled">
+	<fileset id="pmd.output.fileset" dir="${pmd.dir}" includes="pmd.xml" />
+	<fileset id="pmd.src.fileset" dir="${src.dir}" includes="**/*.java" excludes="**/jaxb/**" />
+    <hackystat.pmd pmd.output.fileset="pmd.output.fileset" pmd.src.fileset="pmd.src.fileset" verbose="${hackystat.verbose.mode}"/>
+  </target>
 
-  <target name="pmd.sensor" description="Sends CodeIssue data to Hackystat using the PMD sensor.">
-    <!-- Define the pmd sensor taskdef, failing the build if the sensor is not installed. -->
-    <available classname="org.hackystat.sensor.pmd.PmdSensor" property="pmd.sensor.available"/>
-    <fail unless="pmd.sensor.available" message="Error: PMD sensor not installed."/>
-    <taskdef name="hacky-pmd" classname="org.hackystat.sensor.pmd.PmdSensor"/>
-
-    <hacky-pmd verbose="${hackystat.verbose.mode}">
-      <fileset file="${pmd.dir}/pmd.xml"/>
-    </hacky-pmd>
-  </target>  
 
 </project>
 

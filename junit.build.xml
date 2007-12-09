@@ -6,7 +6,7 @@
   <import file="build.xml"/>
   <property name="junit.dir" location="${build.dir}/junit" />
 
-  <target name="junit" depends="junit.tool, junit.report" description="Runs JUnit, JunitReport">
+  <target name="junit" depends="junit.tool, junit.report, junit.sensor" description="Runs JUnit, JunitReport">
      <fail if="junit.failed">JUnit test case(s) failed.</fail>
   </target>   
 
@@ -35,18 +35,10 @@
       <report format="frames" todir="${junit.dir}" />
     </junitreport>
   </target>
-    
-  <target name="junit.sensor" description="Sends UnitTest data to Hackystat using the JUnit sensor.">
-    <!-- Define the junit sensor taskdef, failing the build if the sensor is not installed. -->
-    <available classname="org.hackystat.sensor.junit.JUnitSensor" property="junit.sensor.available"/>
-    <fail unless="junit.sensor.available" message="Error: JUnit sensor not installed."/>
-    <taskdef name="hacky-junit" classname="org.hackystat.sensor.junit.JUnitSensor" />
 
-    <!-- Send JUnit test data to hackystat using the JUnit sensor. -->
-    <hacky-junit verbose="${hackystat.verbose.mode}" 
-                 sourcePath="${src.dir}">
-      <fileset dir="${junit.dir}" includes="TEST-*.xml"/>
-    </hacky-junit>
+  <target name="junit.sensor" description="Send hackystat data about this JUnit invocation." if="hackystat.enabled">
+	<fileset id="junit.output.fileset" dir="${junit.dir}" includes="TEST-*.xml" />
+	<hackystat.junit src.dir="${src.dir}" junit.output.fileset="junit.output.fileset" verbose="${hackystat.verbose.mode}" />
   </target>
 </project>
 

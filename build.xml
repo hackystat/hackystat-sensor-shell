@@ -6,6 +6,15 @@
   <!-- Always make environment variables available with the "env." prefix. --> 
   <property environment="env"/> 
       
+  <!-- Hackystat sensor definitions and configuration. -->
+  <import file="hackystat.build.xml"/>
+  <property name="hackystat.verbose.mode" value="false" />
+  <property name="hackystat.enable" value="true" />
+  <!-- define hackystat.enabled if hackystat.enable is true, so we can use it in an 'if' clause -->
+  <condition property="hackystat.enabled">
+	<istrue value="${hackystat.enable}"/>
+  </condition>
+	
   <!-- Make sure we're running a Java 5 or better. --> 
   <condition property="java.5.available">  
     <or>

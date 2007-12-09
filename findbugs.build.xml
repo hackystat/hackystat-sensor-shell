@@ -7,7 +7,7 @@
   <property environment="env"/>
   <property name="findbugs.dir" location="${build.dir}/findbugs" />
 
-  <target name="findbugs" depends="findbugs.tool, findbugs.report" 
+  <target name="findbugs" depends="findbugs.tool, findbugs.report, findbugs.sensor" 
     description="Runs the FindBugs tool, report, and sensor."/>
 
   <target name="findbugs.tool" depends="compile" description="Runs FindBugs over the byte code to check for problems.">
@@ -44,18 +44,10 @@
           out="${findbugs.dir}/findbugs-default.html" />
   </target>
 
-  <target name="findbugs.sensor" description="Sends CodeIssue data to Hackystat using the Findbugs sensor.">
-    <!-- Define the findbugs sensor taskdef, failing the build if the sensor is not installed. -->
-    <available classname="org.hackystat.sensor.findbugs.FindBugsSensor" property="findbugs.sensor.available"/>
-    <fail unless="findbugs.sensor.available" message="Error: Findbugs sensor not installed."/>
-    <taskdef name="hacky-findbugs" classname="org.hackystat.sensor.findbugs.FindBugsSensor" />
-    
-    <!-- Send the code issue information to the hackystat server. -->
-    <hacky-findbugs verbose="${hackystat.verbose.mode}">
-      <fileset file="${findbugs.dir}/findbugs.xml"/>
-    </hacky-findbugs>
+  <target name="findbugs.sensor" description="Send hackystat data about this FindBugs invocation." if="hackystat.enabled">
+	<fileset id="findbugs.output.fileset" dir="${findbugs.dir}" includes="findbugs.xml" />
+	<hackystat.findbugs findbugs.output.fileset="findbugs.output.fileset" verbose="${hackystat.verbose.mode}" />
   </target>
-
 </project>
 
 
