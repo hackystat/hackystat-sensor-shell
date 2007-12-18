@@ -3,13 +3,21 @@
   Supports JAXB binding process (creation of Java classes from the XmlSchema documents.)
   </description>
 
-  <import file="build.xml"/>
-  <property environment="env"/>
-    
-  <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
-  </taskdef>   
+  <import file="build.xml" />
+  <property environment="env" />
+  <!-- If the JAXB_TARGET env var is not defined, provide a default definition. -->
+  <property name="env.JAXB_TARGET" value="2.0"/>
 
+  <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+     <classpath>
+       <fileset dir="${env.JAXB_HOME}/lib" includes="*.jar" />
+     </classpath>
+   </taskdef>
+  
   <target name="jaxb" description="Runs the XJC compiler.">
-    <xjc schema="${basedir}/xml/schema/usermap.xsd" destdir="src" package="org.hackystat.sensorshell.usermap.resource.jaxb"/>
+    <echo message="Compiling using ${env.JAXB_HOME} for target version ${env.JAXB_TARGET}."/>
+    <xjc schema="${basedir}/xml/schema/usermap.xsd" target="${env.JAXB_TARGET}" destdir="src" package="org.hackystat.sensorshell.usermap.resource.jaxb">
+      <produces dir="${src.dir}/org/hackystat/sensorshell/usermap/resource/jaxb" includes="*" />
+    </xjc>
   </target>
 </project>
