@@ -7,6 +7,10 @@
   <property environment="env" />
   <!-- If the JAXB_TARGET env var is not defined, provide a default definition. -->
   <property name="env.JAXB_TARGET" value="2.0"/>
+  
+  <!-- Make sure that the JAXB compiler is available. -->
+  <available file="${env.JAXB_HOME}/lib/jaxb-xjc.jar" property="jaxb.xjc.available" />
+  <fail message="Could not find ${env.JAXB_HOME}/lib/jaxb-xjc.jar" unless="jaxb.xjc.available" />
 
   <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
      <classpath>
