@@ -60,7 +60,7 @@
   <!-- Basic properties for this system. --> 
   <property name="system.name" value="hackystat-sensor-shell" />
   <property name="majorVersionNumber" value="8" />
-  <property name="minorVersionNumber" value="0" />
+  <property name="minorVersionNumber" value="x" />
   <tstamp>
     <format property="DAYSTAMP" pattern="Mdd" />
   </tstamp>
