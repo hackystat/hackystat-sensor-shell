@@ -219,7 +219,7 @@ public class SensorShellProperties {
       validateProperties();
     } 
     catch (Exception e) {
-      String errMsg = "SensorShellProperties error: sensorFile is: " + sensorFile;
+      String errMsg = "SensorShellProperties error loading: " + sensorFile;
       this.logger.warning(errMsg);
       throw new SensorShellException(errMsg, e);
     }
