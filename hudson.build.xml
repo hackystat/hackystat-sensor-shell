@@ -29,4 +29,8 @@
       <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
   </target>
   
+  <target name="hudson.daily" 
+      depends="clean, compile, checkstyle.tool, junit.tool, findbugs.tool, pmd.tool, emma.tool, jar" 
+      description="Builds and runs all QA stuff in preparation for sending sensor data.">
+   </target>
 </project>
