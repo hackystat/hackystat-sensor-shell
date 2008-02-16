@@ -115,7 +115,7 @@ public class ShellPerfEval {
     double timePerData = (double) totalTime / (double) numInstances;
     System.out.println("Milliseconds/sensordata instance: " + timePerData);
     SensorBaseClient client = new SensorBaseClient(shellProps.getSensorBaseHost(), user, user);
-    System.out.print("Deleting data from sensorbase and compressing tables...");
+    System.out.print("Deleting data from sensorbase...");
     client.deleteSensorData(user);
     System.out.println(" done.");
   }
