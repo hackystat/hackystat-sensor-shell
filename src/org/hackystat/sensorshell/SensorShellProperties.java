@@ -57,6 +57,12 @@ public class SensorShellProperties {
   public static final String SENSORSHELL_TIMEOUT_KEY = "sensorshell.timeout";
   
   /**
+   * The property key retrieving the timeout value (in seconds) for SensorShell 'PING' requests.
+   * Default: "5".
+   */
+  public static final String SENSORSHELL_PING_TIMEOUT_KEY = "sensorshell.timeout.ping";
+  
+  /**
    * The property key retrieving a boolean indicating whether the MultiSensorShell is enabled.
    * Default: "false".
    */
@@ -160,6 +166,8 @@ public class SensorShellProperties {
 
   /** The default timeout in seconds. */
   private int timeout = 10;
+  /** The default ping timeout in seconds. */
+  private int pingTimeout = 5;
   /** MultiShell processing is disabled by default. */
   private boolean multiShellEnabled = false;
   /** If MultiShell processing is enabled, then the default number of shells is 10. */
@@ -343,6 +351,7 @@ public class SensorShellProperties {
     props.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
     props.setProperty(SENSORSHELL_STATECHANGE_INTERVAL_KEY, "30");
     props.setProperty(SENSORSHELL_TIMEOUT_KEY, "10");
+    props.setProperty(SENSORSHELL_PING_TIMEOUT_KEY, "5");
     return new SensorShellProperties(props, true);
   }
   
@@ -421,6 +430,8 @@ public class SensorShellProperties {
   private void setDefaultSensorShellProperties (boolean overridePreexisting) {
     setDefaultProperty(SENSORSHELL_TIMEOUT_KEY, 
         String.valueOf(timeout), overridePreexisting);
+    setDefaultProperty(SENSORSHELL_PING_TIMEOUT_KEY, 
+        String.valueOf(pingTimeout), overridePreexisting);
     setDefaultProperty(SENSORSHELL_MULTISHELL_ENABLED_KEY, 
         String.valueOf(multiShellEnabled), overridePreexisting);
     setDefaultProperty(SENSORSHELL_MULTISHELL_NUMSHELLS_KEY, 
@@ -476,6 +487,21 @@ public class SensorShellProperties {
     catch (Exception e) {
       this.logger.warning(errMsg + SENSORSHELL_TIMEOUT_KEY + " " + newValue); 
       this.sensorProps.setProperty(SENSORSHELL_TIMEOUT_KEY, origValue);
+    }
+    // PING TIMEOUT
+    try {
+      origValue = String.valueOf(this.pingTimeout);
+      newValue = this.getProperty(SENSORSHELL_PING_TIMEOUT_KEY);
+      this.pingTimeout = Integer.parseInt(newValue);
+      if (this.pingTimeout < 1) {
+        this.logger.warning(errMsg + SENSORSHELL_PING_TIMEOUT_KEY + " " + newValue); 
+        this.sensorProps.setProperty(SENSORSHELL_PING_TIMEOUT_KEY, origValue);
+        this.pingTimeout = Integer.parseInt(origValue);
+      }
+    }
+    catch (Exception e) {
+      this.logger.warning(errMsg + SENSORSHELL_PING_TIMEOUT_KEY + " " + newValue); 
+      this.sensorProps.setProperty(SENSORSHELL_PING_TIMEOUT_KEY, origValue);
     }
     // MULTISHELL_ENABLED
     try {
@@ -732,11 +758,19 @@ public class SensorShellProperties {
   }
   
   /**
-   * Returns the current timeout setting.
+   * Returns the current timeout setting for non-Ping requests.
    * @return The timeout in seconds. 
    */
   public int getTimeout() {
     return this.timeout;
+  }
+  
+  /**
+   * Returns the current timeout setting for Ping requests.
+   * @return The ping timeout in seconds. 
+   */
+  public int getPingTimeout() {
+    return this.pingTimeout;
   }
   
   /**

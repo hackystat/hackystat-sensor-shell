@@ -1,5 +1,7 @@
 package org.hackystat.sensorshell.command;
 
+import java.util.Date;
+
 import org.hackystat.sensorbase.client.SensorBaseClient;
 import org.hackystat.sensorshell.SensorShellProperties;
 import org.hackystat.sensorshell.SingleSensorShell;
@@ -20,8 +22,7 @@ public class PingCommand extends Command {
    */
   public PingCommand(SingleSensorShell shell, SensorShellProperties properties) {
     super(shell, properties);
-    // don't use properties.getTimeout() * 1000, since it could be set quite high for MultiShell.
-    this.timeout = 5000; 
+    this.timeout = properties.getPingTimeout() * 1000;
   }
   
   /**
@@ -48,12 +49,11 @@ public class PingCommand extends Command {
    */
   public boolean isPingable(int timeout) {
     boolean result = false;
-    int waitTime = timeout <= 0 ? 0 : timeout;
-    this.shell.print("Starting a ping...  ");
+    long startTime = new Date().getTime();
     PingWorkerThread workThread = new PingWorkerThread(this.host, this.email, this.password);
     workThread.start();
     try {
-      workThread.join(waitTime);  //block this thread until work thread dies or times out.
+      workThread.join(timeout);  //block this thread until work thread dies or times out.
     }
     catch (InterruptedException ex) {
       //do nothing
@@ -62,7 +62,8 @@ public class PingCommand extends Command {
     if (!workThread.isAlive()) {
       result = workThread.serverPingable;
     }
-    this.shell.println(" ...finished ping. Result is: " + result);
+    long elapsedTime = new Date().getTime() - startTime;
+    this.shell.println("Pinged " + this.host + " in " + elapsedTime + " ms. Result is: " + result);
     return result;
   }
 
