@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.hackystat.sensorbase.client.SensorBaseClient;
 import org.hackystat.utilities.logger.HackystatLogger;
 import org.hackystat.utilities.home.HackystatUserHome;
 
@@ -167,7 +168,7 @@ public class SensorShellProperties {
   /** The default timeout in seconds. */
   private int timeout = 10;
   /** The default ping timeout in seconds. */
-  private int pingTimeout = 5;
+  private int pingTimeout = 2;
   /** MultiShell processing is disabled by default. */
   private boolean multiShellEnabled = false;
   /** If MultiShell processing is enabled, then the default number of shells is 10. */
@@ -488,6 +489,9 @@ public class SensorShellProperties {
       this.logger.warning(errMsg + SENSORSHELL_TIMEOUT_KEY + " " + newValue); 
       this.sensorProps.setProperty(SENSORSHELL_TIMEOUT_KEY, origValue);
     }
+    // Now set the SensorBaseClient default timeout.
+    System.setProperty(SensorBaseClient.SENSORBASECLIENT_TIMEOUT_KEY, 
+        String.valueOf(this.timeout * 1000));
     // PING TIMEOUT
     try {
       origValue = String.valueOf(this.pingTimeout);
