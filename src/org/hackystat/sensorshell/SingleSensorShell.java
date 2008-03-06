@@ -482,7 +482,7 @@ public class SingleSensorShell implements Shell {
   }
   
   /** {@inheritDoc} */
-  public synchronized void quit() {
+  public synchronized void quit() throws SensorShellException {
     this.quitCommand.quit();
   }
   

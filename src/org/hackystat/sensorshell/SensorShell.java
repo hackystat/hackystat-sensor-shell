@@ -94,7 +94,7 @@ public class SensorShell implements Shell {
   }
   
   /** {@inheritDoc} */
-  public void quit() {
+  public void quit() throws SensorShellException {
     this.shell.quit();
   }
   

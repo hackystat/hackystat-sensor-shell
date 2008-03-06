@@ -66,8 +66,9 @@ public interface Shell {
   /**
    * Invokes quit() on this Shell, which invokes a final send() and closes any
    * logging files.
+   * @throws SensorShellException If an exception occurred during any autosend. 
    */
-  public void quit();
+  public void quit() throws SensorShellException;
   
   /**
    * Implements the "StateChange" algorithm.  The goal of StateChange is to add a new SensorData

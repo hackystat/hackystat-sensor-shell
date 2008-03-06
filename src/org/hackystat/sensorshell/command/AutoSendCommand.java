@@ -1,11 +1,13 @@
 package org.hackystat.sensorshell.command;
 
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import org.hackystat.sensorshell.SensorShellException;
 import org.hackystat.sensorshell.SensorShellProperties;
 import org.hackystat.sensorshell.SingleSensorShell;
+import org.hackystat.utilities.stacktrace.StackTrace;
 
 /**
  * Implements the AutoSend facility, which automatically sends all SensorData to the Sensorbase
@@ -16,6 +18,8 @@ public class AutoSendCommand extends Command {
   
   /** The timer that enables periodic sending. */
   private Timer timer = null;
+  /** The autosend command task for this shell. */
+  private AutoSendCommandTask task = null;
   
   /**
    * Creates the AutoSendCommand and starts a timer-based process running that wakes up and 
@@ -34,17 +38,23 @@ public class AutoSendCommand extends Command {
       // Otherwise set up a timer with the newly specified value.
       this.timer = new Timer(true);
       int milliseconds = (int) (minutes * 60 * 1000);
-      this.timer.schedule(new AutoSendCommandTask(shell), milliseconds, milliseconds);
+      this.task = new AutoSendCommandTask(shell);
+      this.timer.schedule(task, milliseconds, milliseconds);
       this.shell.println("AutoSend time interval set to " + (int) (minutes * 60) + " seconds");
     }
   }
   
   /**
    * Cancels the timer if there is one. 
+   * @throws SensorShellException if one occurred during an autosend. 
    */
-  public void quit() {
+  public void quit() throws SensorShellException {
     if (this.timer != null) {
       this.timer.cancel();
+    }
+    if (this.task.getException() != null) {
+      throw new SensorShellException("Autosend exception at: " + this.task.getExceptionTime(), 
+          this.task.getException());
     }
   }
   
@@ -56,7 +66,11 @@ public class AutoSendCommand extends Command {
     
     /** The sensor shell. */
     private SingleSensorShell shell;
-
+    /** The exception that was thrown by this task. */
+    private SensorShellException exception = null;
+    /** The time at which the exception was thrown. */
+    private Date exceptionTime = null;
+    
     /**
      * Creates the TimerTask.
      * @param shell The sensorshell.
@@ -73,8 +87,29 @@ public class AutoSendCommand extends Command {
         this.shell.send();
       }
       catch (SensorShellException e) {
-        this.shell.println("Error sending data.");
+        this.shell.getLogger().info("Error during autosend: " + StackTrace.toString(e));
+        this.exceptionTime = new Date();
+        this.exception = e;
       }
     }
+    
+    /**
+     * The exception that was thrown during the run() method of this task.
+     * @return The thrown exception, or null if no exception was thrown.
+     * 
+     */
+    public SensorShellException getException() {
+      return this.exception;
+    }
+    
+    /**
+     * The time that an exception was thrown during the run() method of this task.
+     * @return The thrown exception time, or null if no exception was thrown. 
+     * 
+     */
+    public Date getExceptionTime() {
+      return this.exceptionTime;
+    }
+    
   }
 }

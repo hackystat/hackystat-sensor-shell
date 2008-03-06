@@ -32,8 +32,11 @@ public class QuitCommand extends Command {
     this.autoSendCommand = autoSendCommand;
   }
   
-  /** Quits the shell. Sends all data and closes the loggers. */
-  public void quit() {
+  /** 
+   * Quits the shell. Sends all data and closes the loggers.
+   * @throws SensorShellException if an exception occurred during an autosend event.  
+   */
+  public void quit() throws SensorShellException {
     // Log this command if not running interactively.
     if (!this.shell.isInteractive()) {
       this.shell.getLogger().info("#> quit" + cr);

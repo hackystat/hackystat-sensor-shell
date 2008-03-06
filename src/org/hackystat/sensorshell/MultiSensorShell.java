@@ -152,7 +152,7 @@ public class MultiSensorShell implements Shell {
   }
 
   /** {@inheritDoc} */
-  public void quit() {
+  public void quit() throws SensorShellException {
     for (int i = 0; i < numShells; i++) {
       this.shells.get(i).quit();
     }
