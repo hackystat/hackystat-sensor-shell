@@ -37,25 +37,41 @@ public class QuitCommand extends Command {
    * @throws SensorShellException if an exception occurred during an autosend event.  
    */
   public void quit() throws SensorShellException {
+    SensorShellException exception = null;
+    
     // Log this command if not running interactively.
     if (!this.shell.isInteractive()) {
       this.shell.getLogger().info("#> quit" + cr);
     }
+    // Try to send any remaining data. 
     try {
       this.sensorDataCommand.send();
     }
     catch (SensorShellException e) {
-      this.shell.getLogger().warning("Error sending data. " + e);
+      // Note that we had an exception thrown, now proceed to finally block.
+      exception = e; 
     }
-    // Now close all loggers. 
-    if (this.shell.getLogger() != null) {
-      // Close all the open handler.
-      Handler[] handlers = this.shell.getLogger().getHandlers();
-      for (int i = 0; i < handlers.length; i++) {
-        handlers[i].close();
+    finally {
+      // Shut down all timers. 
+      this.autoSendCommand.quit();
+      // Log quit() information.
+      if (exception != null) {
+        this.shell.println("Error sending data during final quit: " + exception);
+      }
+      this.shell.println("Quitting SensorShell started at: " + this.shell.getStartTime());
+      this.shell.println("Total sensor data instances sent: " + this.shell.getTotalSent());
+      // Close all loggers. 
+      if (this.shell.getLogger() != null) {
+        // Close all the open handler.
+        Handler[] handlers = this.shell.getLogger().getHandlers();
+        for (int i = 0; i < handlers.length; i++) {
+          handlers[i].close();
+        }
+      }
+      // If we had an exception earlier, now we throw it again. 
+      if (exception != null) {
+        throw exception;
       }
     }
-    this.autoSendCommand.quit();
-    this.shell.println("Quitting.");
   }
 }

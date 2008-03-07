@@ -84,7 +84,9 @@ public class SingleSensorShell implements Shell {
   /** The OfflineManager used to recover data. */
   private OfflineManager offlineManager;
   
-
+  /** The startup time for this sensorshell. */
+  private Date startTime = new Date();
+  
   /**
    * Constructs a new SensorShell instance that can be provided with
    * notification data to be sent eventually to a specific user key and host.
@@ -219,7 +221,7 @@ public class SingleSensorShell implements Shell {
    */
   private void printBanner() {
     this.println("Hackystat SensorShell Version: " + getVersion());
-    this.println("SensorShell started at: " + new Date());
+    this.println("SensorShell started at: " + this.startTime);
     this.println(sensorProperties.toString());
     this.println("Type 'help' for a list of commands.");
     // Ping the host to determine availability.
@@ -379,12 +381,10 @@ public class SingleSensorShell implements Shell {
     this.print(helpString);
   }
 
- 
   /** Print out a prompt if in interactive mode. */
   void printPrompt() {
     this.print(this.prompt);
   }
-
 
   /**
    * Returns a string with the next line of input from the user. If input
@@ -430,6 +430,22 @@ public class SingleSensorShell implements Shell {
       SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd HH:mm:ss", Locale.US);
       System.out.print(dateFormat.format(new Date()) + " " + line);
     }
+  }
+  
+  /**
+   * Returns a Date instance indicating when this SensorShell was started. 
+   * @return The Date when this instance started up. 
+   */
+  public synchronized Date getStartTime() {
+    return new Date(this.startTime.getTime());
+  }
+  
+  /**
+   * Returns the total number of instances sent by this shell's SensorDataCommand. 
+   * @return The total number of instances sent. 
+   */
+  public synchronized long getTotalSent() {
+    return this.sensorDataCommand.getTotalSent();
   }
 
   /**
@@ -490,7 +506,6 @@ public class SingleSensorShell implements Shell {
   public synchronized boolean ping() {
     return this.pingCommand.isPingable();
   }
-  
   
   /** {@inheritDoc} */
   public synchronized void statechange(long resourceCheckSum, Map<String, String> keyValMap) 

@@ -33,6 +33,8 @@ public class SensorDataCommand extends Command {
   private String lastStateChangeResource = "";
   /** Holds the bufferSize value from the last StateChange event. */
   private long lastStateChangeResourceCheckSum = 0;
+  /** Holds the total number of sensor data sent to the server. */
+  private long totalSent = 0;
   
   /**
    * Creates the SensorDataCommand. 
@@ -66,10 +68,12 @@ public class SensorDataCommand extends Command {
           this.shell.println("No sensor data to send.");
           return 0;
         }
+        // Otherwise there is data to send, so try to do it.
         this.client.putSensorDataBatch(sensorDatas);
         this.shell.println(sensorDatas.getSensorData().size() + " SensorData instances sent to "
             + this.properties.getSensorBaseHost());
         numDataSent = sensorDatas.getSensorData().size();
+        totalSent += numDataSent;
         this.sensorDatas.getSensorData().clear();
       }
       catch (SensorBaseClientException e) {
@@ -234,5 +238,13 @@ public class SensorDataCommand extends Command {
         (!RESOURCE.equals(key)) &&
         (!"Owner".equals(key)) &&
         (!"SensorDataType".equals(key));
+  }
+
+  /**
+   * Returns the total number of sensor data instances sent so far. 
+   * @return The total sent so far by this instance of SensorDataCommand. 
+   */
+  public long getTotalSent() {
+    return this.totalSent;
   }
 }
