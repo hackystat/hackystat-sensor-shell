@@ -441,6 +441,14 @@ public class SingleSensorShell implements Shell {
   }
   
   /**
+   * Returns true if this shell has stored any data offline. 
+   * @return True if any data has been stored offline. 
+   */
+  public synchronized boolean hasOfflineData() {
+    return this.offlineManager.hasOfflineData();
+  }
+  
+  /**
    * Returns the total number of instances sent by this shell's SensorDataCommand. 
    * @return The total number of instances sent. 
    */

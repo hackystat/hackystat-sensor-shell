@@ -99,6 +99,11 @@ public class SensorShell implements Shell {
   }
   
   /** {@inheritDoc} */
+  public boolean hasOfflineData() {
+    return this.shell.hasOfflineData();
+  }
+  
+  /** {@inheritDoc} */
   public boolean ping() {
     return this.shell.ping();
   }

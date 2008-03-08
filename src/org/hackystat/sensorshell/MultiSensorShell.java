@@ -159,6 +159,17 @@ public class MultiSensorShell implements Shell {
   }
   
   /** {@inheritDoc} */
+  public boolean hasOfflineData() {
+    boolean hasOfflineData = false;
+    for (int i = 0; i < numShells; i++) {
+      if (this.shells.get(i).hasOfflineData()) {
+        hasOfflineData = true;
+      }
+    }
+    return hasOfflineData;
+  }
+  
+  /** {@inheritDoc} */
   public void statechange(long resourceCheckSum, Map<String, String> keyValMap) throws Exception {
     // The same SingleSensorShell always has to process statechange events.  
     this.shells.get(0).statechange(resourceCheckSum, keyValMap);

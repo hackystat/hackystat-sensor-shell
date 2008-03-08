@@ -71,6 +71,12 @@ public interface Shell {
   public void quit() throws SensorShellException;
   
   /**
+   * Returns true if any of shells in this interface have stored data offline. 
+   * @return True if any of these shells have stored offline data during this session.
+   */
+  public boolean hasOfflineData();
+  
+  /**
    * Implements the "StateChange" algorithm.  The goal of StateChange is to add a new SensorData
    * instance for sending to the SensorBase only when "something has changed" in the tool (which
    * is typically an interactive editor or IDE). This method is designed to be used in conjunction

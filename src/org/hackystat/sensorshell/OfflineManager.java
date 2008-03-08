@@ -31,6 +31,9 @@ public class OfflineManager {
   /** The jaxb context. */
   private JAXBContext jaxbContext;
   
+  /** Whether or not data has been stored offline. */
+  boolean hasOfflineData = false;
+  
   /**
    * Constructor for OfflineManager which initializes the location for offline data.
    * @param shell The SensorShell associated with this OfflineManager.
@@ -62,12 +65,21 @@ public class OfflineManager {
       Marshaller marshaller = jaxbContext.createMarshaller();
       marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
       marshaller.marshal(sensorDatas, new FileOutputStream(outFile));
+      shell.println("Stored " + sensorDatas.getSensorData().size() + " sensor data instances in: " 
+          + outFile.getAbsolutePath());
+      this.hasOfflineData = true;
       }
     catch (Exception e) {
       shell.println("Error writing the offline file " + outFile.getName() + " " + e);
     }
-    shell.println("Stored " + sensorDatas.getSensorData().size() + " sensor data instances in: " 
-        + outFile.getAbsolutePath());
+  }
+  
+  /**
+   * Returns true if this offline manager has successfully stored any data offline.  
+   * @return True if offline data has been stored. 
+   */
+  public boolean hasOfflineData() {
+    return this.hasOfflineData;
   }
   
   /**
