@@ -1,0 +1,38 @@
+<project name="javancss" default="javancss">
+  <description>Runs javancss.   Invocation: ant -f javancss.build.xml</description>
+
+  <property environment="env" />
+  <import file="build.xml" />
+  <property name="javancss.version" value="28.49" />
+  <property name="javancss.jar" value="javancss.jar" />
+  <property name="javancss.dir" location="${build.dir}/javancss" />
+  <property name="javancss.failOnError" value="false" />
+
+  <target name="javancss" depends="javancss.tool,javancss.report" description="Runs the javancss tool" />
+
+  <target name="javancss.report" description="Converts xml output to html">
+    <xslt in="${javancss.dir}/javancss.xml" out="${javancss.dir}/javancss.html" style="${env.JAVANCSS_HOME}/xslt/javancss2html.xsl"/>
+  </target>
+  
+  <target name="javancss.tool" description="Runs javancss over the source code to check for problems.">
+    <!-- Fail this target if JAVANCSS is not installed. -->
+    <available file="${env.JAVANCSS_HOME}/lib/${javancss.jar}" property="javancss.available" />
+    <fail unless="javancss.available" message="Error: ${env.JAVANCSS_HOME}/lib/${javancss.jar} not found." />
+    <taskdef name="javancss" classname="javancss.JavancssAntTask">
+      <classpath>
+        <fileset dir="${env.JAVANCSS_HOME}/lib" includes="*.jar" />
+      </classpath>
+    </taskdef>
+    <!-- Run javancss -->
+    <mkdir dir="${javancss.dir}" />
+    <javancss srcdir="${basedir}/src" abortOnFail="${javancss.failOnError}" includes="**/*.java" generateReport="true" outputfile="${javancss.dir}/javancss.xml" format="xml">
+    </javancss>
+  </target>
+  
+  <target name="javancss.sensor" unless="javancss.disabled" description="Sends JavaNCSS FileMetric data to Hackystat.">
+     <fileset id="javancss.fileset" dir="${src.dir}" includes="**/*.java" />
+     <hackystat.javancss javancss.output.file="${javancss.dir}/javancss.xml" javancss.fileset="javancss.fileset" verbose="${hackystat.verbose.mode}" />
+  </target>
+
+</project>
+

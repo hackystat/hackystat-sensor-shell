@@ -3,22 +3,23 @@
   Provides the JUnit tool and the Hackystat JUnit sensor.
   </description>
 
-  <import file="build.xml"/>
+  <import file="build.xml" />
   <property name="junit.dir" location="${build.dir}/junit" />
 
   <target name="junit" depends="junit.tool, junit.report, junit.sensor" description="Runs JUnit, JunitReport">
-     <fail if="junit.failed">JUnit test case(s) failed.</fail>
-  </target>   
+    <fail if="junit.failed">JUnit test case(s) failed.</fail>
+  </target>
 
   <target name="junit.tool" depends="compile" description="Run JUnit tests.">
     <mkdir dir="${junit.dir}" />
     <!-- Run the tests, which are all classes whose name starts with 'Test'. -->
     <!-- Fork is on until I can figure out how to stop the sensorbase and unbind the port. -->
-    <!-- Note that emma is forking in its JUnit as well. --> 
+    <!-- Note that emma is forking in its JUnit as well. -->
     <junit printsummary="withOutAndErr" haltonfailure="${junit.haltonfailure}" fork="yes" failureproperty="junit.failed">
       <classpath>
         <pathelement location="${build.dir}/classes" />
-        <path refid="compile.classpath"/>
+        <path refid="compile.classpath" />
+        <fileset file="${env.JAVAMAIL_HOME}/mail.jar"/> 
       </classpath>
     	<sysproperty key="usermaptestfile" value="${basedir}/testdata/usermap/test.usermaps.xml"/>
       <formatter type="xml" />
@@ -26,20 +27,23 @@
         <fileset dir="${src.dir}" includes="**/Test*.java" excludes="**/jaxb/**"/>
       </batchtest>
     </junit>
-  </target>  
+  </target>
 
   <target name="junit.report" description="Generates an HTML report for JUnit.">
     <taskdef name="junitreport" classname="org.apache.tools.ant.taskdefs.optional.junit.XMLResultAggregator" />
     <junitreport todir="${junit.dir}">
-      <fileset dir="${junit.dir}" includes="TEST-*.xml"/>
+      <fileset dir="${junit.dir}" includes="TEST-*.xml" />
       <report format="frames" todir="${junit.dir}" />
     </junitreport>
   </target>
 
   <target name="junit.sensor" description="Send hackystat data about this JUnit invocation." if="hackystat.enabled">
-	<fileset id="junit.output.fileset" dir="${junit.dir}" includes="TEST-*.xml" />
-	<hackystat.junit src.dir="${src.dir}" junit.output.fileset="junit.output.fileset" verbose="${hackystat.verbose.mode}" />
+    <fileset id="junit.datafiles" dir="${junit.dir}" includes="TEST-*.xml" />
+    <fileset id="junit.sourcefiles" dir="${src.dir}" includes="**/Test*.java" />
+    <hackystat.junit junit.sourcefiles.fileset="junit.sourcefiles" junit.datafiles.fileset="junit.datafiles" verbose="${hackystat.verbose.mode}" />
   </target>
+
+
 </project>
 
 

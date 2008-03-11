@@ -66,9 +66,15 @@
   </tstamp>
   <property name="version" value="${majorVersionNumber}.${minorVersionNumber}.${DAYSTAMP}" />
 
-  <!-- Hackystat sensor configuration information. -->
-  <property name="hackystat.verbose.mode" value="true" />
-
+  <!-- Hackystat sensor definitions and configuration. -->
+  <import file="hackystat.build.xml" />
+  <property name="hackystat.verbose.mode" value="false" />
+  <property name="hackystat.enable" value="true" />
+  <!-- define hackystat.enabled if hackystat.enable is true, so we can use it in an 'if' clause -->
+  <condition property="hackystat.enabled">
+    <istrue value="${hackystat.enable}" />
+  </condition>
+  
   <!-- Basic directory structure. --> 
   <property name="src.dir" location="${basedir}/src" />
   <property name="lib.dir" location="${basedir}/lib" />

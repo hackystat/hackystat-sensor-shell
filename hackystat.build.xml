@@ -1,4 +1,7 @@
-<project name="sensors" default="">
+<project name="hackystat.sensors" default="">
+  <description>
+    Provides a set of macros that simplify the definition of sensors within the other Ant xml files. 
+  </description>
 
   <macrodef name="check.antsensors">
     <sequential>
@@ -10,66 +13,82 @@
 
   <!-- Send Checkstyle data to hackystat using the Checkstyle sensor. -->
   <macrodef name="hackystat.checkstyle">
-  	<attribute name="checkstyle.output.fileset" />
-    <attribute name="verbose" default="true" />
+    <attribute name="checkstyle.datafiles.fileset" />
+    <attribute name="verbose" default="false" />
     <sequential>
       <check.antsensors />
       <hacky-checkstyle verbose="@{verbose}">
-        <fileset refid="@{checkstyle.output.fileset}" />
+        <datafiles><fileset refid="@{checkstyle.datafiles.fileset}" /></datafiles>
       </hacky-checkstyle>
     </sequential>
   </macrodef>
 
   <!-- Send JUnit test data to hackystat using the JUnit sensor. -->
   <macrodef name="hackystat.junit">
-    <attribute name="src.dir" />
-  	<attribute name="junit.output.fileset" />
-    <attribute name="verbose" default="true" />
+    <attribute name="junit.datafiles.fileset" />
+    <attribute name="junit.sourcefiles.fileset" />
+    <attribute name="verbose" default="false" />
     <sequential>
       <check.antsensors />
-      <hacky-junit verbose="@{verbose}" sourcePath="@{src.dir}">
-      	<fileset refid="@{junit.output.fileset}" />
+      <hacky-junit verbose="@{verbose}">
+        <datafiles><fileset refid="@{junit.datafiles.fileset}" /></datafiles>
+        <sourcefiles><fileset refid="@{junit.sourcefiles.fileset}" /></sourcefiles>
       </hacky-junit>
     </sequential>
   </macrodef>
-
+  
+  <!-- Send JavaNCSS data to hackystat using the JavaNCSS sensor. -->
+   <macrodef name="hackystat.javancss">
+     <attribute name="javancss.datafiles.fileset" />
+     <attribute name="javancss.sourcefiles.fileset" />
+     <attribute name="verbose" default="false" />
+     <sequential>
+       <check.antsensors />
+       <hacky-javancss verbose="@{verbose}"> 
+         <datafiles><fileset refid="@{javancss.datafiles.fileset}"/></datafiles>
+         <sourcefiles><fileset refid="@{javancss.sourcefiles.fileset}"/></sourcefiles>
+       </hacky-javancss>
+     </sequential>
+   </macrodef>
+       
   <!-- Send Emma coverage data to hackystat using the Emma sensor. -->
   <macrodef name="hackystat.emma">
-    <attribute name="emma.fileset" />
-    <attribute name="emma.output.file" />
-    <attribute name="verbose" default="true" />
+    <attribute name="emma.sourcefiles.fileset" />
+    <attribute name="emma.datafiles.fileset" />
+    <attribute name="verbose" default="false" />
     <sequential>
       <check.antsensors />
-      <hacky-emma verbose="@{verbose}" emmaReportXmlFile="@{emma.output.file}" >
-      	<fileset refid="@{emma.fileset}" />
+      <hacky-emma verbose="@{verbose}">
+        <datafiles><fileset refid="@{emma.datafiles.fileset}" /></datafiles>
+        <sourcefiles><fileset refid="@{emma.sourcefiles.fileset}" /></sourcefiles>
       </hacky-emma>
     </sequential>
   </macrodef>
 
   <!-- Send PMD coverage data to hackystat using the PMD sensor. -->
   <macrodef name="hackystat.pmd">
-  	<attribute name="pmd.output.fileset" />
-  	<attribute name="pmd.src.fileset" />
-    <attribute name="verbose" default="true" />
+    <attribute name="pmd.datafiles.fileset" />
+    <attribute name="pmd.sourcefiles.fileset" />
+    <attribute name="verbose" default="false" />
     <sequential>
       <check.antsensors />
       <hacky-pmd verbose="@{verbose}">
-        <fileset refid="@{pmd.output.fileset}" />
-        <sourcePath>
-          <fileset refid="@{pmd.src.fileset}" />
-        </sourcePath>
+        <datafiles><fileset refid="@{pmd.datafiles.fileset}" /></datafiles>
+        <sourcefiles><fileset refid="@{pmd.sourcefiles.fileset}" /></sourcefiles>
       </hacky-pmd>
     </sequential>
   </macrodef>
 
   <!-- Send findbugs coverage data to hackystat using the findbugs sensor. -->
   <macrodef name="hackystat.findbugs">
-  	<attribute name="findbugs.output.fileset" />
-    <attribute name="verbose" default="true" />
+    <attribute name="findbugs.datafiles.fileset" />
+    <attribute name="findbugs.sourcefiles.fileset" />
+    <attribute name="verbose" default="false" />
     <sequential>
       <check.antsensors />
       <hacky-findbugs verbose="@{verbose}">
-        <fileset refid="@{findbugs.output.fileset}" />
+        <datafiles><fileset refid="@{findbugs.datafiles.fileset}" /></datafiles>
+        <sourcefiles><fileset refid="@{findbugs.sourcefiles.fileset}" /></sourcefiles>
       </hacky-findbugs>
     </sequential>
   </macrodef>
