@@ -8,7 +8,7 @@
   <property name="javancss.dir" location="${build.dir}/javancss" />
   <property name="javancss.failOnError" value="false" />
 
-  <target name="javancss" depends="javancss.tool,javancss.report" description="Runs the javancss tool" />
+  <target name="javancss" depends="javancss.tool,javancss.report, javancss.sensor" description="Runs the javancss tool" />
 
   <target name="javancss.report" description="Converts xml output to html">
     <xslt in="${javancss.dir}/javancss.xml" out="${javancss.dir}/javancss.html" style="${env.JAVANCSS_HOME}/xslt/javancss2html.xsl"/>
@@ -30,8 +30,9 @@
   </target>
   
   <target name="javancss.sensor" unless="javancss.disabled" description="Sends JavaNCSS FileMetric data to Hackystat.">
-     <fileset id="javancss.fileset" dir="${src.dir}" includes="**/*.java" />
-     <hackystat.javancss javancss.output.file="${javancss.dir}/javancss.xml" javancss.fileset="javancss.fileset" verbose="${hackystat.verbose.mode}" />
+    <fileset id="javancss.sourcefiles" dir="${src.dir}" includes="**/*.java" />
+    <fileset id="javancss.datafiles" file="${javancss.dir}/javancss.xml" />
+    <hackystat.javancss javancss.datafiles.fileset="javancss.datafiles" javancss.sourcefiles.fileset="javancss.sourcefiles" verbose="${hackystat.verbose.mode}" />
   </target>
 
 </project>
