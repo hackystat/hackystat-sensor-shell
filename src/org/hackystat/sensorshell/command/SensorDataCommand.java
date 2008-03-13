@@ -59,19 +59,26 @@ public class SensorDataCommand extends Command {
   public int send() throws SensorShellException {
     int numDataSent = 0;
     // Log this command if not running interactively.
+    // Return right away if there is no data to send
+    if (sensorDatas.getSensorData().isEmpty()) {
+      //this.shell.println("Send() invoked; no sensor data to send; returning.");
+      return 0;
+    }
     if (!this.shell.isInteractive()) {
       this.shell.getLogger().info("#> send" + cr);
     }
     if (this.pingCommand.isPingable()) {
       try {
-        if (sensorDatas.getSensorData().isEmpty()) {
-          this.shell.println("No sensor data to send.");
-          return 0;
+        long freeMemory = Runtime.getRuntime().freeMemory();
+        if (freeMemory < 10) {
+          System.gc();
+          freeMemory = Runtime.getRuntime().freeMemory(); 
         }
         // Otherwise there is data to send, so try to do it.
+        this.shell.println("Attempting to send " + sensorDatas.getSensorData().size() 
+            + " sensor data instances. Remaining free memory (bytes): " + freeMemory);
         this.client.putSensorDataBatch(sensorDatas);
-        this.shell.println(sensorDatas.getSensorData().size() + " SensorData instances sent to "
-            + this.properties.getSensorBaseHost());
+        this.shell.println("Successful send to " + this.properties.getSensorBaseHost());
         numDataSent = sensorDatas.getSensorData().size();
         totalSent += numDataSent;
         this.sensorDatas.getSensorData().clear();

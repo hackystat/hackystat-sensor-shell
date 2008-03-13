@@ -1,6 +1,7 @@
 package org.hackystat.sensorshell;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Map;
 import java.util.Random;
 
@@ -95,7 +96,9 @@ public class MultiSensorShell implements Shell {
     for (int i = 0; i < numShells; i++) { 
       // MultiSensorShells must always be non-interactive.
       boolean isInteractive = false;
-      SingleSensorShell shell = new SingleSensorShell(properties, isInteractive, toolName);
+      // Hack the tool name to make it unique for each multishell and include a tstamp.
+      String multiToolName = toolName + "-" + new Date().getTime() + "--" + i;
+      SingleSensorShell shell = new SingleSensorShell(properties, isInteractive, multiToolName);
       this.shells.add(shell);
     }
   }

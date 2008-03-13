@@ -82,12 +82,12 @@ public class AutoSendCommand extends Command {
     /** Invoked periodically by the timer in AutoSendCommand. */
     @Override
     public void run() {
-      this.shell.println("Autosending...");
+      this.shell.println("Timer-based invocation of send().");
       try {
         this.shell.send();
       }
       catch (SensorShellException e) {
-        this.shell.getLogger().info("Error during autosend: " + StackTrace.toString(e));
+        this.shell.getLogger().info("Error in timer-based invocation: " + StackTrace.toString(e));
         this.exceptionTime = new Date();
         this.exception = e;
       }

@@ -176,12 +176,21 @@ public class SingleSensorShell implements Shell {
    */
   private void recoverOfflineData() throws SensorShellException {
     // Return immediately if server is not available.
-    if (this.pingCommand.isPingable() && this.sensorProperties.isOfflineRecoveryEnabled()) {
+    boolean isPingable = this.pingCommand.isPingable();
+    boolean isOfflineRecoveryEnabled = this.sensorProperties.isOfflineRecoveryEnabled();
+    if (isPingable && isOfflineRecoveryEnabled) {
       this.println("Checking for offline data to recover.");
       this.offlineManager.recover();
     }
     else {
-      this.println("Server not available or offline recovery disabled.");
+      if (!isPingable) {
+        this.println("Not checking for offline data: Server not available.");  
+      }
+      else {
+        if (!isOfflineRecoveryEnabled) {
+          this.println("Not checking for offline data: Offline recovery disabled.");
+        }
+      }
     }
   }
 
@@ -198,7 +207,7 @@ public class SingleSensorShell implements Shell {
       logDir.mkdirs();
 
       // Now set up logging to a file in that directory.
-      this.logger = Logger.getLogger("org.hackystat.sensorshell");
+      this.logger = Logger.getLogger("org.hackystat.sensorshell-" + this.toolName);
       this.logger.setUseParentHandlers(false);
       String fileName = logDir.getAbsolutePath() + "/" + this.toolName + ".%u.log";
       FileHandler handler = new FileHandler(fileName, 500000, 1, true);
@@ -233,6 +242,7 @@ public class SingleSensorShell implements Shell {
     String authorized = SensorBaseClient.isRegistered(host, email, password) ? 
         " authorized " : " not authorized ";
     this.println("User " + email + " is" + authorized + "to login at this host.");
+    this.println("Maximum Java heap size (bytes): " + Runtime.getRuntime().maxMemory());
   }
   
   
