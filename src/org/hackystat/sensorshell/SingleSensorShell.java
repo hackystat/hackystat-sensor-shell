@@ -183,7 +183,7 @@ public class SingleSensorShell implements Shell {
       this.offlineManager.recover();
     }
     else {
-      if (!isPingable) {
+      if (!isPingable) {  //NOPMD
         this.println("Not checking for offline data: Server not available.");  
       }
       else {

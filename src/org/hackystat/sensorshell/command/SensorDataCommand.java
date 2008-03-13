@@ -70,10 +70,7 @@ public class SensorDataCommand extends Command {
     if (this.pingCommand.isPingable()) {
       try {
         long freeMemory = Runtime.getRuntime().freeMemory();
-        if (freeMemory < 10) {
-          System.gc();
-          freeMemory = Runtime.getRuntime().freeMemory(); 
-        }
+        
         // Otherwise there is data to send, so try to do it.
         this.shell.println("Attempting to send " + sensorDatas.getSensorData().size() 
             + " sensor data instances. Remaining free memory (bytes): " + freeMemory);
