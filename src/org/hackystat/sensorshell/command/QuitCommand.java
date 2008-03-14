@@ -68,10 +68,16 @@ public class QuitCommand extends Command {
           handlers[i].close();
         }
       }
-      // If we had an exception earlier, now we throw it again. 
-      if (exception != null) {
+      // If we had an autosend exception, and there's data left, we throw it again. 
+      if ((this.autoSendCommand.getException() != null) && 
+          (this.sensorDataCommand.hasUnsentData())) {
+        throw this.autoSendCommand.getException();
+      }
+      // If we had a quit() exception, and there's data left, we throw it again. 
+      if ((exception != null) && (this.sensorDataCommand.hasUnsentData())) {
         throw exception;
       }
+      
     }
   }
 }

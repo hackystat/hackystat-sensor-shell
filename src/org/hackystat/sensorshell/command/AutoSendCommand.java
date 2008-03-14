@@ -46,16 +46,20 @@ public class AutoSendCommand extends Command {
   
   /**
    * Cancels the timer if there is one. 
-   * @throws SensorShellException if one occurred during an autosend. 
    */
-  public void quit() throws SensorShellException {
+  public void quit() {
     if (this.timer != null) {
       this.timer.cancel();
     }
-    if (this.task.getException() != null) {
-      throw new SensorShellException("Autosend exception at: " + this.task.getExceptionTime(), 
-          this.task.getException());
-    }
+  }
+
+  
+  /**
+   * Returns the exception that was thrown during autosend, or null if none was thrown.
+   * @return The exception if one was thrown previously, or null if none was thrown. 
+   */
+  public SensorShellException getException() {
+    return this.task.getException();
   }
   
   /**

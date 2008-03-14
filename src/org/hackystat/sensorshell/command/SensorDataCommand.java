@@ -1,5 +1,6 @@
 package org.hackystat.sensorshell.command;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -69,13 +70,13 @@ public class SensorDataCommand extends Command {
     }
     if (this.pingCommand.isPingable()) {
       try {
-        long freeMemory = Runtime.getRuntime().freeMemory();
-        
         // Otherwise there is data to send, so try to do it.
         this.shell.println("Attempting to send " + sensorDatas.getSensorData().size() 
-            + " sensor data instances. Remaining free memory (bytes): " + freeMemory);
+            + " sensor data instances. Available memory (bytes): " + getAvailableMemory());
+        long startTime = new Date().getTime(); 
         this.client.putSensorDataBatch(sensorDatas);
-        this.shell.println("Successful send to " + this.properties.getSensorBaseHost());
+        this.shell.println("Successful send to " + this.properties.getSensorBaseHost() +
+            " Elapsed time: " + (new Date().getTime() - startTime) + " ms.");
         numDataSent = sensorDatas.getSensorData().size();
         totalSent += numDataSent;
         this.sensorDatas.getSensorData().clear();
@@ -250,5 +251,26 @@ public class SensorDataCommand extends Command {
    */
   public long getTotalSent() {
     return this.totalSent;
+  }
+  
+  /**
+   * Returns true if this SensorDataCommand instance has remaining unsent data. 
+   * @return True if there is data remaining to be sent. 
+   */
+  public boolean hasUnsentData() {
+    return ((this.sensorDatas.getSensorData() != null) &&
+        !this.sensorDatas.getSensorData().isEmpty());
+  }
+  
+  /**
+   * Helper method to return the available memory in bytes.
+   * @return The available memory.
+   */
+  private long getAvailableMemory() {
+    Runtime runtime = Runtime.getRuntime();
+    long maxMemory = runtime.maxMemory();
+    long allocatedMemory = runtime.totalMemory();
+    long freeMemory = runtime.freeMemory();
+    return freeMemory + (maxMemory - allocatedMemory);
   }
 }
