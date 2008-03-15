@@ -29,7 +29,7 @@
     </javancss>
   </target>
   
-  <target name="javancss.sensor" unless="javancss.disabled" description="Sends JavaNCSS FileMetric data to Hackystat.">
+  <target name="javancss.sensor" if="hackystat.enabled" unless="javancss.disabled" description="Sends JavaNCSS FileMetric data to Hackystat.">
     <fileset id="javancss.sourcefiles" dir="${src.dir}" includes="**/*.java" />
     <fileset id="javancss.datafiles" file="${javancss.dir}/javancss.xml" />
     <hackystat.javancss javancss.datafiles.fileset="javancss.datafiles" javancss.sourcefiles.fileset="javancss.sourcefiles" verbose="${hackystat.verbose.mode}" />

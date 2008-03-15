@@ -8,9 +8,9 @@
   <property name="emma.dir" location="${build.dir}/emma" />
   <property name="junit.dir" location="${build.dir}/junit" />
 
-  <target name="emma" depends="emma.tool, emma.report, emma.sensor, emma.echo" unless="emma.disabled" description="Runs Emma." />
+  <target name="emma" depends="clean, emma.tool, emma.report, emma.sensor, emma.echo" unless="emma.disabled" description="Runs Emma." />
 
-  <target name="emma.tool" depends="clean, compile" unless="emma.disabled" description="Cleans, compiles, instruments byte codes, runs unit tests, generates Emma report.">
+  <target name="emma.tool" depends="compile" unless="emma.disabled" description="Cleans, compiles, instruments byte codes, runs unit tests, generates Emma report.">
     <!-- Verify that Emma is installed. -->
     <available file="${env.EMMA_HOME}/lib/emma.jar" property="emma.available" />
     <fail unless="emma.available" message="Error: EMMA_HOME not set or ${env.EMMA_HOME}/lib/emma.jar not found, indicating Emma is not installed." />

@@ -8,6 +8,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.hackystat.sensorbase.client.SensorBaseClient;
 import org.hackystat.sensorbase.client.SensorBaseClientException;
+import org.hackystat.utilities.stacktrace.StackTrace;
 import org.hackystat.utilities.tstamp.Tstamp;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.Properties;
 import org.hackystat.sensorbase.resource.sensordata.jaxb.Property;
@@ -37,6 +38,8 @@ public class SensorDataCommand extends Command {
   /** Holds the total number of sensor data sent to the server. */
   private long totalSent = 0;
   
+  //private int sendCounter = 0;
+  
   /**
    * Creates the SensorDataCommand. 
    * @param shell The sensorshell. 
@@ -58,6 +61,7 @@ public class SensorDataCommand extends Command {
    * @throws SensorShellException If problems occur sending the data. 
    */
   public int send() throws SensorShellException {
+    
     int numDataSent = 0;
     // Log this command if not running interactively.
     // Return right away if there is no data to send
@@ -74,6 +78,12 @@ public class SensorDataCommand extends Command {
         this.shell.println("Attempting to send " + sensorDatas.getSensorData().size() 
             + " sensor data instances. Available memory (bytes): " + getAvailableMemory());
         long startTime = new Date().getTime(); 
+        // The following lines are available temporarily for seeding error. 
+        //sendCounter++;
+        //if (sendCounter > 6) {
+        //  sendCounter = 0;
+        //  throw new SensorBaseClientException("Bogus error.");
+        //}
         this.client.putSensorDataBatch(sensorDatas);
         this.shell.println("Successful send to " + this.properties.getSensorBaseHost() +
             " Elapsed time: " + (new Date().getTime() - startTime) + " ms.");
@@ -83,6 +93,7 @@ public class SensorDataCommand extends Command {
       }
       catch (SensorBaseClientException e) {
         this.shell.println("Error sending data: " + e);
+        this.shell.println(StackTrace.toString(e));
         throw new SensorShellException("Could not send data: error in SensorBaseClient", e);
       }
     }
@@ -180,7 +191,12 @@ public class SensorDataCommand extends Command {
     // If that makes the buffer size too big, then send this data. 
     if (sensorDatas.getSensorData().size() > properties.getAutoSendMaxBuffer()) {
       this.shell.println("Invoking send(); buffer size > " + properties.getAutoSendMaxBuffer());
-      this.send();
+      try {
+        this.send();
+      }
+      catch (SensorShellException e) {
+        this.shell.println("Exception during send(): " + e);
+      }
     }
   }
   
