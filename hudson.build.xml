@@ -1,4 +1,4 @@
-<project name="hudson" default="hudson.basic">
+<project name="hudson.sensorshell" default="hudson.basic">
   <description>
     Runs junit, pmd, checkstyle, findbugs, and javadoc, failing the build if problems found.
     Invocation: ant -f verify.build.xml
@@ -21,16 +21,26 @@
   <import file="sclc.build.xml"/>
   <import file="dist.build.xml"/>
   <import file="jar.build.xml"/>
-  
-      
+  <import file="javancss.build.xml"/>
+        
   <target name="hudson.basic" 
     depends="clean, compile, checkstyle.tool,  junit.tool, findbugs.tool, pmd.tool, jar, dist" 
     description="Fast build for production purposes. No sensors.">
       <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
   </target>
   
-  <target name="hudson.daily" 
-      depends="clean, compile, checkstyle.tool, junit.tool, findbugs.tool, pmd.tool, emma.tool, jar" 
-      description="Builds and runs all QA stuff in preparation for sending sensor data.">
-   </target>
+  <target name="hudson.daily.build" 
+     depends="clean, compile, checkstyle.tool, junit.tool, findbugs.tool, pmd.tool, jar" 
+     description="Builds and runs all QA stuff in preparation for sending sensor data.">
+  </target>
+
+  <target name="hudson.daily.junit"  
+    depends="junit.tool, junit.sensor"  description="JUnit plus sensor."/>
+  
+  <target name="hudson.daily.javancss"  
+    depends="javancss.tool, javancss.sensor"  description="JavaNCSS plus sensor."/>
+  
+  <target name="hudson.daily.emma"  
+     depends="emma.tool, emma.report, emma.sensor"  description="Emma plus sensor."/>
+
 </project>
