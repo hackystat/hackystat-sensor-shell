@@ -66,6 +66,7 @@
     </emma>
     <!-- Now delete the instrumented .class files. -->
     <delete dir="${build.dir}/classes" />
+    <ant antfile="jar.build.xml"/> 
   </target>
 
   <target name="emma.report" unless="emma.disabled" description="Generates XML and HTML reports.">
