@@ -21,7 +21,9 @@
         <path refid="compile.classpath" />
         <fileset file="${env.JAVAMAIL_HOME}/mail.jar"/> 
       </classpath>
-    	<sysproperty key="usermaptestfile" value="${basedir}/testdata/usermap/test.usermaps.xml"/>
+      <sysproperty key="usermaptestfile" value="${basedir}/testdata/usermap/test.usermaps.xml"/>
+      <sysproperty key="HACKYSTAT_SENSORBASE_HOME" value="${env.HACKYSTAT_SENSORBASE_HOME}" />
+      <sysproperty key="user.dir" value="${basedir}" />
       <formatter type="xml" />
       <batchtest todir="${junit.dir}">
         <fileset dir="${src.dir}" includes="**/Test*.java" excludes="**/jaxb/**"/>

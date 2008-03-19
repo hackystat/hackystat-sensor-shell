@@ -42,7 +42,9 @@
       </classpath>
       <sysproperty key="emma.coverage.out.file" value="${build.dir}/emma/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
-    	<sysproperty key="usermaptestfile" value="${basedir}/testdata/usermap/test.usermaps.xml"/>
+      <sysproperty key="usermaptestfile" value="${basedir}/testdata/usermap/test.usermaps.xml"/>
+      <sysproperty key="HACKYSTAT_SENSORBASE_HOME" value="${env.HACKYSTAT_SENSORBASE_HOME}" />
+      <sysproperty key="user.dir" value="${basedir}" />
       <formatter type="xml" />
       <batchtest todir="${junit.dir}">
         <fileset dir="${src.dir}">
