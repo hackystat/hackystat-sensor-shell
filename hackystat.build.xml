@@ -10,6 +10,20 @@
       <taskdef resource="antlib.xml" classpath="${env.HACKYSTAT_ANTSENSORS_HOME}/antsensors.jar" />
     </sequential>
   </macrodef>
+  
+   <!-- Send coupling data to hackystat using the DependencyFinder sensor. -->
+   <macrodef name="hackystat.dependencyfinder">
+     <attribute name="dependencyfinder.datafiles.fileset" />
+     <attribute name="dependencyfinder.sourcefiles.fileset" />
+     <attribute name="verbose" default="false" />
+     <sequential>
+       <check.antsensors />
+       <hacky-dependencyfinder verbose="@{verbose}">
+         <datafiles><fileset refid="@{dependencyfinder.datafiles.fileset}" /></datafiles>
+         <sourcefiles><fileset refid="@{dependencyfinder.sourcefiles.fileset}" /></sourcefiles>
+       </hacky-dependencyfinder>
+     </sequential>
+   </macrodef>
 
   <!-- Send Checkstyle data to hackystat using the Checkstyle sensor. -->
   <macrodef name="hackystat.checkstyle">
