@@ -175,7 +175,7 @@ class UserMap {
       return false;
     }
     String lowercaseTool = tool.toLowerCase();
-    if (this.userMappings.containsKey(tool)) {
+    if (this.userMappings.containsKey(lowercaseTool)) {
       Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(lowercaseTool);
       return toolMapping.containsKey(toolAccount);
     }

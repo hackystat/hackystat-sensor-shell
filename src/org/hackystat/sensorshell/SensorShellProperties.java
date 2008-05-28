@@ -900,7 +900,7 @@ public class SensorShellProperties {
   
   /**
    * Returns a new SensorShellProperties instance customized for offline data recovery.
-   * This means that multishell mode and offline recovery/caching is disabled.
+   * This means that multishell, autosend, and offline recovery/caching are all disabled.
    * @param properties The original properties.
    * @return The new SensorShellProperties instance. 
    * @throws SensorShellException If something goes wrong. 
@@ -913,6 +913,7 @@ public class SensorShellProperties {
     props.setProperty(SENSORSHELL_MULTISHELL_ENABLED_KEY, falseStr);
     props.setProperty(SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, falseStr);
     props.setProperty(SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, falseStr);
+    props.setProperty(SENSORSHELL_AUTOSEND_TIMEINTERVAL_KEY, "0.0");
     return new SensorShellProperties(props, true);
   }
 }
