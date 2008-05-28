@@ -4,9 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
@@ -16,8 +14,8 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorDatas;
 import org.hackystat.utilities.home.HackystatUserHome;
 
 /**
- * Provides a facility for persisting buffered SensorData instances locally when the SensorBase
- * host is not available and then sending them during a subsequent invocation of SensorShell.
+ * Provides a facility for: (a) persisting buffered SensorData instances locally when the SensorBase
+ * host is not available and (b) recovering them during a subsequent invocation of SensorShell.
  * 
  * @author Philip Johnson
  */
@@ -26,22 +24,32 @@ public class OfflineManager {
   /** The directory where offline data is stored. */
   private File offlineDir;
   
-  /** The SensorShell associated with this OfflineManager. */
-  private SingleSensorShell shell;
   /** The jaxb context. */
   private JAXBContext jaxbContext;
+  
+  /** Holds the sensorShellProperties instance from the parent sensor shell. */
+  private SensorShellProperties properties; 
+  
+  /** The shell that created this offline manager. **/
+  private SingleSensorShell shell; 
+  
+  /** The tool that was created the parent shell. */
+  private String tool; 
   
   /** Whether or not data has been stored offline. */
   boolean hasOfflineData = false;
   
   /**
-   * Constructor for OfflineManager which initializes the location for offline data.
-   * @param shell The SensorShell associated with this OfflineManager.
+   * Creates an OfflineManager given the parent shell and the tool. 
+   * @param shell The parent shell.
+   * @param tool The tool. 
    */
-  public OfflineManager(SingleSensorShell shell) {
+  public OfflineManager(SingleSensorShell shell, String tool) {
+    this.shell = shell;
+    this.properties = shell.getProperties();
+    this.tool = tool;
     this.offlineDir = new File(HackystatUserHome.getHome(),  "/.hackystat/sensorshell/offline/");
     this.offlineDir.mkdirs();
-    this.shell = shell;
     try {
       this.jaxbContext = 
         JAXBContext.newInstance(
@@ -82,57 +90,52 @@ public class OfflineManager {
     return this.hasOfflineData;
   }
   
+  
   /**
    * Recovers any previously stored SensorDatas instances from their serialized files.
+   * Creates a new sensorshell instance to do the sending. 
    * Each SensorDatas instance is deserialized, then each SensorData instance inside is
    * individually sent to the SensorShell.  This gives the SensorShell an opportunity to 
    * send batches off at whatever interval it chooses.
-   * All serialized files are deleted after being processed, regardless of whether or not
-   * processing is successful or not. 
+   * All serialized files are deleted after being processed if successful.
    * @throws SensorShellException If problems occur sending the recovered data.
    */
   public void recover() throws SensorShellException {
+    // Create a new properties instance with offline recovery/storage disabled. 
+    SensorShellProperties props = SensorShellProperties.getOfflineMode(this.properties);
+    // Provide a separate log file for this offline recovery. 
+    String offlineTool = this.tool + "-offline-recovery";
+    SingleSensorShell shell = new SingleSensorShell(props, false, offlineTool);
     File[] xmlFiles = this.offlineDir.listFiles(new ExtensionFileFilter(".xml"));
+    shell.println("Invoking offline recovery on " + xmlFiles.length + " files.");
     FileInputStream fileStream = null;
-    List<SensorData> offlineData = new ArrayList<SensorData>(500);
+
     for (int i = 0; i < xmlFiles.length; i++) {
       try {
         // Reconstruct the SensorDatas instances from the serialized files. 
-        this.shell.println("Recovering offline data from: " + xmlFiles[i].getName());
+        shell.println("Recovering offline data from: " + xmlFiles[i].getName());
         fileStream = new FileInputStream(xmlFiles[i]);
         Unmarshaller unmarshaller = this.jaxbContext.createUnmarshaller();
         SensorDatas sensorDatas = (SensorDatas)unmarshaller.unmarshal(fileStream);
         // Now that we have the sensor data in memory, close and delete the file. 
         fileStream.close();
-        xmlFiles[i].delete();
-        // Next, add this data to our local arraylist.
+        boolean isDeleted = xmlFiles[i].delete();
+        shell.println(xmlFiles[i].getName() + "was deleted: " + isDeleted);
+        // Next, add this data to our local shell.
+        shell.println("About to add " + sensorDatas.getSensorData().size() + " instances.");
         for (SensorData data : sensorDatas.getSensorData()) {
-          offlineData.add(data);
-        }
-        // Now, if we've collected enough local entries, send them out.
-        if (offlineData.size() > 500) {
-          this.shell.println("Sending recovered offline data (" + offlineData.size() + " entries)");
-          for (SensorData data : offlineData) {
-            shell.add(data);
-          }
-          offlineData.clear();
+          shell.add(data);
         }
       }
       catch (Exception e) {
-        this.shell.println("Error recovering offline data from: " + xmlFiles[i] + " " + e);
+        shell.println("Error recovering offline data from: " + xmlFiles[i] + " " + e);
         try {
           fileStream.close();
         }
         catch (Exception f) { 
-          this.shell.println("Failed to close: " + fileStream.toString() + " " + e);
+          shell.println("Failed to close: " + fileStream.toString() + " " + e);
         }
       }
     }
-    // Clear out any remaining data from our local buffer. 
-    for (SensorData data : offlineData) {
-      shell.add(data);
-    }
-    this.shell.println("Explicit send of recovered data.");
-    shell.send();
   }
 }

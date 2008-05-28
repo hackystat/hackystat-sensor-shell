@@ -59,12 +59,13 @@ public class SensorShellProperties {
   
   /**
    * The property key retrieving the timeout value (in seconds) for SensorShell 'PING' requests.
-   * Default: "5".
+   * Default: "2".
    */
   public static final String SENSORSHELL_PING_TIMEOUT_KEY = "sensorshell.timeout.ping";
   
   /**
    * The property key retrieving a boolean indicating whether the MultiSensorShell is enabled.
+   * If true, offline recovery and storage will be automatically disabled.
    * Default: "false".
    */
   public static final String SENSORSHELL_MULTISHELL_ENABLED_KEY = "sensorshell.multishell.enabled";
@@ -109,7 +110,7 @@ public class SensorShellProperties {
   /**
    * The property key retrieving a boolean indicating if data will be cached locally if the 
    * SensorBase cannot be contacted. 
-   * Default: "true".
+   * Default: "true" if multi-shell is disabled. If multishell is enabled, then set to false. 
    */
   public static final String SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY = 
     "sensorshell.offline.cache.enabled";
@@ -117,7 +118,7 @@ public class SensorShellProperties {
   /**
    * The property key retrieving a boolean indicating if offline data will be recovered at startup
    * if the SensorBase can be contacted.
-   * Default: "true".
+   * Default: "true" if multi-shell is disabled. If multishell is enabled, then set to false. 
    */
   public static final String SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY = 
     "sensorshell.offline.recovery.enabled";
@@ -197,8 +198,7 @@ public class SensorShellProperties {
   private String password = null;
   /** Holds the default logging level. */
   private Level loggingLevel = Level.INFO;
-
-
+  
   /**
    * Initializes SensorShell properties using the default sensorshell.properties file.
    * It could be located in user.home, or hackystat.user.home (if the user has set the 
@@ -336,17 +336,18 @@ public class SensorShellProperties {
    */
   public static SensorShellProperties getTestInstance(String host, String email, String password) 
   throws SensorShellException {
+    String falseStr = "false";
     Properties props = new Properties();
     props.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, "250");
     props.setProperty(SENSORSHELL_AUTOSEND_TIMEINTERVAL_KEY, "1.0");
     props.setProperty(SENSORSHELL_LOGGING_LEVEL_KEY, "OFF");
     props.setProperty(SENSORSHELL_MULTISHELL_AUTOSEND_TIMEINTERVAL_KEY, "0.05");
     props.setProperty(SENSORSHELL_MULTISHELL_BATCHSIZE_KEY, "499");
-    props.setProperty(SENSORSHELL_MULTISHELL_ENABLED_KEY, "false");
+    props.setProperty(SENSORSHELL_MULTISHELL_ENABLED_KEY, falseStr);
     props.setProperty(SENSORSHELL_MULTISHELL_MAXBUFFER_KEY, "500");
     props.setProperty(SENSORSHELL_MULTISHELL_NUMSHELLS_KEY, "10");
-    props.setProperty(SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, "false");
-    props.setProperty(SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, "false");
+    props.setProperty(SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, falseStr);
+    props.setProperty(SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, falseStr);
     props.setProperty(SENSORSHELL_SENSORBASE_HOST_KEY, host);
     props.setProperty(SENSORSHELL_SENSORBASE_PASSWORD_KEY, password);
     props.setProperty(SENSORSHELL_SENSORBASE_USER_KEY, email);
@@ -587,6 +588,11 @@ public class SensorShellProperties {
       this.logger.warning(errMsg + SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY + " " + newValue); 
       this.sensorProps.setProperty(SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, origValue);
     }
+    if (this.multiShellEnabled && this.offlineCacheEnabled) {
+      this.logger.warning("Warning: Offline cache disabled since multishell enabled.");
+      this.offlineCacheEnabled = false;
+    }
+
     // OFFLINE_RECOVERY_ENABLED
     try {
       origValue = String.valueOf(offlineRecoveryEnabled);
@@ -596,6 +602,10 @@ public class SensorShellProperties {
     catch (Exception e) {
       this.logger.warning(errMsg + SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY + " " + newValue); 
       this.sensorProps.setProperty(SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, origValue);
+    }
+    if (this.multiShellEnabled && this.offlineRecoveryEnabled) {
+      this.logger.warning("Warning: Offline recovery disabled since multishell enabled.");
+      this.offlineRecoveryEnabled = false;
     }
     // STATECHANGE_INTERVAL
     try {
@@ -886,6 +896,24 @@ public class SensorShellProperties {
     this.sensorProps.setProperty(SENSORSHELL_AUTOSEND_MAXBUFFER_KEY, 
         String.valueOf(this.getMultiShellMaxBuffer()));
     this.autosendMaxBuffer = this.getMultiShellMaxBuffer();
+  }
+  
+  /**
+   * Returns a new SensorShellProperties instance customized for offline data recovery.
+   * This means that multishell mode and offline recovery/caching is disabled.
+   * @param properties The original properties.
+   * @return The new SensorShellProperties instance. 
+   * @throws SensorShellException If something goes wrong. 
+   */
+
+  public static SensorShellProperties getOfflineMode(SensorShellProperties properties) 
+  throws SensorShellException {
+    String falseStr = "false";
+    Properties props = new Properties();
+    props.setProperty(SENSORSHELL_MULTISHELL_ENABLED_KEY, falseStr);
+    props.setProperty(SENSORSHELL_OFFLINE_CACHE_ENABLED_KEY, falseStr);
+    props.setProperty(SENSORSHELL_OFFLINE_RECOVERY_ENABLED_KEY, falseStr);
+    return new SensorShellProperties(props, true);
   }
 }
 

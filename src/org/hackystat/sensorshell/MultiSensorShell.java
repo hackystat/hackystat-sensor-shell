@@ -1,7 +1,6 @@
 package org.hackystat.sensorshell;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Map;
 import java.util.Random;
 
@@ -27,12 +26,11 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
  * <li>sensorshell.multishell.numshells = 10
  * <li>sensorshell.multishell.batchsize = 250
  * <li>sensorshell.multishell.autosend.timeinterval = 0.05
- * <li>sensorshell.offline.cache.enabled = false
- * <li>sensorshell.offline.recovery.enabled = false
  * <li>sensorshell.autosend.maxbuffer = 1000
- * <li>sensorshell.logging.level = OFF
  * <li>sensorshell.timeout = 30
  * </ul>
+ * <p>
+ * Note that offline storage and recovery are automatically disabled when multishell is enabled.
  * <p>
  * The TestMultiSensorShell class provides a main() method that we have used to do some simple
  * performance evaluation, which we report on next. All results were obtained using a MacBook Pro
@@ -96,8 +94,8 @@ public class MultiSensorShell implements Shell {
     for (int i = 0; i < numShells; i++) { 
       // MultiSensorShells must always be non-interactive.
       boolean isInteractive = false;
-      // Hack the tool name to make it unique for each multishell and include a tstamp.
-      String multiToolName = toolName + "-" + new Date().getTime() + "--" + i;
+      // Each subshell in a multishell goes to its own log file.  
+      String multiToolName = toolName + "-multishell-" + i;
       SingleSensorShell shell = new SingleSensorShell(properties, isInteractive, multiToolName);
       this.shells.add(shell);
     }
@@ -163,13 +161,8 @@ public class MultiSensorShell implements Shell {
   
   /** {@inheritDoc} */
   public boolean hasOfflineData() {
-    boolean hasOfflineData = false;
-    for (int i = 0; i < numShells; i++) {
-      if (this.shells.get(i).hasOfflineData()) {
-        hasOfflineData = true;
-      }
-    }
-    return hasOfflineData;
+    // MultiSensorShells can never have offline data. 
+    return false;
   }
   
   /** {@inheritDoc} */

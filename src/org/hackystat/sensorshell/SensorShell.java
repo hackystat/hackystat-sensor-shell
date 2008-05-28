@@ -119,9 +119,9 @@ public class SensorShell implements Shell {
   }
   
   /**
-   * The command line shell interface.
+   * The command line shell interface for invoking a single sensor shell interactively.
    * <ul>
-   *   <li> If invoked with no arguments, then the default sensor.properties
+   *   <li> If invoked with no arguments, then the default sensorshell.properties
    *   file is used and the toolName field in the sensor log file name is
    *   "interactive".
    *   <li> If invoked with one argument, that argument is used as the toolName

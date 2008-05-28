@@ -38,7 +38,6 @@ public class SensorDataCommand extends Command {
   /** Holds the total number of sensor data sent to the server. */
   private long totalSent = 0;
   
-  //private int sendCounter = 0;
   
   /**
    * Creates the SensorDataCommand. 
@@ -63,53 +62,52 @@ public class SensorDataCommand extends Command {
   public int send() throws SensorShellException {
     
     int numDataSent = 0;
-    // Log this command if not running interactively.
+
     // Return right away if there is no data to send
     if (sensorDatas.getSensorData().isEmpty()) {
-      //this.shell.println("Send() invoked; no sensor data to send; returning.");
       return 0;
     }
+    // Indicate we're sending if in interactive mode.
     if (!this.shell.isInteractive()) {
       this.shell.getLogger().info("#> send" + cr);
     }
+    
+    // Do a ping to see that we can connect to the server. 
     if (this.pingCommand.isPingable()) {
+      // We can connect, and there is data, so attempt to send.
       try {
-        // Otherwise there is data to send, so try to do it.
         this.shell.println("Attempting to send " + sensorDatas.getSensorData().size() 
             + " sensor data instances. Available memory (bytes): " + getAvailableMemory());
         long startTime = new Date().getTime(); 
-        // The following lines are available temporarily for seeding error. 
-        //sendCounter++;
-        //if (sendCounter > 6) {
-        //  sendCounter = 0;
-        //  throw new SensorBaseClientException("Bogus error.");
-        //}
         this.client.putSensorDataBatch(sensorDatas);
         this.shell.println("Successful send to " + this.properties.getSensorBaseHost() +
             " Elapsed time: " + (new Date().getTime() - startTime) + " ms.");
         numDataSent = sensorDatas.getSensorData().size();
         totalSent += numDataSent;
         this.sensorDatas.getSensorData().clear();
+        return numDataSent;
       }
       catch (SensorBaseClientException e) {
         this.shell.println("Error sending data: " + e);
         this.shell.println(StackTrace.toString(e));
+        this.sensorDatas.getSensorData().clear();
         throw new SensorShellException("Could not send data: error in SensorBaseClient", e);
       }
     }
-    else {
-      if (this.properties.isOfflineCacheEnabled()) {
-        this.shell.println("Server not available. Storing commands offline.");
-        numDataSent = 0;
-        this.shell.getOfflineManager().store(this.sensorDatas);
-      }
-      else {
-        String msg = "Server not available and offline storage disabled. Sensor Data lost.";
-        this.shell.println(msg);
-        throw new SensorShellException(msg);
-      }
+
+    // If we got here, then the server was not available.
+    if (this.properties.isOfflineCacheEnabled()) {
+      this.shell.println("Server not available. Storing commands offline.");
+      this.shell.getOfflineManager().store(this.sensorDatas);
+      this.sensorDatas.getSensorData().clear();
+      return 0;
     }
-    return numDataSent;
+    else {
+      String msg = "Server not available and offline storage disabled. Sensor Data lost.";
+      this.shell.println(msg);
+      this.sensorDatas.getSensorData().clear();
+      throw new SensorShellException(msg);
+    }
   }
   
   /**

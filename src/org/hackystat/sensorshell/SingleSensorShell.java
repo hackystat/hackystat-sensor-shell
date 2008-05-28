@@ -151,7 +151,10 @@ public class SingleSensorShell implements Shell {
     catch (IOException e) {
       this.logger.info(cr);
     }
-    this.offlineManager = new OfflineManager(this);
+    
+    this.offlineManager = new OfflineManager(this, this.toolName);
+
+    // attempts to recover data if enabled; logs appropriate message in any case. 
     try {
       recoverOfflineData();
     }
@@ -176,21 +179,20 @@ public class SingleSensorShell implements Shell {
    */
   private void recoverOfflineData() throws SensorShellException {
     // Return immediately if server is not available.
-    boolean isPingable = this.pingCommand.isPingable();
     boolean isOfflineRecoveryEnabled = this.sensorProperties.isOfflineRecoveryEnabled();
-    if (isPingable && isOfflineRecoveryEnabled) {
+    // Return immediately if offline recovery is not enabled, but print this to the logger. 
+    if (!isOfflineRecoveryEnabled) {
+      this.println("Not checking for offline data: Offline recovery disabled.");
+      return;
+    }
+
+    boolean isPingable = this.pingCommand.isPingable();
+    if (isPingable) {
       this.println("Checking for offline data to recover.");
       this.offlineManager.recover();
     }
     else {
-      if (!isPingable) {  //NOPMD
-        this.println("Not checking for offline data: Server not available.");  
-      }
-      else {
-        if (!isOfflineRecoveryEnabled) {
-          this.println("Not checking for offline data: Offline recovery disabled.");
-        }
-      }
+      this.println("Not checking for offline data: Server not available.");  
     }
   }
 
