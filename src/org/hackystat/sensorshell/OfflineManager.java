@@ -76,8 +76,8 @@ public class OfflineManager {
         Marshaller marshaller = jaxbContext.createMarshaller();
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         marshaller.marshal(sensorDatas, new FileOutputStream(outFile));
-        parentShell.println("Stored " + sensorDatas.getSensorData().size() + " sensor data instances in: " 
-            + outFile.getAbsolutePath());
+        parentShell.println("Stored " + sensorDatas.getSensorData().size() + 
+            " sensor data instances in: "  + outFile.getAbsolutePath());
         this.hasOfflineData = true;
       }
       catch (Exception e) {
@@ -134,6 +134,7 @@ public class OfflineManager {
           shell.add(data);
         }
         // Try to send the data.
+        shell.println("About to send data");
         int numSent = shell.send();
         shell.println("Successfully sent: " + numSent + " instances.");
         // If all the data was successfully sent, then we delete the file. 
@@ -155,6 +156,7 @@ public class OfflineManager {
           shell.println("Failed to close: " + fileStream.toString() + " " + e);
         }
       }
+      shell.quit();
     }
   }
 }
