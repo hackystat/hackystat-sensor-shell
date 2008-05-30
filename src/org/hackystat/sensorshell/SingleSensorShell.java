@@ -182,7 +182,6 @@ public class SingleSensorShell implements Shell {
     boolean isOfflineRecoveryEnabled = this.sensorProperties.isOfflineRecoveryEnabled();
     // Return immediately if offline recovery is not enabled, but print this to the logger. 
     if (!isOfflineRecoveryEnabled) {
-      this.println("Not checking for offline data: Offline recovery disabled.");
       return;
     }
 

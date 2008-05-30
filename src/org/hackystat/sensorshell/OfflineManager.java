@@ -119,6 +119,7 @@ public class OfflineManager {
     String offlineTool = this.tool + "-offline-recovery";
     // Create the offline sensor shell to be used for sending this data. 
     SingleSensorShell shell = new SingleSensorShell(props, false, offlineTool);
+    shell.println("Invoking offline recovery on " + xmlFiles.length + " files.");
     FileInputStream fileStream = null;
 
     // For each offline file to recover

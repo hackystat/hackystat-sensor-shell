@@ -59,7 +59,7 @@ public class AutoSendCommand extends Command {
    * @return The exception if one was thrown previously, or null if none was thrown. 
    */
   public SensorShellException getException() {
-    return this.task.getException();
+    return (this.task == null) ? null : this.task.getException();
   }
   
   /**
