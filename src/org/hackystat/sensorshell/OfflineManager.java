@@ -156,7 +156,7 @@ public class OfflineManager {
           shell.println("Failed to close: " + fileStream.toString() + " " + e);
         }
       }
-      shell.quit();
     }
+    shell.quit();
   }
 }
