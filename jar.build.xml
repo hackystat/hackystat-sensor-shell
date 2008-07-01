@@ -20,7 +20,7 @@
      <jar destfile="${basedir}/sensorshell.jar" basedir="${tmp.dir}">
        <manifest>
          <attribute name="Main-Class" value="org.hackystat.sensorshell.SensorShell"/>
-         <attribute name="Implementation-Title" value="HackystatLogger"/>
+         <attribute name="Implementation-Title" value="SensorShell"/>
          <attribute name="Implementation-Version" value="${version}"/>
          <attribute name="Implementation-Vendor" value="Collaborative Software Development Laboratory, University of Hawaii"/>
        </manifest>
