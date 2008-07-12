@@ -3,6 +3,7 @@ package org.hackystat.sensorshell.usermap;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.Set;
 
 import org.hackystat.sensorshell.SensorShell;
 import org.hackystat.sensorshell.SensorShellProperties;
@@ -74,6 +75,15 @@ public class SensorShellMap {
     else {
       return this.userMap.hasUser(this.tool, toolAccount.trim());
     }
+  }
+  
+  /**
+   * Returns the set of tool account names associated with this tool in the usermaps file.
+   * @param tool The tool of interest.
+   * @return The known tool account names for this tool.
+   */
+  public Set<String> getToolAccounts(String tool) {
+    return this.userMap.getToolAccounts(tool);
   }
 
   /**

@@ -2,8 +2,10 @@ package org.hackystat.sensorshell.usermap;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -36,7 +38,7 @@ import org.hackystat.utilities.home.HackystatUserHome;
  * @author Julie Ann Sakuda
  */
 class UserMap {
-
+  
   /** Keys in the user map used to access information. */
   enum UserMapKey {
     /** The key for accessing the user value. */
@@ -65,7 +67,12 @@ class UserMap {
     if (userMapFile.exists()) {
       this.loadUserMapFile(userMapFile);
     }
+    else {
+      throw new SensorShellMapException("Could not find " + userMapFile.getAbsolutePath());
+    }
   }
+
+
 
   /**
    * This constructor initializes the user mappings from a given file. This version of the
@@ -181,4 +188,24 @@ class UserMap {
     }
     return false;
   }
+
+
+  /**
+   * Returns the set of tool account names for the passed tool.
+   * @param tool The tool of interest.
+   * @return The tool account names. 
+   */
+  Set<String> getToolAccounts(String tool) {
+    String lowerCaseTool = tool.toLowerCase();
+    Set<String> toolAccounts = new HashSet<String>();
+    Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(lowerCaseTool);
+    if (toolMapping == null) {
+      return toolAccounts;
+    }
+    else {
+      toolAccounts.addAll(toolMapping.keySet());
+      return toolAccounts;
+    }
+  }
 }
+
