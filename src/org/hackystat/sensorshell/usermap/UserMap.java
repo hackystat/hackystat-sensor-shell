@@ -51,24 +51,24 @@ class UserMap {
 
   /** Three-key map for storing mappings for tool, toolaccount, user, password, and sensorbase. */
   private Map<String, Map<String, Map<UserMapKey, String>>> userMappings;
+  
+  /** The (potentially non-existent) UserMap.xml file. */
+  private File userMapFile = null;
 
   /**
    * Creates the user map and initializes the user mappings.
+   * Returns an empty UserMap if the UserMap.xml file cannot be found.
    * 
-   * @throws SensorShellMapException Thrown if the UserMap.xml cannot be accessed or cannot be
-   *           parsed.
+   * @throws SensorShellMapException Thrown if the UserMap.xml cannot be parsed.
    */
-  UserMap() throws SensorShellMapException {
+  UserMap() throws SensorShellMapException  {
     this.userMappings = new HashMap<String, Map<String, Map<UserMapKey, String>>>();
 
     File sensorPropsDir = new File(HackystatUserHome.getHome(), "/.hackystat/sensorshell/");
     String userMapFilePath = sensorPropsDir.getAbsolutePath() + "/usermap/UserMap.xml";
-    File userMapFile = new File(userMapFilePath);
+    this.userMapFile = new File(userMapFilePath);
     if (userMapFile.exists()) {
       this.loadUserMapFile(userMapFile);
-    }
-    else {
-      throw new SensorShellMapException("Could not find " + userMapFile.getAbsolutePath());
     }
   }
 
@@ -187,6 +187,14 @@ class UserMap {
       return toolMapping.containsKey(toolAccount);
     }
     return false;
+  }
+  
+  /**
+   * Returns the usermap.xml file path, which may or may not exist.
+   * @return The usermap.xml file path.
+   */
+  String getUserMapFile() {
+    return this.userMapFile.getAbsolutePath();
   }
 
 

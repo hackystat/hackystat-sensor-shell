@@ -85,6 +85,15 @@ public class SensorShellMap {
   public Set<String> getToolAccounts(String tool) {
     return this.userMap.getToolAccounts(tool);
   }
+  
+  /**
+   * Returns the UserMap file name associated with this SensorShellMap.
+   * This file may or may not exist.
+   * @return The usermap file name associated with this SensorShellMap. 
+   */
+  public String getUserMapFile() {
+    return this.userMap.getUserMapFile();
+  }
 
   /**
    * Gets the SensorShell instance for a Hackystat user with an account for the given tool. Assumes
