@@ -48,54 +48,20 @@
       <available file="${env.HACKYSTAT_ANTSENSORS_HOME}/antsensors.jar" type="file" property="hackystat.antsensors.available"/>
       <fail message="${env.HACKYSTAT_ANTSENSORS_HOME}/antsensors.jar could not be found." unless="hackystat.antsensors.available"/>   
       <taskdef resource="antlib.xml" classpath="${env.HACKYSTAT_ANTSENSORS_HOME}/antsensors.jar"/>
-        
+    <!-- Need this to get the default account and password info. -->
+    <property environment="env"/> 
+    <property name="hackystat-system" value="hackystat-sensor-shell"/> 
     <!-- Send Subversion data to Hackystat using the Subversion sensor. --> 
     <hacky-svn  
       repositoryName="Hackystat"
-      repositoryUrl="http://hackystat-sensor-shell.googlecode.com/svn/trunk"
-      fileNamePrefix="hackystat-integration"
-      defaultHackystatAccount="johnson@hawaii.edu"
-      defaultHackystatPassword="foobar" 
+      repositoryUrl="http://${hackystat-system}.googlecode.com/svn/trunk"
+      fileNamePrefix="/hackystat-integration/${hackystat-system}"
+      defaultHackystatAccount="${env.HACKYSTAT_SVN_DEFAULT_ACCOUNT}"
+      defaultHackystatPassword="${env.HACKYSTAT_SVN_DEFAULT_PASSWORD}" 
       defaultHackystatSensorbase="http://dasha.ics.hawaii.edu:9876/sensorbase"
       verbose="true" />
   </target>
   
-  <target name="hudson.svn.2008" description="Send commit data for all of 2008">
-     <property environment="env"/>
-       <available file="${env.HACKYSTAT_ANTSENSORS_HOME}/antsensors.jar" type="file" property="hackystat.antsensors.available"/>
-       <fail message="${env.HACKYSTAT_ANTSENSORS_HOME}/antsensors.jar could not be found." unless="hackystat.antsensors.available"/>   
-       <taskdef resource="antlib.xml" classpath="${env.HACKYSTAT_ANTSENSORS_HOME}/antsensors.jar"/>
-
-    <svn2008 project="hackystat-analysis-dailyprojectdata"/>
-    <svn2008 project="hackystat-analysis-telemetry"/>
-    <svn2008 project="hackystat-sensor-ant"/>
-    <svn2008 project="hackystat-sensor-emacs"/>
-    <svn2008 project="hackystat-sensor-eclipse"/>
-    <svn2008 project="hackystat-sensor-example"/>
-    <svn2008 project="hackystat-sensor-shell"/>
-    <svn2008 project="hackystat-sensor-vim"/>
-    <svn2008 project="hackystat-sensor-xmldata"/>
-    <svn2008 project="hackystat-sensorbase-simdata"/>
-    <svn2008 project="hackystat-sensorbase-uh"/>
-    <svn2008 project="hackystat-ui-wicket"/>
-    <svn2008 project="hackystat-utilities"/>
-   </target>
-  
-  <macrodef name="svn2008">
-    <attribute name="project" />
-     <sequential>
-       <hacky-svn  
-         repositoryName="Hackystat"
-         repositoryUrl="http://@{project}.googlecode.com/svn/trunk"
-         fileNamePrefix="hackystat-integration/@{project}"
-         fromDate="2008-01-01"
-         toDate="2008-07-12"
-         defaultHackystatAccount="hackystat.hudson@gmail.com"
-         defaultHackystatPassword=""
-         defaultHackystatSensorbase="http://dasha.ics.hawaii.edu:9876/sensorbase"
-         verbose="true" 
-       />
-     </sequential>
-   </macrodef>
+ 
 
 </project>
