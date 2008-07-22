@@ -94,6 +94,17 @@ public class SensorShellMap {
   public String getUserMapFile() {
     return this.userMap.getUserMapFile();
   }
+  
+  /**
+   * Validates the hackystat user, password, and sensorbase associated with tool. 
+   * Throws an exception if the sensorbase cannot be contacted and/or if the user/password
+   * combination is not valid for the associated sensorbase. 
+   * @param tool The tool of interest. 
+   * @throws SensorShellMapException Thrown if user map info cannot be validated. 
+   */
+  public void validateHackystatInfo(String tool) throws SensorShellMapException {
+    this.userMap.validateHackystatUsers(tool);
+  }
 
   /**
    * Gets the SensorShell instance for a Hackystat user with an account for the given tool. Assumes
@@ -144,7 +155,7 @@ public class SensorShellMap {
             new SensorShellProperties(host, user, password) :
               new SensorShellProperties(host, user, password, properties, false) ;
         // Now, instantiate the non-interactive SensorShell.
-        SensorShell userShell = new SensorShell(sensorProps, false, this.tool);
+        SensorShell userShell = new SensorShell(sensorProps, false, this.tool + "-" + user);
         this.toolAccountsToShells.put(trimmedToolAccount, userShell);
       }
       // Now return the SensorShell.

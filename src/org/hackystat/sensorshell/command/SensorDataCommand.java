@@ -97,7 +97,8 @@ public class SensorDataCommand extends Command {
 
     // If we got here, then the server was not available.
     if (this.properties.isOfflineCacheEnabled()) {
-      this.shell.println("Server not available. Storing commands offline.");
+      this.shell.println("Server " + this.properties.getSensorBaseHost() + " not available." + 
+          " Storing sensor data offline.");
       this.shell.getOfflineManager().store(this.sensorDatas);
       this.sensorDatas.getSensorData().clear();
       return 0;

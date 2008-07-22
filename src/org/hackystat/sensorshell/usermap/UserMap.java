@@ -1,6 +1,7 @@
 package org.hackystat.sensorshell.usermap;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,6 +12,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
+import org.hackystat.sensorbase.client.SensorBaseClient;
 import org.hackystat.sensorshell.usermap.resource.jaxb.ObjectFactory;
 import org.hackystat.sensorshell.usermap.resource.jaxb.User;
 import org.hackystat.sensorshell.usermap.resource.jaxb.Usermap;
@@ -38,7 +40,7 @@ import org.hackystat.utilities.home.HackystatUserHome;
  * @author Julie Ann Sakuda
  */
 class UserMap {
-  
+
   /** Keys in the user map used to access information. */
   enum UserMapKey {
     /** The key for accessing the user value. */
@@ -51,17 +53,17 @@ class UserMap {
 
   /** Three-key map for storing mappings for tool, toolaccount, user, password, and sensorbase. */
   private Map<String, Map<String, Map<UserMapKey, String>>> userMappings;
-  
+
   /** The (potentially non-existent) UserMap.xml file. */
   private File userMapFile = null;
 
   /**
-   * Creates the user map and initializes the user mappings.
-   * Returns an empty UserMap if the UserMap.xml file cannot be found.
+   * Creates the user map and initializes the user mappings. Returns an empty UserMap if the
+   * UserMap.xml file cannot be found.
    * 
    * @throws SensorShellMapException Thrown if the UserMap.xml cannot be parsed.
    */
-  UserMap() throws SensorShellMapException  {
+  UserMap() throws SensorShellMapException {
     this.userMappings = new HashMap<String, Map<String, Map<UserMapKey, String>>>();
 
     File sensorPropsDir = new File(HackystatUserHome.getHome(), "/.hackystat/sensorshell/");
@@ -72,7 +74,67 @@ class UserMap {
     }
   }
 
+  /**
+   * A method that will check all of the mappings associated with the given tool and throw an
+   * error if (a) any of the sensorbases could not be contacted, and/or (b) any of the users 
+   * did not appear to be registered.
+   * @param tool The tool of interest. 
+   * @throws SensorShellMapException The exception thrown if any errors are discovered. 
+   */
+  public void validateHackystatUsers(String tool) throws SensorShellMapException {
+    List<String> invalidSensorBases = new ArrayList<String>();
+    List<String> invalidUsers = new ArrayList<String>();
+    Map<String, Map<UserMapKey, String>> toolAccountMap = userMappings.get(tool);
+    // If there are no mappings for this tool, then return. 
+    if (toolAccountMap == null) {
+      return;
+    }
+    // Check all mappings associated with this tool.
+    for (Map<UserMapKey, String> userMap : toolAccountMap.values()) {
+      if (userMap == null) {
+        return;
+      }
+      String user = userMap.get(UserMapKey.USER);
+      String sensorbase = userMap.get(UserMapKey.SENSORBASE);
+      String password = userMap.get(UserMapKey.PASSWORD);
+      // Ignore this entire entry if we've already determined the sensorbase to be invalid.
+      if (invalidSensorBases.contains(sensorbase)) {
+        continue;
+      }
+      // Now check to see if it's validated. 
+      if (!SensorBaseClient.isHost(sensorbase)) {
+        invalidSensorBases.add(sensorbase);
+        // No use doing anything else.
+        continue;
+      }
+      // If we get here, it's a valid sensorbase. Now check to see if the user is OK.
+      if (!SensorBaseClient.isRegistered(sensorbase, user, password)) {
+        invalidUsers.add(user);
+      }
+    }
 
+    // If all mappings are OK, we can return right now. 
+    if (invalidSensorBases.isEmpty() && invalidUsers.isEmpty()) {
+      return;
+    }
+
+    // Otherwise throw an exception indicating the problem(s). Create the message. 
+    StringBuffer buff = new StringBuffer(20);
+    buff.append("Errors found in ").append(this.userMapFile.getAbsolutePath()).append(". ");
+    if (!invalidSensorBases.isEmpty()) {
+      buff.append("The following SensorBase hosts were not found or available: ");
+      for (String badBase : invalidSensorBases) {
+        buff.append(badBase).append(' ');
+      }
+    }
+    if (!invalidUsers.isEmpty()) {
+      buff.append("The following users did not appear to be valid: ");
+      for (String badUser : invalidUsers) {
+        buff.append(badUser).append(' ');
+      }
+    }
+    throw new SensorShellMapException(buff.toString());
+  }
 
   /**
    * This constructor initializes the user mappings from a given file. This version of the
@@ -188,20 +250,21 @@ class UserMap {
     }
     return false;
   }
-  
+
   /**
    * Returns the usermap.xml file path, which may or may not exist.
+   * 
    * @return The usermap.xml file path.
    */
   String getUserMapFile() {
     return this.userMapFile.getAbsolutePath();
   }
 
-
   /**
    * Returns the set of tool account names for the passed tool.
+   * 
    * @param tool The tool of interest.
-   * @return The tool account names. 
+   * @return The tool account names.
    */
   Set<String> getToolAccounts(String tool) {
     String lowerCaseTool = tool.toLowerCase();
@@ -216,4 +279,3 @@ class UserMap {
     }
   }
 }
-
