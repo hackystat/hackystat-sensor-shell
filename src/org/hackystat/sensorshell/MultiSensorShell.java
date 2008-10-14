@@ -76,7 +76,7 @@ public class MultiSensorShell implements Shell {
   private int batchCounter = 0;
   /** A pointer to the current Shell that is receiving SensorData instances. */
   private int currShellIndex = 0;
-  /** Used when batchSize == 0 */
+  /** Used when batchSize == 0. */
   private Random generator = new Random(0L);
 
   /**

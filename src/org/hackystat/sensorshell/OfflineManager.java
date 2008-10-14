@@ -50,7 +50,10 @@ public class OfflineManager {
     this.properties = shell.getProperties();
     this.tool = tool;
     this.offlineDir = new File(HackystatUserHome.getHome(),  "/.hackystat/sensorshell/offline/");
-    this.offlineDir.mkdirs();
+    boolean dirOk = this.offlineDir.mkdirs();
+    if (!dirOk && !this.offlineDir.exists()) {
+      throw new RuntimeException("mkdirs failed");
+    }
     try {
       this.jaxbContext = 
         JAXBContext.newInstance(

@@ -32,7 +32,7 @@
     
   <!-- Make sure that a compatible version of JUnit is installed. --> 
   <!-- You can override the version. For example: 'ant -Djunit.version=4.1 -f junit.build.xml' -->
-  <property name="junit.version" value="4.4"/>
+  <property name="junit.version" value="4.5"/>
   <property name="junit.jar" location="${env.JUNIT_HOME}/junit-${junit.version}.jar"/>
   <available file="${junit.jar}" type="file" property="junit.available"/>
   <fail message="This package requires JUNIT_HOME to be defined and ${junit.jar} available" unless="junit.available"/>

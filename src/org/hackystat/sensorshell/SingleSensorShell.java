@@ -59,27 +59,14 @@ public class SingleSensorShell implements Shell {
   /** The logging formatter that adds a timestamp but doesn't add a newline. */
   private Formatter oneLineFormatter = new OneLineFormatter(true, false);
 
-  /** The file of commands, if provided on the command line. */
-  private File commandFile = null;
-
-  /** A boolean indicating if the command file has been supplied on the command line. */
-  private boolean commandFilePresent = false;
-  
   /** The ping command. */
   private PingCommand pingCommand;
   
   /** The send command. */
   private SensorDataCommand sensorDataCommand;
 
-  /** The autosend command. */
-  @SuppressWarnings("unused")
-  private AutoSendCommand autoSendCommand;
-  
   /** The quit command. */
   private QuitCommand quitCommand;
-  
-  /** The SensorBase Client instance used to communicate with the SensorBase. */
-  private SensorBaseClient client;
   
   /** The OfflineManager used to recover data. */
   private OfflineManager offlineManager;
@@ -129,23 +116,21 @@ public class SingleSensorShell implements Shell {
     this.isInteractive = isInteractive;
     this.toolName = toolName;
     this.sensorProperties = properties;
-    this.commandFile = commandFile;
-    this.commandFilePresent = ((commandFile != null));
-    this.client = new SensorBaseClient(properties.getSensorBaseHost(), 
+    boolean commandFilePresent = ((commandFile != null));
+    SensorBaseClient client = new SensorBaseClient(properties.getSensorBaseHost(), 
         properties.getSensorBaseUser(), properties.getSensorBasePassword());
-    this.client.setTimeout(properties.getTimeout() * 1000);
+    client.setTimeout(properties.getTimeout() * 1000);
     initializeLogger();
     printBanner();
     this.pingCommand = new PingCommand(this, properties);
-    this.sensorDataCommand = new SensorDataCommand(this, properties, this.pingCommand, 
-        this.client);
-    this.autoSendCommand = new AutoSendCommand(this, properties);
+    this.sensorDataCommand = new SensorDataCommand(this, properties, this.pingCommand, client);
+    AutoSendCommand autoSendCommand = new AutoSendCommand(this, properties);
     this.quitCommand = new QuitCommand(this, properties, sensorDataCommand, autoSendCommand);
 
     // Now determine whether to read commands from the input stream or from the command file.
     try {
       this.bufferedReader = (commandFilePresent) ?
-        new BufferedReader(new FileReader(this.commandFile)) :
+        new BufferedReader(new FileReader(commandFile)) :
         new BufferedReader(new InputStreamReader(System.in));
     }
     catch (IOException e) {
@@ -205,7 +190,10 @@ public class SingleSensorShell implements Shell {
     try {
       // First, create the logs directory.
       File logDir = new File(HackystatUserHome.getHome(), ".hackystat/sensorshell/logs/");
-      logDir.mkdirs();
+      boolean dirOk = logDir.mkdirs();
+      if (!dirOk && !logDir.exists()) {
+        throw new RuntimeException("mkdirs() failed");
+      }
 
       // Now set up logging to a file in that directory.
       this.logger = Logger.getLogger("org.hackystat.sensorshell-" + this.toolName);
