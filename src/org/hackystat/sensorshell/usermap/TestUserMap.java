@@ -38,17 +38,16 @@ public class TestUserMap extends TestCase {
   }
   
   /** 
-   * Test that the tool in the user map is treated case-insensitive.
+   * Test that the tool and toolaccount in the user map are case-insensitive on retrieval.
    * 
    *  @throws Exception if an error occurs.
    */
-  public void testToolCaseInsensitive() throws Exception {
+  public void testCaseInsensitiveRetrievals() throws Exception {
     UserMap userMap = null;
     userMap = new UserMap(new File(System.getProperty("usermaptestfile")));
     assertNotNull("Checking that the UserMap is not null", userMap);
-    String lowercaseToolUser = userMap.get(tool, toolAccount, UserMapKey.USER);
-    assertEquals("Check user", user, lowercaseToolUser);
-    String uppercaseToolUser = userMap.get(tool.toUpperCase(), toolAccount, UserMapKey.USER);
-    assertEquals("Check user", lowercaseToolUser, uppercaseToolUser);
+    assertNotNull("Checking get 1", userMap.get(tool, toolAccount, UserMapKey.USER));
+    assertNotNull("Checking get 2", userMap.get(tool.toUpperCase(), toolAccount, UserMapKey.USER));
+    assertNotNull("Checking get 3", userMap.get(tool, toolAccount.toUpperCase(), UserMapKey.USER));
   }
 }

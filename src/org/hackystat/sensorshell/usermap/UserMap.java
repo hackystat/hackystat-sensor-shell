@@ -167,7 +167,8 @@ class UserMap {
         String tool = usermap.getTool().toLowerCase();
         List<User> userList = usermap.getUser();
         for (User user : userList) {
-          String toolAccount = user.getToolaccount();
+          // Lowercase the toolaccount for case-insensitive comparison.
+          String toolAccount = user.getToolaccount().toLowerCase();
 
           String userName = user.getUser();
           this.put(tool, toolAccount, UserMapKey.USER, userName);
@@ -194,25 +195,25 @@ class UserMap {
    * @param value The value associated with the key given.
    */
   private void put(String tool, String toolAccount, UserMapKey key, String value) {
-    if (!this.userMappings.containsKey(tool)) {
-      this.userMappings.put(tool, new HashMap<String, Map<UserMapKey, String>>());
+    if (!this.userMappings.containsKey(tool.toLowerCase())) {
+      this.userMappings.put(tool.toLowerCase(), new HashMap<String, Map<UserMapKey, String>>());
     }
 
     Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(tool);
-    if (!toolMapping.containsKey(toolAccount)) {
-      toolMapping.put(toolAccount, new HashMap<UserMapKey, String>());
+    if (!toolMapping.containsKey(toolAccount.toLowerCase())) {
+      toolMapping.put(toolAccount.toLowerCase(), new HashMap<UserMapKey, String>());
     }
 
-    Map<UserMapKey, String> toolAccountMapping = toolMapping.get(toolAccount);
+    Map<UserMapKey, String> toolAccountMapping = toolMapping.get(toolAccount.toLowerCase());
     toolAccountMapping.put(key, value);
   }
 
   /**
    * Gets the value of the given <code>UserMapKey</code> associated with the given tool and
-   * toolAccount.
+   * toolAccount, or null if not found.
    * 
-   * @param tool The tool name.
-   * @param toolAccount The tool account name.
+   * @param tool The tool name. This is case-insensitive.
+   * @param toolAccount The tool account name.  This is case-insensitive.
    * @param key The USER, PASSWORD, or SENSORBASE key representing the desired value.
    * @return Returns the value matching the criteria given or null if none can be found.
    */
@@ -221,10 +222,11 @@ class UserMap {
       return null;
     }
     String lowercasetool = tool.toLowerCase();
+    String lowercaseaccount = toolAccount.toLowerCase();
     if (this.userMappings.containsKey(lowercasetool)) {
       Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(lowercasetool);
-      if (toolMapping.containsKey(toolAccount)) {
-        Map<UserMapKey, String> toolAccountMapping = toolMapping.get(toolAccount);
+      if (toolMapping.containsKey(lowercaseaccount)) {
+        Map<UserMapKey, String> toolAccountMapping = toolMapping.get(lowercaseaccount);
         return toolAccountMapping.get(key);
       }
     }
@@ -244,9 +246,10 @@ class UserMap {
       return false;
     }
     String lowercaseTool = tool.toLowerCase();
+    String lowercaseAccount = toolAccount.toLowerCase();
     if (this.userMappings.containsKey(lowercaseTool)) {
       Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(lowercaseTool);
-      return toolMapping.containsKey(toolAccount);
+      return toolMapping.containsKey(lowercaseAccount);
     }
     return false;
   }
