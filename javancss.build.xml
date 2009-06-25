@@ -1,39 +1,60 @@
-<project name="javancss" default="javancss">
-  <description>Runs javancss.   Invocation: ant -f javancss.build.xml</description>
+<project name="stack.javancss" default="javancss" xmlns:ivy="antlib:org.apache.ivy.ant">
+  <description>
+    Runs javancss on system
+    Invocation: ant -f javancss.build.xml
+  </description>
 
-  <property environment="env" />
-  <import file="build.xml" />
-  <property name="javancss.version" value="28.49" />
-  <property name="javancss.jar" value="javancss.jar" />
+  <import file="build.xml"/>
   <property name="javancss.dir" location="${build.dir}/javancss" />
-  <property name="javancss.failOnError" value="false" />
-
-  <target name="javancss" depends="javancss.tool,javancss.report, javancss.sensor" description="Runs the javancss tool" />
-
-  <target name="javancss.report" description="Converts xml output to html">
-    <xslt in="${javancss.dir}/javancss.xml" out="${javancss.dir}/javancss.html" style="${env.JAVANCSS_HOME}/xslt/javancss2html.xsl"/>
-  </target>
+  <property name="javancss.abortOnFail" value="false"/>
   
-  <target name="javancss.tool" description="Runs javancss over the source code to check for problems.">
-    <!-- Fail this target if JAVANCSS is not installed. -->
-    <available file="${env.JAVANCSS_HOME}/lib/${javancss.jar}" property="javancss.available" />
-    <fail unless="javancss.available" message="Error: ${env.JAVANCSS_HOME}/lib/${javancss.jar} not found." />
-    <taskdef name="javancss" classname="javancss.JavancssAntTask">
+  <!-- Initializations for Ivy-based download of JavaNCSS -->
+  <property name="javancss.install.dir" location="${lib.dir}/javancss" />
+  <ivy:retrieve module="javancss" organisation="de.kclee" revision="${javancss.version}" pattern="${lib.dir}/javancss/[artifact].[ext]" sync="true" inline="true" log="download-only" type="jar,report"/>
+
+
+  <target name="javancss" depends="javancss.tool, javancss.report, javancss.sensor" 
+      description="Runs the Javancss tool, report, and sensor."/>
+
+  <target name="javancss.tool" depends="compile"  description="Runs Javancss over the byte code to check for problems.">
+    <taskdef name="javancss" classname="javancss.JavancssAntTask" >
       <classpath>
-        <fileset dir="${env.JAVANCSS_HOME}/lib" includes="*.jar" />
+        <fileset dir="${javancss.install.dir}" includes="*.jar" />
       </classpath>
     </taskdef>
-    <!-- Run javancss -->
-    <mkdir dir="${javancss.dir}" />
-    <javancss srcdir="${basedir}/src" abortOnFail="${javancss.failOnError}" includes="**/*.java" generateReport="true" outputfile="${javancss.dir}/javancss.xml" format="xml">
+    <!-- Run Javancss. -->
+    <mkdir dir="${javancss.dir}"/>
+    <javancss 
+        generateReport="true"
+        abortOnFail="${javancss.abortOnFail}"
+        srcdir="${src.dir}" 
+        includes="**/*.java" 
+        outputfile="${javancss.dir}/javancss.xml" 
+        format="xml">
     </javancss>
   </target>
-  
-  <target name="javancss.sensor" if="hackystat.enabled" unless="javancss.disabled" description="Sends JavaNCSS FileMetric data to Hackystat.">
-    <fileset id="javancss.sourcefiles" dir="${src.dir}" includes="**/*.java" />
-    <fileset id="javancss.datafiles" file="${javancss.dir}/javancss.xml" />
-    <hackystat.javancss javancss.datafiles.fileset="javancss.datafiles" javancss.sourcefiles.fileset="javancss.sourcefiles" verbose="${hackystat.verbose.mode}" />
-  </target>
 
+  <target name="javancss.report" description="Generate an HTML report on Javancss.">
+    <xslt in="${javancss.dir}/javancss.xml" 
+          style="${javancss.install.dir}/javancss2html.xsl" 
+          out="${javancss.dir}/javancss-default.html" />
+  </target>
+  
+  <target name="javancss.sensor"  description="Sends FileMetric complexity data to Hackystat using the JavaNCSS sensor.">
+    <ivy:retrieve module="hackystat" organisation="org.hackystat" revision="${hackystat.version}" pattern="${lib.dir}/hackystat/[artifact].[ext]" sync="true" inline="true" log="download-only" conf="ant" transitive="false" type="jar"/>
+    <taskdef resource="antlib.xml" classpath="${lib.dir}/hackystat/antsensors.jar" />
+
+      <!-- Send FileMetric complexity test data to Hackystat using the JavaNCSS sensor. -->
+      <hacky-javancss verbose="${hackystat.verbose.mode}" failOnError="true">
+        <sourcefiles>
+          <fileset dir="${src.dir}" includes="**/*.java"/>
+        </sourcefiles>
+        <datafiles>
+          <fileset file="${javancss.dir}/javancss.xml" />
+        </datafiles>
+      </hacky-javancss>
+    </target>
 </project>
+
+
 

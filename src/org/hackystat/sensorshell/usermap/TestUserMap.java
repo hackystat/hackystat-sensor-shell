@@ -1,6 +1,7 @@
 package org.hackystat.sensorshell.usermap;
 
 import java.io.File;
+import java.util.Locale;
 
 import org.hackystat.sensorshell.usermap.UserMap.UserMapKey;
 
@@ -47,7 +48,9 @@ public class TestUserMap extends TestCase {
     userMap = new UserMap(new File(System.getProperty("usermaptestfile")));
     assertNotNull("Checking that the UserMap is not null", userMap);
     assertNotNull("Checking get 1", userMap.get(tool, toolAccount, UserMapKey.USER));
-    assertNotNull("Checking get 2", userMap.get(tool.toUpperCase(), toolAccount, UserMapKey.USER));
-    assertNotNull("Checking get 3", userMap.get(tool, toolAccount.toUpperCase(), UserMapKey.USER));
+    assertNotNull("Checking get 2", 
+        userMap.get(tool.toUpperCase(Locale.ENGLISH), toolAccount, UserMapKey.USER));
+    assertNotNull("Checking get 3", 
+        userMap.get(tool, toolAccount.toUpperCase(Locale.ENGLISH), UserMapKey.USER));
   }
 }

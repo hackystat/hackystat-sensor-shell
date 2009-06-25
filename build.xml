@@ -1,63 +1,62 @@
-<project name="build" default="compile">
+<project name="build" default="compile" xmlns:ivy="antlib:org.apache.ivy.ant">
   <description>
   The basic build file for the system. 
   </description>
-  
-  <!-- Always make environment variables available with the "env." prefix. --> 
-  <property environment="env"/> 
-      
-  <!-- Hackystat sensor definitions and configuration. -->
-  <import file="hackystat.build.xml"/>
-  <property name="hackystat.verbose.mode" value="false" />
-  <property name="hackystat.enable" value="true" />
-  <!-- define hackystat.enabled if hackystat.enable is true, so we can use it in an 'if' clause -->
-  <condition property="hackystat.enabled">
-	<istrue value="${hackystat.enable}"/>
-  </condition>
-	
-  <!-- Make sure we're running a Java 5 or better. --> 
-  <condition property="java.5.available">  
+
+  <!-- Basic directory structure. -->
+  <property name="src.dir" location="${basedir}/src" />
+  <property name="lib.dir" location="${basedir}/lib" />
+  <property name="build.dir" location="${basedir}/build" />
+
+  <!-- Make sure we're running a Java 5 or better. -->
+  <condition property="java.5.available">
     <or>
-      <contains string="${java.version}" substring="1.5" /> 
-      <contains string="${java.version}" substring="1.6" /> 
-    </or> 
-  </condition>   
-  <fail message="This package requires Java 5 or 6." unless="java.5.available"/> 
+      <contains string="${java.version}" substring="1.5" />
+      <contains string="${java.version}" substring="1.6" />
+    </or>
+  </condition>
+  <fail message="This package requires Java 5 or 6." unless="java.5.available" />
 
-   <!-- Make sure we're running Ant 1.7 . --> 
-   <condition property="ant.1.7.available"> 
-     <contains string="${ant.version}" substring="1.7" />
-   </condition>  
-   <fail message="This package requires Ant 1.7." unless="ant.1.7.available"/>
-    
-  <!-- Make sure that a compatible version of JUnit is installed. --> 
-  <!-- You can override the version. For example: 'ant -Djunit.version=4.1 -f junit.build.xml' -->
-  <property name="junit.version" value="4.5"/>
-  <property name="junit.jar" location="${env.JUNIT_HOME}/junit-${junit.version}.jar"/>
-  <available file="${junit.jar}" type="file" property="junit.available"/>
-  <fail message="This package requires JUNIT_HOME to be defined and ${junit.jar} available" unless="junit.available"/>
+  <!-- Make sure we're running Ant 1.7 . -->
+  <condition property="ant.1.7.available">
+    <contains string="${ant.version}" substring="1.7" />
+  </condition>
+  <fail message="This package requires Ant 1.7." unless="ant.1.7.available" />
 
-  <!-- Make sure that Hackystat Utilities libraries are available . --> 
-  <available file="${env.HACKYSTAT_UTILITIES_HOME}/stacktrace.lib.jar" type="file" property="hackystat.utilities.available"/>
-  <fail message="This package requires the Hackystat Utilities to be installed and HACKYSTAT_UTILITIES_HOME defined" unless="hackystat.utilities.available"/>   
+  <!-- Make sure Ivy is installed. -->
+  <import file="ivy.build.xml" />
+  <available file="${lib.dir}/ivy/ivy.jar" type="file" property="ivy.available" />
+  <fail message="This package requires Ivy.  To install, invoke 'ant -f ivy.build.xml'." unless="ivy.available" />
+  <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path" />
 
-  <!-- Make sure that the SensorBase library is available . --> 
-  <available file="${env.HACKYSTAT_SENSORBASE_HOME}/sensorbase.lib.jar" type="file" property="hackystat.sensorbase.available"/>
-  <fail message="This package requires the Hackystat Sensorbase to be installed and HACKYSTAT_SENSORBASE_HOME defined" unless="hackystat.sensorbase.available"/>   
-  
-  <!-- Make sure that Restlet is available. --> 
-  <available file="${env.RESTLET_HOME}/lib/org.restlet.jar" type="file" property="restlet.available"/>
-  <fail message="This package requires the Restlet Framework to be downloaded and RESTLET_HOME defined" unless="restlet.available"/>
-  
-   <!-- Make sure that JavaMail is installed . --> 
-   <available file="${env.JAVAMAIL_HOME}/mail.jar" type="file" property="javamail.available"/>
-   <fail message="This package requires JavaMail 4.1 to be downloaded and JAVAMAIL_HOME defined" unless="javamail.available"/>
-  
-   <!-- Make sure that the JAXB library is available (by default in Java 6, through manual installation in Java 5. --> 
-   <available classname="javax.xml.bind.JAXBContext" property="jaxb.available"/>
-   <fail message="This package requires JAXB to be installed" unless="jaxb.available"/>
-       
-  <!-- Basic properties for this system. --> 
+  <!-- Make sure library.versions.properties is installed, which provides all library version numbers. -->
+  <property name="library.versions.path" location="${user.home}/.hackystat/library.versions.properties" />
+  <available file="${library.versions.path}" type="file" property="library.versions.available" />
+  <fail message="This package requires ~/.hackystat/library.versions.properties.  To install, invoke 'ant -f ivy.build.xml'." unless="library.versions.available" />
+  <!-- Now load all library version numbers. -->
+  <property file="${library.versions.path}" />
+
+  <!-- Where to look for configuration files (Checkstyle, PMD, FindBugs, etc.) -->
+  <property name="configfiles.url" value="http://hackystat.googlecode.com/svn/trunk/configfiles/" />
+  <property name="configfiles.dir" location="${lib.dir}/configfiles" />
+  <mkdir dir="${configfiles.dir}" />
+
+  <!-- Install libraries required for compilation. -->
+  <ivy:retrieve organisation="org.junit" module="junit" revision="${junit.version}" pattern="${lib.dir}/junit/[artifact].[ext]" sync="true" inline="true" conf="default" log="download-only" transitive="false" type="jar" />
+  <path id="junit.path" location="${lib.dir}/junit/junit.jar" />
+
+  <ivy:retrieve organisation="org.hackystat" module="hackystat-sensorbase-uh" revision="latest.integration" pattern="${lib.dir}/hackystat-sensorbase-uh/[artifact].[ext]" sync="true" inline="true" conf="default" log="download-only" transitive="false" type="jar" />
+  <path id="hackystat-sensorbase-uh.path" location="${lib.dir}/hackystat-sensorbase-uh/sensorbase.jar" />
+
+  <!-- Make sure that JavaMail is accessible. -->
+  <available classname="javax.mail.Message" property="javamail.available" />
+  <fail message="This package requires JavaMail. See http://code.google.com/p/hackystat/wiki/InstallingJavaMail." unless="javamail.available" />
+
+  <!-- Make sure that the JAXB library is available (by default in Java 6, through manual installation in Java 5. -->
+  <available classname="javax.xml.bind.JAXBContext" property="jaxb.available" />
+  <fail message="This package requires JAXB.  See http://code.google.com/p/hackystat/wiki/InstallingJAXBinJava5." unless="jaxb.available" />
+
+  <!-- Basic properties for this system. -->
   <property name="system.name" value="hackystat-sensor-shell" />
   <property name="majorVersionNumber" value="8" />
   <property name="minorVersionNumber" value="x" />
@@ -74,39 +73,32 @@
   <condition property="hackystat.enabled">
     <istrue value="${hackystat.enable}" />
   </condition>
-  
-  <!-- Basic directory structure. --> 
-  <property name="src.dir" location="${basedir}/src" />
-  <property name="lib.dir" location="${basedir}/lib" />
-  <property name="build.dir" location="${basedir}/build" />
 
-  <!-- The compile/testing classpath  -->
+  <!-- The compile classpath is useful to many tools. -->
   <path id="compile.classpath">
-    <fileset file="${env.JUNIT_HOME}/junit-${junit.version}.jar"/>
-    <fileset file="${env.FINDBUGS_HOME}/lib/annotations.jar"/> 
-    <fileset file="${env.HACKYSTAT_SENSORBASE_HOME}/sensorbase.jar"/> 
-    <fileset file="${env.JAVAMAIL_HOME}/mail.jar"/> 
-  </path> 
+    <path refid="junit.path" />
+    <path refid="hackystat-sensorbase-uh.path" />
+  </path>
 
   <target name="compile" description="Compiles the code.">
-    <!-- Now compile the code into build/classes -->   
-    <mkdir dir="${build.dir}/classes"/>
+    <!-- Now compile the code into build/classes -->
+    <mkdir dir="${build.dir}/classes" />
     <javac srcdir="${src.dir}" destdir="${build.dir}/classes" source="1.5" target="1.5" debug="on" includeAntRuntime="no">
       <classpath refid="compile.classpath" />
-      <compilerarg value="-Xlint:all"/>
-      <compilerarg value="-Werror"/>
+      <compilerarg value="-Xlint:all" />
+      <compilerarg value="-Werror" />
     </javac>
   </target>
 
   <target name="clean" description="Delete build/ directory and top-level jar files.">
     <delete>
-      <fileset dir="${basedir}" includes="*.jar"/> 
+      <fileset dir="${basedir}" includes="*.jar" />
     </delete>
-    <delete dir="${build.dir}"/> 
+    <delete dir="${build.dir}" />
   </target>
 
   <target name="convertLineEndings" description="Makes line endings compatible with host platform.">
-    <fixcrlf srcdir="${basedir}" includes="*.build.xml"/>
+    <fixcrlf srcdir="${basedir}" includes="*.build.xml" />
   </target>
 </project>
 

@@ -1,25 +1,30 @@
-<project name="emma" default="emma">
+<project name="emma" default="emma" xmlns:ivy="antlib:org.apache.ivy.ant">
   <description>
-  Provides the Emma tool and the Hackystat Emma sensor.
+  Generates coverage data for JUnit tests. Cleans, compiles, instruments, runs JUnit, cleans. 
+  Invocation: ant -f emma.build.xml
   </description>
 
   <import file="build.xml" />
-  <property environment="env" />
+  <property name="emma.install.dir" location="${lib.dir}/emma" />
+  <property name="emma.echo.file" location="${configfiles.dir}/hackystat.emma.xsl" />
   <property name="emma.dir" location="${build.dir}/emma" />
   <property name="junit.dir" location="${build.dir}/junit" />
 
-  <target name="emma" depends="clean, emma.tool, emma.report, emma.sensor, emma.echo" unless="emma.disabled" description="Runs Emma." />
+  <!-- Make sure Emma is installed (using Ivy) and the local "echo" file is downloaded. -->
+  <ivy:retrieve module="emma" organisation="com.vladium" revision="${emma.version}" pattern="${lib.dir}/emma/[artifact].[ext]" sync="true" inline="true" log="download-only" transitive="false" type="jar" />
+  <available file="${emma.echo.file}" type="file" property="emma.echo.available" />
 
-  <target name="emma.tool" depends="compile" unless="emma.disabled" description="Cleans, compiles, instruments byte codes, runs unit tests, generates Emma report.">
-    <!-- Verify that Emma is installed. -->
-    <available file="${env.EMMA_HOME}/lib/emma.jar" property="emma.available" />
-    <fail unless="emma.available" message="Error: EMMA_HOME not set or ${env.EMMA_HOME}/lib/emma.jar not found, indicating Emma is not installed." />
+  <target name="emma.install.echo.file" unless="emma.echo.available">
+    <get src="${configfiles.url}/hackystat.emma.xsl" dest="${emma.echo.file}" usetimestamp="true" />
+  </target>
 
-    <!-- Define the path and taskdef containing the emma binaries. -->
-    <property name="emma.lib.dir" value="${env.EMMA_HOME}/lib" />
+  <target name="emma" depends="emma.tool, emma.echo, emma.sensor" description="Runs Emma." />
+
+  <target name="emma.tool" depends="clean, compile" description="Cleans, compiles, instruments byte codes, runs unit tests, generates Emma report.">
+
     <path id="emma.lib.dir">
-      <pathelement location="${emma.lib.dir}/emma.jar" />
-      <pathelement location="${emma.lib.dir}/emma_ant.jar" />
+      <pathelement location="${emma.install.dir}/emma.jar" />
+      <pathelement location="${emma.install.dir}/emma_ant.jar" />
     </path>
     <taskdef resource="emma_ant.properties" classpathref="emma.lib.dir" />
 
@@ -34,17 +39,14 @@
 
     <!-- Run JUnit with the instrumented class files. -->
     <mkdir dir="${junit.dir}" />
-    <junit printsummary="withOutAndErr" fork="yes">
-      <classpath path="${build.dir}/classes;${java.class.path}">
+    <junit maxmemory="512M" printsummary="withOutAndErr" fork="yes">
+      <classpath path="${build.dir}/classes">
         <path refid="emma.lib.dir" />
         <path refid="compile.classpath" />
-        <fileset file="${env.JAVAMAIL_HOME}/mail.jar"/> 
       </classpath>
+      <sysproperty key="user.dir" value="${basedir}" />
       <sysproperty key="emma.coverage.out.file" value="${build.dir}/emma/coverage.emma" />
       <sysproperty key="emma.coverage.out.merge" value="true" />
-      <sysproperty key="usermaptestfile" value="${basedir}/testdata/usermap/test.usermaps.xml"/>
-      <sysproperty key="HACKYSTAT_SENSORBASE_HOME" value="${env.HACKYSTAT_SENSORBASE_HOME}" />
-      <sysproperty key="user.dir" value="${basedir}" />
       <formatter type="xml" />
       <batchtest todir="${junit.dir}">
         <fileset dir="${src.dir}">
@@ -55,52 +57,46 @@
 
     <!-- Generate Emma reports. -->
     <emma enabled="true">
-      <report sourcepath="${src.dir}" sort="+name" metrics="method:70,block:80,line:80,class:100">
+      <report sourcepath="${src.dir}" sort="+name" metrics="method:80,block:80,line:80,class:80">
         <fileset dir="${emma.dir}">
           <include name="*.emma" />
         </fileset>
         <xml outfile="${emma.dir}/coverage.xml" depth="method" />
-        <txt outfile="${emma.dir}/coverage.txt" depth="class" />
         <html outfile="${emma.dir}/coverage.html" depth="method" columns="name,class,method,block,line" />
       </report>
     </emma>
+
     <!-- Now delete the instrumented .class files. -->
     <delete dir="${build.dir}/classes" />
-    <ant antfile="jar.build.xml"/> 
   </target>
 
-  <target name="emma.report" unless="emma.disabled" description="Generates XML and HTML reports.">
-    <!-- Generate Emma reports. -->
-    <emma enabled="true">
-      <report sourcepath="${src.dir}" sort="+name" metrics="method:70,block:80,line:80,class:100">
-        <fileset dir="${emma.dir}">
-          <include name="*.emma" />
-        </fileset>
-        <xml outfile="${emma.dir}/coverage.xml" depth="method" />
-        <txt outfile="${emma.dir}/coverage.txt" depth="class" />
-        <html outfile="${emma.dir}/coverage.html" depth="method" columns="name,class,method,block,line" />
-      </report>
-    </emma>
-  </target>
-
-  <target name="emma.echo" description="Sends summary of Emma results to console" unless="emma.disabled">
+  <target name="emma.echo" description="Sends summary of Emma results to console" depends="emma.install.echo.file">
     <!-- It's ridiculous what we have to do to get a decent summary. -->
-    <xslt style="${basedir}/lib/emma/hackystat.emma.xsl" in="${emma.dir}/coverage.xml" out="${emma.dir}/coverage.brief.txt" />
+    <xslt style="${emma.echo.file}" in="${emma.dir}/coverage.xml" out="${emma.dir}/coverage.brief.txt" />
     <replace file="${emma.dir}/coverage.brief.txt" token="class, %" value="class: " />
     <replace file="${emma.dir}/coverage.brief.txt" token="method, %" value="method:" />
     <replace file="${emma.dir}/coverage.brief.txt" token="block, %" value="block: " />
     <replace file="${emma.dir}/coverage.brief.txt" token="line, %" value="line:  " />
     <concat>
       <header>Emma Coverage summary
-      </header>
+</header>
       <fileset file="${emma.dir}/coverage.brief.txt" />
     </concat>
   </target>
 
-  <target name="emma.sensor" description="Send hackystat data about this Emma invocation." if="hackystat.enabled" unless="emma.disabled">
-    <fileset id="emma.sourcefiles" dir="${src.dir}" includes="**/*.java" />
-    <fileset id="emma.datafiles" file="${emma.dir}/coverage.xml" />
-    <hackystat.emma emma.datafiles.fileset="emma.datafiles" emma.sourcefiles.fileset="emma.sourcefiles" verbose="${hackystat.verbose.mode}" />
+  <target name="emma.sensor" description="Sends Emma coverage data to Hackystat using the Emma sensor.">
+    <ivy:retrieve module="hackystat" organisation="org.hackystat" revision="${hackystat.version}" pattern="${lib.dir}/hackystat/[artifact].[ext]" sync="true" inline="true" log="download-only" conf="ant" transitive="false" type="jar" />
+    <taskdef resource="antlib.xml" classpath="${lib.dir}/hackystat/antsensors.jar" />
+
+    <!-- Send Coverage data to Hackystat using the Emma sensor. -->
+    <hacky-emma verbose="${hackystat.verbose.mode}" failOnError="true">
+      <datafiles>
+        <fileset file="${emma.dir}/coverage.xml" />
+      </datafiles>
+      <sourcefiles>
+        <fileset dir="${src.dir}" includes="**/*.java" />
+      </sourcefiles>
+    </hacky-emma>
   </target>
 </project>
 

@@ -1,18 +1,23 @@
-<project name="hudson.sensorshell" default="hudson.basic">
+<project name="sensorbase.hudson" default="hudson.basic">
   <description>
-    Runs junit, pmd, checkstyle, findbugs, and javadoc, failing the build if problems found.
-    Invocation: ant -f verify.build.xml
+    Tasks for use by Hudson continuous integration system.
   </description>
 
   <!-- First, override the default settings of these properties. -->
+  <!--
   <property name="javadoc.failonerror" value="true"/>
   <property name="pmd.failonerror" value="true"/>
   <property name="findbugs.failOnError" value="true"/>  
   <property name="checkstyle.failOnViolation" value="true"/> 
   <property name="junit.haltonfailure" value="true"/>
+  --> 
+
+  <!-- Ensure that Ivy and library.versions.properties are installed. -->
+  <ant antfile="ivy.build.xml"/>
 
   <!-- Now import the target definitions. -->
-  <import file="javadoc.build.xml"/>
+  <import file="javadoc.build.xml"/>  
+  <import file="javancss.build.xml"/>  
   <import file="pmd.build.xml"/>
   <import file="findbugs.build.xml"/>
   <import file="checkstyle.build.xml"/>
@@ -21,17 +26,17 @@
   <import file="sclc.build.xml"/>
   <import file="dist.build.xml"/>
   <import file="jar.build.xml"/>
-  <import file="javancss.build.xml"/>
-        
+  
+      
   <target name="hudson.basic" 
     depends="clean, compile, checkstyle.tool,  junit.tool, findbugs.tool, pmd.tool, jar, dist" 
     description="Fast build for production purposes. No sensors.">
-      <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
   </target>
   
   <target name="hudson.daily.build" 
      depends="clean, compile, checkstyle.tool, junit.tool, findbugs.tool, pmd.tool, jar" 
      description="Builds and runs all QA stuff in preparation for sending sensor data.">
+      <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
   </target>
 
   <target name="hudson.daily.junit"  
@@ -41,27 +46,6 @@
     depends="javancss.tool, javancss.sensor"  description="JavaNCSS plus sensor."/>
   
   <target name="hudson.daily.emma"  
-     depends="emma.tool, emma.report, emma.sensor"  description="Emma plus sensor."/>
+     depends="emma.tool, emma.sensor"  description="Emma plus sensor."/>
   
-  <target name="hudson.daily.svn" description="Send commit data from previous day">
-    <property environment="env"/>
-      <available file="${env.HACKYSTAT_ANTSENSORS_HOME}/antsensors.jar" type="file" property="hackystat.antsensors.available"/>
-      <fail message="${env.HACKYSTAT_ANTSENSORS_HOME}/antsensors.jar could not be found." unless="hackystat.antsensors.available"/>   
-      <taskdef resource="antlib.xml" classpath="${env.HACKYSTAT_ANTSENSORS_HOME}/antsensors.jar"/>
-    <!-- Need this to get the default account and password info. -->
-    <property environment="env"/> 
-    <property name="hackystat-system" value="hackystat-sensor-shell"/> 
-    <!-- Send Subversion data to Hackystat using the Subversion sensor. --> 
-    <hacky-svn  
-      repositoryName="Hackystat"
-      repositoryUrl="http://${hackystat-system}.googlecode.com/svn/trunk"
-      fileNamePrefix="/hackystat-integration/${hackystat-system}"
-      defaultHackystatAccount="${env.HACKYSTAT_SVN_DEFAULT_ACCOUNT}"
-      defaultHackystatPassword="${env.HACKYSTAT_SVN_DEFAULT_PASSWORD}" 
-      defaultHackystatSensorbase="http://dasha.ics.hawaii.edu:9876/sensorbase"
-      verbose="true" />
-  </target>
-  
- 
-
 </project>

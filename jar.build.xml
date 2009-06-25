@@ -1,39 +1,56 @@
-<project name="jar" default="jar">
+<project name="jar" default="publish" xmlns:ivy="antlib:org.apache.ivy.ant">
   <description>
-  Provides the target for building Java5 and Java6 jar files of the SensorShell.
+  Provides the target for building jar files of the SensorShell.
   </description>
 
-  <import file="build.xml"/>
+  <import file="build.xml" />
   <property name="tmp.dir" location="${basedir}/tmp" />
- 
-  <target name="jar" depends="compile" 
-     description="Create sensorshell.jar.">
+  <property name="build.jar.dir" location="${build.dir}/jar" />
 
-     <mkdir dir="${tmp.dir}" />
-     <copy todir="${tmp.dir}">
-       <fileset dir="${basedir}/build/classes/">
-          <include name="org/hackystat/sensorshell/**"/>
-       </fileset>
-     </copy>
-     <unjar src="${env.HACKYSTAT_SENSORBASE_HOME}/sensorbaseclient.jar" dest="${tmp.dir}"/>
+  <target name="jar" depends="jar-clients">
+    <!-- Temporary copy to ${basedir} to support packages still using HACKYSTAT_SENSORSHELL_HOME. -->
+    <copy todir="${basedir}">
+      <fileset dir="${build.jar.dir}">
+        <include name="*.jar" />
+      </fileset>
+    </copy>
+  </target>
 
-     <jar destfile="${basedir}/sensorshell.jar" basedir="${tmp.dir}">
-       <manifest>
-         <attribute name="Main-Class" value="org.hackystat.sensorshell.SensorShell"/>
-         <attribute name="Implementation-Title" value="SensorShell"/>
-         <attribute name="Implementation-Version" value="${version}"/>
-         <attribute name="Implementation-Vendor" value="Collaborative Software Development Laboratory, University of Hawaii"/>
-       </manifest>
-     </jar>
-    <jar destfile="${basedir}/shellperfeval.jar" basedir="${tmp.dir}">
+  <target name="jar-clients" depends="compile" description="Create sensorshell.jar.">
+    <mkdir dir="${build.jar.dir}" />
+    <mkdir dir="${tmp.dir}" />
+    <copy todir="${tmp.dir}">
+      <fileset dir="${basedir}/build/classes/">
+        <include name="org/hackystat/sensorshell/**" />
+      </fileset>
+    </copy>
+    <unjar src="${lib.dir}/hackystat-sensorbase-uh/sensorbaseclient.jar" dest="${tmp.dir}" />
+
+    <jar destfile="${build.jar.dir}/sensorshell.jar" basedir="${tmp.dir}">
       <manifest>
-        <attribute name="Main-Class" value="org.hackystat.sensorshell.ShellPerfEval"/>
-        <attribute name="Implementation-Title" value="ShellPerfEval"/>
-        <attribute name="Implementation-Version" value="${version}"/>
-        <attribute name="Implementation-Vendor" value="Collaborative Software Development Laboratory, University of Hawaii"/>
+        <attribute name="Main-Class" value="org.hackystat.sensorshell.SensorShell" />
+        <attribute name="Implementation-Title" value="SensorShell" />
+        <attribute name="Implementation-Version" value="${version}" />
+        <attribute name="Implementation-Vendor" value="Collaborative Software Development Laboratory, University of Hawaii" />
       </manifest>
     </jar>
-     <delete dir="${tmp.dir}" />
-   </target>  
+    <jar destfile="${build.jar.dir}/shellperfeval.jar" basedir="${tmp.dir}">
+      <manifest>
+        <attribute name="Main-Class" value="org.hackystat.sensorshell.ShellPerfEval" />
+        <attribute name="Implementation-Title" value="ShellPerfEval" />
+        <attribute name="Implementation-Version" value="${version}" />
+        <attribute name="Implementation-Vendor" value="Collaborative Software Development Laboratory, University of Hawaii" />
+      </manifest>
+    </jar>
+    <delete dir="${tmp.dir}" />
+  </target>
+  
+  <target name="publish" depends="jar" description="Publish this project in the local ivy repository">
+     <ivy:resolve />
+     <tstamp>
+       <format property="publication-revision" pattern="yyyy.MM.dd.hh.mm.ss" />
+     </tstamp>
+     <ivy:publish artifactspattern="${build.jar.dir}/[artifact].[ext]" resolver="local-repository" pubrevision="${publication-revision}" update="true"/>
+   </target>   
 </project>
 

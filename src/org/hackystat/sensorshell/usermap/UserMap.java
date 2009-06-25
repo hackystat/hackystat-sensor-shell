@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -195,16 +196,19 @@ class UserMap {
    * @param value The value associated with the key given.
    */
   private void put(String tool, String toolAccount, UserMapKey key, String value) {
-    if (!this.userMappings.containsKey(tool.toLowerCase())) {
-      this.userMappings.put(tool.toLowerCase(), new HashMap<String, Map<UserMapKey, String>>());
+    if (!this.userMappings.containsKey(tool.toLowerCase(Locale.ENGLISH))) {
+      this.userMappings.put(tool.toLowerCase(Locale.ENGLISH), 
+          new HashMap<String, Map<UserMapKey, String>>());
     }
 
     Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(tool);
-    if (!toolMapping.containsKey(toolAccount.toLowerCase())) {
-      toolMapping.put(toolAccount.toLowerCase(), new HashMap<UserMapKey, String>());
+    if (!toolMapping.containsKey(toolAccount.toLowerCase(Locale.ENGLISH))) {
+      toolMapping.put(toolAccount.toLowerCase(Locale.ENGLISH), 
+          new HashMap<UserMapKey, String>());
     }
 
-    Map<UserMapKey, String> toolAccountMapping = toolMapping.get(toolAccount.toLowerCase());
+    Map<UserMapKey, String> toolAccountMapping = 
+      toolMapping.get(toolAccount.toLowerCase(Locale.ENGLISH));
     toolAccountMapping.put(key, value);
   }
 
@@ -221,8 +225,8 @@ class UserMap {
     if (tool == null) {
       return null;
     }
-    String lowercasetool = tool.toLowerCase();
-    String lowercaseaccount = toolAccount.toLowerCase();
+    String lowercasetool = tool.toLowerCase(Locale.ENGLISH);
+    String lowercaseaccount = toolAccount.toLowerCase(Locale.ENGLISH);
     if (this.userMappings.containsKey(lowercasetool)) {
       Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(lowercasetool);
       if (toolMapping.containsKey(lowercaseaccount)) {
@@ -245,8 +249,8 @@ class UserMap {
     if (tool == null) {
       return false;
     }
-    String lowercaseTool = tool.toLowerCase();
-    String lowercaseAccount = toolAccount.toLowerCase();
+    String lowercaseTool = tool.toLowerCase(Locale.ENGLISH);
+    String lowercaseAccount = toolAccount.toLowerCase(Locale.ENGLISH);
     if (this.userMappings.containsKey(lowercaseTool)) {
       Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(lowercaseTool);
       return toolMapping.containsKey(lowercaseAccount);
@@ -270,7 +274,7 @@ class UserMap {
    * @return The tool account names.
    */
   Set<String> getToolAccounts(String tool) {
-    String lowerCaseTool = tool.toLowerCase();
+    String lowerCaseTool = tool.toLowerCase(Locale.ENGLISH);
     Set<String> toolAccounts = new HashSet<String>();
     Map<String, Map<UserMapKey, String>> toolMapping = this.userMappings.get(lowerCaseTool);
     if (toolMapping == null) {

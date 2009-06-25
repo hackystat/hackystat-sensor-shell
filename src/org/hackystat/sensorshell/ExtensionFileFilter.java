@@ -2,6 +2,7 @@ package org.hackystat.sensorshell;
 
 import java.io.FileFilter;
 import java.io.File;
+import java.util.Locale;
 
 /**
  * Provides a file filter that accepts only files with a given case-insensitive extension.
@@ -19,7 +20,7 @@ public class ExtensionFileFilter implements FileFilter {
    * @param extension  The extension string (typically including the ".").
    */
   public ExtensionFileFilter(String extension) {
-    this.extension = extension.toLowerCase();
+    this.extension = extension.toLowerCase(Locale.ENGLISH);
   }
 
   /**
@@ -32,7 +33,7 @@ public class ExtensionFileFilter implements FileFilter {
     if (file.isDirectory()) {
       return false;
     }
-    return file.getName().toLowerCase().endsWith(this.extension);
+    return file.getName().toLowerCase(Locale.ENGLISH).endsWith(this.extension);
   }
 }
 

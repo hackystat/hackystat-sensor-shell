@@ -1,29 +1,45 @@
-<project name="sclc" default="sclc">
+<project name="stack.sclc" default="sclc" xmlns:ivy="antlib:org.apache.ivy.ant">
   <description>
     Runs sclc on system to generate information on size.
     Invocation: ant -f sclc.build.xml
   </description>
 
-  <import file="build.xml" />
+  <import file="build.xml"/>
   <property name="sclc.dir" location="${build.dir}/sclc" />
 
-  <target name="sclc" depends="sclc.tool,sclc.sensor" description="Runs SCLC and the SCLC sensor." />
+  <target name="sclc" depends="sclc.tool, sclc.sensor" description="Runs SCLC."/>
+  
+  <!-- Download SCLC from Ivy if necessary. -->
+  <property name="sclc.version" value="2.7.428" />
+  <property name="sclc.install.dir" location="${lib.dir}/sclc" />
+  <ivy:retrieve module="sclc" organisation="edu.hawaii.ics.csdl" revision="${sclc.version}" pattern="${lib.dir}/sclc/[artifact].[ext]" sync="true" inline="true" log="download-only" type="script"/>
 
+  <!-- Download the sclc.xsl file if necessary. -->
+   <property name="sclc.xsl.file" location="${configfiles.dir}/sclc.xsl"/>
+   <available file="${sclc.xsl.file}" type="file" property="sclc.xsl.available" />
+   <target name="sclc.install.xsl.file" unless="sclc.xsl.available">
+     <get src="${configfiles.url}/sclc.xsl"
+          dest="${sclc.xsl.file}" usetimestamp="true"/>
+   </target>
+  
   <target name="sclc.tool" depends="compile" description="Compute size data on the source code using SCLC.">
-    <!-- Check for the SCLC_HOME environment variable, failing the build if it can't be found. -->
-    <available file="${env.SCLC_HOME}/src/sclc" property="sclc.available" />
-    <fail unless="sclc.available" message="Error: SCLC_HOME not set or file 'sclc' not found, indicating SCLC is not installed." />
     <mkdir dir="${sclc.dir}" />
-
-    <!-- Collect size data on src/ dir using SCLC.  Invoke Perl via the exec task to run SCLC. -->
-    <exec executable="perl" dir="${basedir}">
-      <arg line="${env.SCLC_HOME}/src/sclc -default_exclude -ignore -xml_output ${sclc.dir}/size.xml -recurse ${src.dir}" />
-    </exec>
+    <!-- Run size data using SCLC.  Invoke Perl via the exec task to run SCLC. -->
+    <exec executable="perl" dir="${build.dir}">
+      <arg line="${sclc.install.dir}/sclc.pl -default_exclude -ignore -xml_output ${sclc.dir}/size.xml -recurse ${src.dir}" />
+    </exec> 
   </target>
+  
+  <target name="sclc.sensor" depends="sclc.install.xsl.file" description="Sends data to Hackystat via the XmlData sensor.">
+    <ivy:retrieve module="hackystat" organisation="org.hackystat" revision="${hackystat.version}" pattern="${lib.dir}/hackystat/[artifact].[ext]" sync="true" inline="true" log="download-only" conf="xmldata" transitive="false" type="jar"/>
 
-  <target name="sclc.sensor" description="Send hackystat data about this SCLC invocation." if="hackystat.enabled">
-    <xslt in="${sclc.dir}/size.xml" out="${sclc.dir}/transform-size.xml" style="${lib.dir}/sclc/sclc.xsl" />
-    <hackystat.sclc sclc.file="${sclc.dir}/transform-size.xml" />
-  </target>
+     <!-- Transform the data into a format suitable for input to the hackystat xml data sensor. -->
+     <xslt in="${sclc.dir}/size.xml" out="${sclc.dir}/hackystat-size.xml" style="${sclc.xsl.file}" />
+
+    <!-- Invoke XmlData by executing the jar file and passing in command line args. -->
+     <java jar="${lib.dir}/hackystat/xmldata-cli.jar" fork="true">
+       <arg line="-setRuntime -uniqueTimestamps -file ${sclc.dir}/hackystat-size.xml" />
+     </java>
+   </target>
 </project>
 

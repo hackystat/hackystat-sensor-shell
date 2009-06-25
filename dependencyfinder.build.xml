@@ -1,16 +1,19 @@
-<project name="dependencyfinder" default="dependencyfinder">
+<project name="dependencyfinder" default="dependencyfinder" xmlns:ivy="antlib:org.apache.ivy.ant">
   <description>
   Provides the DependencyFinder tool and the DependencyFinder sensor.
   </description>
-
+  
   <import file="build.xml"/>
-  <property environment="env"/>
+  <property name="dependencyfinder.install.dir" location="${lib.dir}/dependencyfinder/" />
+  <ivy:retrieve module="DependencyFinder" organisation="com.jeantessier" revision="${dependencyfinder.version}" pattern="${lib.dir}/dependencyfinder/[artifact].[ext]" sync="true" inline="true" log="download-only" type="jar,report"/>
+   
   <property name="dependencyfinder.dir" location="${build.dir}/dependencyfinder" />
+
   <path id="dependencyfinder.path">
-    <pathelement location="${env.DEPENDENCYFINDER_HOME}/classes" />
-    <pathelement location="${env.DEPENDENCYFINDER_HOME}/lib/DependencyFinder.jar" />
-    <pathelement location="${env.DEPENDENCYFINDER_HOME}/lib/jakarta-oro.jar" />
-    <pathelement location="${env.DEPENDENCYFINDER_HOME}/lib/log4j.jar" />
+    <pathelement location="${dependencyfinder.install.dir}" />  <!-- for log4j.properties -->
+    <fileset dir="${dependencyfinder.install.dir}">
+      <include name="*.jar" />
+    </fileset>
   </path>
 
   <target name="dependencyfinder" depends="dependencyfinder.tool, dependencyfinder.report, dependencyfinder.sensor" 
@@ -18,33 +21,39 @@
 
   <target name="dependencyfinder.tool" depends="compile" description="Computes dependency metrics on the source code.">
     <!-- Verify that DependencyFinder is installed. -->
-    <available file="${env.DEPENDENCYFINDER_HOME}/lib/DependencyFinder.jar" property="dependencyfinder.available"/>
-    <fail unless="dependencyfinder.available" message="Error: DEPENDENCYFINDER_HOME not set or dependencyfinder.jar not found."/>
     <taskdef name="dependencyextractor" classname="com.jeantessier.dependencyfinder.ant.DependencyExtractor" classpathref="dependencyfinder.path"/>    
     <taskdef name="dependencyreporter" classname="com.jeantessier.dependencyfinder.ant.DependencyReporter" classpathref="dependencyfinder.path"/>    
     <mkdir dir="${dependencyfinder.dir}"/>
     <!-- Extract dependencies, excluding java.* and javax.* packages. -->
-    <dependencyextractor destfile="${dependencyfinder.dir}/all.xml" filterexcludes="/^java\./||/^javax\./" xml="yes" minimize="yes"  dtdprefix="${env.DEPENDENCYFINDER_HOME}/etc">
+    <dependencyextractor destfile="${dependencyfinder.dir}/all.xml" filterexcludes="/^java\./||/^javax\./" xml="yes" minimize="yes">
       <path path="${build.dir}/classes" />
     </dependencyextractor>
     <!-- Create a class2class.xml file containing just class-level dependency information. -->
     <dependencyreporter srcfile="${dependencyfinder.dir}/all.xml" destfile="${dependencyfinder.dir}/class2class.xml" 
-      c2c="yes" showall="yes"  validate="yes" xml="yes" dtdprefix="${env.DEPENDENCYFINDER_HOME}/etc" />
+      c2c="yes" showall="yes"  validate="yes" xml="yes" />
   </target>
 
   <target name="dependencyfinder.report" description="Generates an HTML report from DependencyFinder data.">
-    <xslt style="${env.DEPENDENCYFINDER_HOME}/etc/DependencyGraphToHTML.xsl" 
+    <xslt style="${dependencyfinder.install.dir}/DependencyGraphToHTML.xsl" 
           in="${dependencyfinder.dir}/all.xml" out="${dependencyfinder.dir}/all/index.html" />
-    <xslt style="${env.DEPENDENCYFINDER_HOME}/etc/DependencyGraphToHTML.xsl" 
+    <xslt style="${dependencyfinder.install.dir}/DependencyGraphToHTML.xsl" 
           in="${dependencyfinder.dir}/class2class.xml" out="${dependencyfinder.dir}/class2class/index.html" />
   </target>
 
  
-  <target name="dependencyfinder.sensor" if="hackystat.enabled" unless="jdepend.disabled" description="Sends JDepend coupling data to Hackystat.">
-    <fileset id="dependencyfinder.sourcefiles" dir="${src.dir}" includes="**/*.java" excludes="**/jaxb/**"/>
-    <fileset id="dependencyfinder.datafiles" file="${dependencyfinder.dir}/class2class.xml" />
-    <hackystat.dependencyfinder dependencyfinder.datafiles.fileset="dependencyfinder.datafiles" dependencyfinder.sourcefiles.fileset="dependencyfinder.sourcefiles" verbose="${hackystat.verbose.mode}" />
-  </target>
+  <target name="dependencyfinder.sensor" unless="dependencyfinder.disabled" description="Sends coupling data to Hackystat using the DependencyFinder sensor.">
+    <ivy:retrieve module="hackystat" organisation="org.hackystat" revision="${hackystat.version}" pattern="${lib.dir}/hackystat/[artifact].[ext]" sync="true" inline="true" log="download-only" conf="ant" transitive="false" type="jar"/>
+    <taskdef resource="antlib.xml" classpath="${lib.dir}/hackystat/antsensors.jar" />
 
+     <hacky-dependencyfinder verbose="${hackystat.verbose.mode}" failOnError="true">
+       <datafiles>
+         <fileset file="${dependencyfinder.dir}/class2class.xml"/>
+       </datafiles>
+       <sourcefiles>
+         <fileset dir="${src.dir}" includes="**/*.java" />
+       </sourcefiles>
+     </hacky-dependencyfinder>
+   </target>
+  
 </project>
 

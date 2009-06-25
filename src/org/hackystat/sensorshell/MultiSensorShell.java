@@ -1,6 +1,7 @@
 package org.hackystat.sensorshell;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -67,7 +68,7 @@ import org.hackystat.sensorbase.resource.sensordata.jaxb.SensorData;
  */
 public class MultiSensorShell implements Shell {
   /** The internal SensorShells managed by this MultiSensorShell. */
-  private ArrayList<SingleSensorShell> shells;
+  private List<SingleSensorShell> shells;
   /** The total number of shells. */
   private int numShells;
   /** The number of SensorData instances to be sent to a single Shell before going to the next. */

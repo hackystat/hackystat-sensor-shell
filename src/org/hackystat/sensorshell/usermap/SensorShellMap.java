@@ -2,6 +2,7 @@ package org.hackystat.sensorshell.usermap;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -31,7 +32,7 @@ public class SensorShellMap {
   private UserMap userMap;
 
   /** Map of Tool specific tool accounts to their SensorShells. */
-  private HashMap<String, SensorShell> toolAccountsToShells = new HashMap<String, SensorShell>();
+  private Map<String, SensorShell> toolAccountsToShells = new HashMap<String, SensorShell>();
 
   /**
    * Instantiate this class which initializes the UserMap used to get SensorShells for users and
