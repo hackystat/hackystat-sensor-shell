@@ -4,13 +4,11 @@
   </description>
 
   <!-- First, override the default settings of these properties. -->
-  <!--
   <property name="javadoc.failonerror" value="true"/>
   <property name="pmd.failonerror" value="true"/>
   <property name="findbugs.failOnError" value="true"/>  
   <property name="checkstyle.failOnViolation" value="true"/> 
   <property name="junit.haltonfailure" value="true"/>
-  --> 
 
   <!-- Ensure that Ivy and library.versions.properties are installed. -->
   <ant antfile="ivy.build.xml"/>
@@ -29,14 +27,15 @@
   
       
   <target name="hudson.basic" 
-    depends="clean, compile, checkstyle.tool,  junit.tool, findbugs.tool, pmd.tool, jar, dist" 
+    depends="clean, compile, checkstyle.tool,  junit.tool, findbugs.tool, pmd.tool, publish" 
     description="Fast build for production purposes. No sensors.">
+    <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
   </target>
   
   <target name="hudson.daily.build" 
-     depends="clean, compile, checkstyle.tool, junit.tool, findbugs.tool, pmd.tool, jar" 
+     depends="clean, compile, checkstyle.tool, junit.tool, findbugs.tool, pmd.tool, publish" 
      description="Builds and runs all QA stuff in preparation for sending sensor data.">
-      <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
+    <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
   </target>
 
   <target name="hudson.daily.junit"  
