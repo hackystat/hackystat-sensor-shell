@@ -6,10 +6,7 @@
   </description> 
     
   <!-- Provide Ivy version and installation details. -->
-  <path id="ivy.lib.path">
-    <fileset dir="${basedir}/lib/ivy" includes="*.jar"/>
-  </path>
-
+  <property name="ivy.jar.path" location="${user.home}/.ivy2/ivyjar/" />
   <property name="library.versions.path" location="${user.home}/.hackystat/library.versions.properties"/>
 
   <target name="clean-cache" description="Cleans the ivy cache">
@@ -21,12 +18,11 @@
     <property file="${library.versions.path}"/>
     <antcall target="install.ivy"/>
   </target>
-    
   
   <target name="install.ivy" description="Downloads Ivy into lib directory.">
-    <mkdir dir="${basedir}/lib/ivy"/>
+    <mkdir dir="${ivy.jar.path}"/>
     <get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.version}/ivy-${ivy.version}.jar"
-         dest="${basedir}/lib/ivy/ivy.jar" usetimestamp="true"/>
+         dest="${ivy.jar.path}/ivy.jar" usetimestamp="true"/>
   </target>
 
   <target name="install.library.versions.properties" description="Downloads library.versions.properties into .hackystat directory.">
@@ -34,7 +30,4 @@
     <get src="http://hackystat.googlecode.com/svn/trunk/configfiles/library.versions.properties"
          dest="${library.versions.path}" usetimestamp="true"/>
   </target>
-
-
-  
 </project>

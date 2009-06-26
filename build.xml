@@ -24,10 +24,10 @@
   <fail message="This package requires Ant 1.7." unless="ant.1.7.available" />
 
   <!-- Make sure Ivy is installed. -->
-  <import file="ivy.build.xml" />
-  <available file="${lib.dir}/ivy/ivy.jar" type="file" property="ivy.available" />
+  <import file="ivy.build.xml"/>
+  <available file="${ivy.jar.path}/ivy.jar" type="file" property="ivy.available" />
   <fail message="This package requires Ivy.  To install, invoke 'ant -f ivy.build.xml'." unless="ivy.available" />
-  <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path" />
+  <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpath="${ivy.jar.path}/ivy.jar"/>
 
   <!-- Make sure library.versions.properties is installed, which provides all library version numbers. -->
   <property name="library.versions.path" location="${user.home}/.hackystat/library.versions.properties" />

@@ -52,5 +52,10 @@
      </tstamp>
      <ivy:publish artifactspattern="${build.jar.dir}/[artifact].[ext]" resolver="local-repository" pubrevision="${publication-revision}" update="true"/>
    </target>   
+  
+  <target name="publish-all" description="Publish all dependent projects, then this one.">
+      <ant antfile="../hackystat-sensorbase-uh/jar.build.xml" target="publish-all" inheritAll="false"/>
+      <antcall target="publish"/>
+  </target>  
 </project>
 
