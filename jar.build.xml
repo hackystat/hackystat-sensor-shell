@@ -48,7 +48,7 @@
   <target name="publish" depends="jar" description="Publish this project in the local ivy repository">
     <ivy:resolve />
     <tstamp>
-      <format property="publication-revision" pattern="yyyy.MM.dd.hh.mm.ss" />
+      <format property="publication-revision" pattern="yyyy.MM.dd.HH.mm.ss" />
     </tstamp>
     <ivy:publish artifactspattern="${build.jar.dir}/[artifact].[ext]" resolver="local-repository" pubrevision="${publication-revision}" update="true" />
   </target>
