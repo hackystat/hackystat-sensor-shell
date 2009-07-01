@@ -6,6 +6,7 @@
   <import file="build.xml" />
   <property name="tmp.dir" location="${basedir}/tmp" />
   <property name="build.jar.dir" location="${build.dir}/jar" />
+  <delete dir="${build.jar.dir}" quiet="true"/>
 
   <target name="jar" depends="jar-clients">
     <!-- Temporary copy to ${basedir} to support packages still using HACKYSTAT_SENSORSHELL_HOME. -->

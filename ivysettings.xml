@@ -9,8 +9,8 @@
       </packager>
 
       <filesystem name="local-repository">
-        <artifact pattern="${user.home}/.ivy2/local-repository/[artifact]-[revision].[ext]" />
-        <ivy pattern="${user.home}/.ivy2/local-repository/[module]-[revision].xml" />
+        <artifact pattern="${user.home}/.ivy2/local-repository/[organization]/[module]/[revision]/[artifact]-[revision].[ext]" />
+        <ivy pattern="${user.home}/.ivy2/local-repository/[organization]/[module]/[revision]/[module]-[revision].xml" />
       </filesystem>
 
     </chain>
