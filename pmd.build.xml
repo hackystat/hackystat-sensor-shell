@@ -13,7 +13,7 @@
   <ivy:retrieve module="pmd" organisation="net.sourceforge.pmd" revision="${pmd.version}" pattern="${lib.dir}/pmd/[artifact].[ext]" sync="true" inline="true" log="download-only" type="jar,report"/>
 
   <property name="pmd.dir" location="${build.dir}/pmd" />
-  <property name="pmd.failonerror" value="true" />
+  <property name="pmd.failonerror" value="false" />
   
   <!-- Download the pmd.rulesets.xml file if necessary. -->
   <property name="pmd.rulesets.file" location="${configfiles.dir}/hackystat.pmd.xml"/>
