@@ -24,10 +24,10 @@
   <fail message="This package requires Ant 1.7." unless="ant.1.7.available" />
 
   <!-- Make sure Ivy is installed. -->
-  <import file="ivy.build.xml"/>
+  <import file="ivy.build.xml" />
   <available file="${ivy.jar.path}/ivy.jar" type="file" property="ivy.available" />
   <fail message="This package requires Ivy.  To install, invoke 'ant -f ivy.build.xml'." unless="ivy.available" />
-  <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpath="${ivy.jar.path}/ivy.jar"/>
+  <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpath="${ivy.jar.path}/ivy.jar" />
 
   <!-- Make sure library.versions.properties is installed, which provides all library version numbers. -->
   <property name="library.versions.path" location="${user.home}/.hackystat/library.versions.properties" />
@@ -41,12 +41,13 @@
   <property name="configfiles.dir" location="${lib.dir}/configfiles" />
   <mkdir dir="${configfiles.dir}" />
 
-  <!-- Install libraries required for compilation. -->
-  <ivy:retrieve organisation="org.junit" module="junit" revision="${junit.version}" pattern="${lib.dir}/junit/[artifact].[ext]" sync="true" inline="true" conf="default" log="download-only" transitive="false" type="jar" />
-  <path id="junit.path" location="${lib.dir}/junit/junit.jar" />
+  <target name="install-libraries" description="Install libraries needed for compilation">
+    <ivy:retrieve organisation="org.junit" module="junit" revision="${junit.version}" pattern="${lib.dir}/junit/[artifact].[ext]" sync="true" inline="true" conf="default" log="download-only" transitive="false" type="jar" />
+    <path id="junit.path" location="${lib.dir}/junit/junit.jar" />
 
-  <ivy:retrieve organisation="org.hackystat" module="hackystat-sensorbase-uh" revision="latest.integration" pattern="${lib.dir}/hackystat-sensorbase-uh/[artifact].[ext]" sync="true" inline="true" conf="default" log="download-only" transitive="false" type="jar" />
-  <path id="hackystat-sensorbase-uh.path" location="${lib.dir}/hackystat-sensorbase-uh/sensorbase.jar" />
+    <ivy:retrieve organisation="org.hackystat" module="hackystat-sensorbase-uh" revision="latest.integration" pattern="${lib.dir}/hackystat-sensorbase-uh/[artifact].[ext]" sync="true" inline="true" conf="default" log="download-only" transitive="false" type="jar" />
+    <path id="hackystat-sensorbase-uh.path" location="${lib.dir}/hackystat-sensorbase-uh/sensorbase.jar" />
+  </target>
 
   <!-- Basic properties for this system. -->
   <property name="system.name" value="hackystat-sensor-shell" />
@@ -72,7 +73,7 @@
     <path refid="hackystat-sensorbase-uh.path" />
   </path>
 
-  <target name="compile" description="Compiles the code.">
+  <target name="compile" depends="install-libraries" description="Compiles the code.">
     <!-- Now compile the code into build/classes -->
     <mkdir dir="${build.dir}/classes" />
     <javac srcdir="${src.dir}" destdir="${build.dir}/classes" source="1.5" target="1.5" debug="on" includeAntRuntime="no">
