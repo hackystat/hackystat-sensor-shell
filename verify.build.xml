@@ -19,38 +19,9 @@
   <import file="junit.build.xml"/>
   <import file="emma.build.xml"/>
   <import file="sclc.build.xml"/>
-  
-  <echo>
-    Hackystat Utilities Verification Task
-    
-    System and Environment settings:
-      Ant version:     ${ant.version}
-      Checkstyle Home: ${env.CHECKSTYLE_HOME}
-      Derby Home:      ${env.DERBY_HOME}
-      Emma Home:       ${env.EMMA_HOME}
-      FindBugs Home:   ${env.FINDBUGS_HOME} 
-      Java version:    ${java.version}
-      JUnit Home:      ${env.JUNIT_HOME}
-      PMD  Home:       ${env.PMD_HOME}
-      Restlet Home:    ${env.RESTLET_HOME}
-    
-      Hackystat SensorBase Home: ${env.HACKYSTAT_SENSORBASE_HOME}
-      Hackystat Utilities Home: ${env.HACKYSTAT_UTILITIES_HOME}
-    
-    This task fails the build unless all of the following are true:
-      * System compiles without warnings or errors.
-      * JavaDocs can be built without warnings or errors. 
-      * JUnit test cases all pass.
-      * Checkstyle of source code generates no warnings. 
-      * PMD generates no warnings. 
-      * FindBugs generates no warnings. 
-    
-    It also runs the Emma code coverage tool and prints a summary report. 
-  </echo>
       
   <target name="verify" 
-    depends="clean, compile, checkstyle,  junit, javadoc, findbugs,
-    emma, pmd, sclc, emma.echo" 
+    depends="clean, compile, checkstyle.tool, junit.tool, pmd.tool, findbugs.tool" 
     description="Invoke analyzers, fail if any errors found.">
       <fail message="FindBugs reported warnings." if="findbugs.warningsfound"/>
   </target>
