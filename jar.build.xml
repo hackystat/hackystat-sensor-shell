@@ -46,13 +46,17 @@
     <delete dir="${tmp.dir}" />
   </target>
 
-  <target name="publish" depends="jar" description="Publish this project in the local ivy repository">
+  <!--
+     Ivy publication targets.
+   -->
+  <import file="javadoc.build.xml"/>
+  <target name="publish" depends="jar, javadoc.zip" description="Publish this project in the local ivy repository">
     <ivy:resolve />
     <tstamp>
       <format property="publication-revision" pattern="yyyy.MM.dd.HH.mm.ss" />
     </tstamp>
-    <ivy:publish artifactspattern="${build.jar.dir}/[artifact].[ext]" resolver="local-repository" pubrevision="${publication-revision}" update="true" />
-  </target>
+    <ivy:publish artifactspattern="${build.jar.dir}/[artifact].[ext]" resolver="local-repository" pubrevision="${publication-revision}" update="true"/>
+  </target> 
 
   <target name="publish-all" description="Publish all dependent projects, then this one.">
     <ant antfile="../hackystat-sensorbase-uh/jar.build.xml" target="publish-all" inheritAll="false" />

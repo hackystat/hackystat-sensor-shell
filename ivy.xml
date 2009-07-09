@@ -3,6 +3,8 @@
   <publications>
     <artifact name="sensorshell" />
     <artifact name="shellperfeval" />
+    <artifact name="hackystat-sensor-shell-javadoc" type="javadoc" ext="zip"/>
+    <artifact name="hackystat-sensor-shell-source" type="source" ext="zip"/>
   </publications>
   <dependencies>
     <dependency org="org.junit" name="junit" rev="${junit.version}" />
