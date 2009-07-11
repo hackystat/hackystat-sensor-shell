@@ -48,7 +48,7 @@
 
   <!-- Basic properties for this system. -->
   <property name="majorVersionNumber" value="8" />
-  <property name="minorVersionNumber" value="x" />
+  <property name="minorVersionNumber" value="3" />
   <tstamp>
     <format property="DAYSTAMP" pattern="Mdd" />
   </tstamp>
@@ -62,5 +62,18 @@
   <condition property="hackystat.enabled">
     <istrue value="${hackystat.enable}" />
   </condition>
+  
+  <target name="convertLineEndings" description="Makes line endings compatible with host platform.">
+    <fixcrlf srcdir="${basedir}" includes="*.build.xml" />
+  </target>
+  
+  <target name="clean" description="Delete build/ directory and top-level jar files.">
+    <delete>
+      <fileset dir="${basedir}" includes="*.jar" />
+    </delete>
+    <delete dir="${build.dir}" />
+    <delete dir="${basedir}/sandbox" />
+  </target>
+
 
 </project>
