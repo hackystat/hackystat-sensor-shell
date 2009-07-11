@@ -9,12 +9,6 @@
   <delete dir="${build.jar.dir}" quiet="true"/>
 
   <target name="jar" depends="jar-clients">
-    <!-- Temporary copy to ${basedir} to support packages still using HACKYSTAT_SENSORSHELL_HOME. -->
-    <copy todir="${basedir}">
-      <fileset dir="${build.jar.dir}">
-        <include name="*.jar" />
-      </fileset>
-    </copy>
   </target>
 
   <target name="jar-clients" depends="compile" description="Create sensorshell.jar.">

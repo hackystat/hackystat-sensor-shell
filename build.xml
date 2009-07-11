@@ -2,44 +2,8 @@
   <description>
   The basic build file for the system. 
   </description>
-
-  <!-- Basic directory structure. -->
-  <property name="src.dir" location="${basedir}/src" />
-  <property name="lib.dir" location="${basedir}/lib" />
-  <property name="build.dir" location="${basedir}/build" />
-
-  <!-- Make sure we're running a Java 5 or better. -->
-  <condition property="java.5.available">
-    <or>
-      <contains string="${java.version}" substring="1.5" />
-      <contains string="${java.version}" substring="1.6" />
-    </or>
-  </condition>
-  <fail message="This package requires Java 5 or 6." unless="java.5.available" />
-
-  <!-- Make sure we're running Ant 1.7 . -->
-  <condition property="ant.1.7.available">
-    <contains string="${ant.version}" substring="1.7" />
-  </condition>
-  <fail message="This package requires Ant 1.7." unless="ant.1.7.available" />
-
-  <!-- Make sure Ivy is installed. -->
-  <import file="ivy.build.xml" />
-  <available file="${ivy.jar.path}/ivy.jar" type="file" property="ivy.available" />
-  <fail message="This package requires Ivy.  To install, invoke 'ant -f ivy.build.xml'." unless="ivy.available" />
-  <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpath="${ivy.jar.path}/ivy.jar" />
-
-  <!-- Make sure library.versions.properties is installed, which provides all library version numbers. -->
-  <property name="library.versions.path" location="${user.home}/.hackystat/library.versions.properties" />
-  <available file="${library.versions.path}" type="file" property="library.versions.available" />
-  <fail message="This package requires ~/.hackystat/library.versions.properties.  To install, invoke 'ant -f ivy.build.xml'." unless="library.versions.available" />
-  <!-- Now load all library version numbers. -->
-  <property file="${library.versions.path}" />
-
-  <!-- Where to look for configuration files (Checkstyle, PMD, FindBugs, etc.) -->
-  <property name="configfiles.url" value="http://hackystat.googlecode.com/svn/trunk/configfiles/" />
-  <property name="configfiles.dir" location="${lib.dir}/configfiles" />
-  <mkdir dir="${configfiles.dir}" />
+  
+  <import file="common.build.xml"/>
 
   <target name="install-libraries" description="Install libraries needed for compilation">
     <ivy:retrieve organisation="org.junit" module="junit" revision="${junit.version}" pattern="${lib.dir}/junit/[artifact].[ext]" sync="true" inline="true" conf="default" log="download-only" transitive="false" type="jar" />
@@ -51,21 +15,6 @@
 
   <!-- Basic properties for this system. -->
   <property name="system.name" value="hackystat-sensor-shell" />
-  <property name="majorVersionNumber" value="8" />
-  <property name="minorVersionNumber" value="x" />
-  <tstamp>
-    <format property="DAYSTAMP" pattern="Mdd" />
-  </tstamp>
-  <property name="version" value="${majorVersionNumber}.${minorVersionNumber}.${DAYSTAMP}" />
-
-  <!-- Hackystat sensor definitions and configuration. -->
-  <import file="hackystat.build.xml" />
-  <property name="hackystat.verbose.mode" value="false" />
-  <property name="hackystat.enable" value="true" />
-  <!-- define hackystat.enabled if hackystat.enable is true, so we can use it in an 'if' clause -->
-  <condition property="hackystat.enabled">
-    <istrue value="${hackystat.enable}" />
-  </condition>
 
   <!-- The compile classpath is useful to many tools. -->
   <path id="compile.classpath">
@@ -83,16 +32,6 @@
     </javac>
   </target>
 
-  <target name="clean" description="Delete build/ directory and top-level jar files.">
-    <delete>
-      <fileset dir="${basedir}" includes="*.jar" />
-    </delete>
-    <delete dir="${build.dir}" />
-  </target>
-
-  <target name="convertLineEndings" description="Makes line endings compatible with host platform.">
-    <fixcrlf srcdir="${basedir}" includes="*.build.xml" />
-  </target>
 </project>
 
 
