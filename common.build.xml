@@ -45,6 +45,10 @@
   <property name="configfiles.url" value="http://hackystat.googlecode.com/svn/trunk/configfiles/" />
   <property name="configfiles.dir" location="${lib.dir}/configfiles" />
   <mkdir dir="${configfiles.dir}" />
+  
+  <!-- Make sure that the JAXB library is available (by default in Java 6, through manual installation in Java 5. -->
+  <available classname="javax.xml.bind.JAXBContext" property="jaxb.available" />
+  <fail message="This package requires JAXB.  See http://code.google.com/p/hackystat/wiki/InstallingJAXBinJava5." unless="jaxb.available" />
 
   <!-- Basic properties for this system. -->
   <property name="majorVersionNumber" value="8" />
