@@ -22,7 +22,7 @@
     <path refid="hackystat-sensorbase-uh.path" />
   </path>
 
-  <target name="compile" depends="install-libraries" description="Compiles the code.">
+  <target name="compile" depends="install-ivy, install-libraries" description="Compiles the code.">
     <!-- Now compile the code into build/classes -->
     <mkdir dir="${build.dir}/classes" />
     <javac srcdir="${src.dir}" destdir="${build.dir}/classes" source="1.5" target="1.5" debug="on" includeAntRuntime="no">

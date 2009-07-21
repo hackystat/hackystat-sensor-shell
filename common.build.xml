@@ -1,6 +1,6 @@
-<project name="common" default="default" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="common" xmlns:ivy="antlib:org.apache.ivy.ant">
   <description>
-  A set of common Ant definitions for Hackystat. 
+  Boilerplate Ant code used by many Hackystat projects. 
   </description>
 
   <!-- Basic directory structure. -->
@@ -28,27 +28,40 @@
   </condition>
   <fail message="This package requires Ant 1.7.1 or better; found ${ant.version}" unless="ant.1.7.available" />
 
-  <!-- Make sure Ivy is installed. -->
-  <import file="ivy.build.xml" />
-  <available file="${ivy.jar.path}/ivy.jar" type="file" property="ivy.available" />
-  <fail message="This package requires Ivy.  To install, invoke 'ant -f ivy.build.xml'." unless="ivy.available" />
-  <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpath="${ivy.jar.path}/ivy.jar" />
-
-  <!-- Make sure library.versions.properties is installed, which provides all library version numbers. -->
+  <!-- Ivy download and configuration targets -->
+  <property name="ivy.jar.path" location="${user.home}/.ivy2/ivyjar/" />
   <property name="library.versions.path" location="${user.home}/.hackystat/library.versions.properties" />
-  <available file="${library.versions.path}" type="file" property="library.versions.available" />
-  <fail message="This package requires ~/.hackystat/library.versions.properties.  To install, invoke 'ant -f ivy.build.xml'." unless="library.versions.available" />
-  <!-- Now load all library version numbers. -->
   <property file="${library.versions.path}" />
+  <available file="${ivy.jar.path}/ivy.jar" type="file" property="ivy.available" />
+
+  <target name="install-ivy" depends="download-ivy-if-necessary" description="Makes Ivy tasks available, downloads Ivy first if necessary.">
+    <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpath="${ivy.jar.path}/ivy.jar" />
+  </target>
+
+  <target name="download-ivy-if-necessary" unless="ivy.available" description="Only downloads Ivy if necessary.">
+    <antcall target="download-ivy" />
+  </target>
+
+  <target name="download-ivy" depends="download-library-versions-properties" description="Downloads ivy.jar and the library.versions.properties files.">
+    <mkdir dir="${ivy.jar.path}" />
+    <get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.version}/ivy-${ivy.version}.jar" dest="${ivy.jar.path}/ivy.jar" usetimestamp="true" />
+  </target>
+
+  <target name="download-library-versions-properties">
+    <mkdir dir="${user.home}/.hackystat" />
+    <get src="http://hackystat.googlecode.com/svn/trunk/configfiles/library.versions.properties" dest="${library.versions.path}" usetimestamp="true" />
+    <property file="${library.versions.path}" />
+  </target>
+
+  <target name="clean-cache" description="Cleans the ivy cache">
+    <ivy:cleancache />
+  </target>
+
 
   <!-- Where to look for configuration files (Checkstyle, PMD, FindBugs, etc.) -->
   <property name="configfiles.url" value="http://hackystat.googlecode.com/svn/trunk/configfiles/" />
   <property name="configfiles.dir" location="${lib.dir}/configfiles" />
   <mkdir dir="${configfiles.dir}" />
-  
-  <!-- Make sure that the JAXB library is available (by default in Java 6, through manual installation in Java 5. -->
-  <available classname="javax.xml.bind.JAXBContext" property="jaxb.available" />
-  <fail message="This package requires JAXB.  See http://code.google.com/p/hackystat/wiki/InstallingJAXBinJava5." unless="jaxb.available" />
 
   <!-- Basic properties for this system. -->
   <property name="majorVersionNumber" value="8" />
@@ -59,18 +72,34 @@
   <property name="version" value="${majorVersionNumber}.${minorVersionNumber}.${DAYSTAMP}" />
 
   <!-- Hackystat sensor definitions and configuration. -->
-  <import file="hackystat.build.xml" />
+
+  <!--
+    You can change the default settings of the following two properties on the command line:
+       ant -Dhackystat.enable=false -f checkstyle.build.xml
+  -->
   <property name="hackystat.verbose.mode" value="false" />
-  <property name="hackystat.enable" value="false" />
-  <!-- define hackystat.enabled if hackystat.enable is true, so we can use it in an 'if' clause -->
+  <property name="hackystat.enable" value="true" />
+
+  <!-- define hackystat.enabled iff hackystat.enable is true, so we can use it in an 'if' clause -->
   <condition property="hackystat.enabled">
     <istrue value="${hackystat.enable}" />
   </condition>
-  
-  <target name="convertLineEndings" description="Makes line endings compatible with host platform.">
-    <fixcrlf srcdir="${basedir}" includes="*.build.xml" />
+
+  <property name="ant.lib.dir" location="${user.home}/.ant/lib" />
+  <target name="define-sensors" description="Checks to make sure antsensors.jar is installed. Fails build if absent, defines ant sensor tasks if present.">
+    <available file="${ant.lib.dir}/antsensors.jar" type="file" property="antsensors.available" />
+    <fail message="Hackystat sensors not installed. Please invoke 'ant install-sensors'." unless="antsensors.available" />
+    <taskdef resource="antlib.xml" classpath="${ant.lib.dir}/antsensors.jar" />
   </target>
-  
+
+  <!-- antsensors.jar cannot be automatically installed during a run due to a classpath problem in Restlet. We must require the user to invoke 'ant install-sensors'.-->
+  <target name="install-sensors" depends="install-ivy" description="Installs the Ant and XmlData sensors.">
+    <ivy:retrieve module="hackystat" organisation="org.hackystat" revision="${hackystat.version}" pattern="${ant.lib.dir}/[artifact].[ext]" sync="false" inline="true" log="download-only" conf="ant,xmldata" transitive="false" type="jar" />
+    <echo message="Installed Ant sensors version ${hackystat.version} into ${ant.lib.dir}" />
+  </target>
+
+  <!-- Miscellaneous housekeeping targets -->
+
   <target name="clean" description="Delete build/ directory and top-level jar files.">
     <delete>
       <fileset dir="${basedir}" includes="*.jar" />
@@ -79,5 +108,12 @@
     <delete dir="${basedir}/sandbox" />
   </target>
 
+  <target name="reallyclean" depends="clean" description="Delete build/ directory, top-level jar files, and lib/ directory.">
+    <delete dir="${lib.dir}" />
+  </target>
+
+  <target name="convertLineEndings" description="Makes line endings compatible with host platform.">
+    <fixcrlf srcdir="${basedir}" includes="*.build.xml" />
+  </target>
 
 </project>

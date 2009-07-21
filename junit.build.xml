@@ -36,11 +36,7 @@
     </junitreport>
   </target>
   
-  <target name="junit.sensor" description="Sends UnitTest data to Hackystat using the JUnit sensor.">
-    <ivy:retrieve module="hackystat" organisation="org.hackystat" revision="${hackystat.version}" pattern="${lib.dir}/hackystat/[artifact].[ext]" sync="true" inline="true" log="download-only" conf="ant" transitive="false" type="jar"/>
-    <taskdef resource="antlib.xml" classpath="${lib.dir}/hackystat/antsensors.jar" />
-
-    <!-- Send JUnit test data to Hackystat using the JUnit sensor. -->
+  <target name="junit.sensor" depends="define-sensors" if="hackystat.enabled" description="Sends UnitTest data to Hackystat using the JUnit sensor.">
     <hacky-junit verbose="${hackystat.verbose.mode}" failOnError="true">
       <sourcefiles>
         <fileset dir="${src.dir}" includes="**/*.java"/>
