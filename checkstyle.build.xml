@@ -29,10 +29,10 @@
     <path refid="compile.classpath"/>
   </path>
 
-  <target name="checkstyle" depends="compile, install-checkstyle, checkstyle.tool, checkstyle.report, checkstyle.sensor" 
+  <target name="checkstyle" depends="compile, checkstyle.tool, checkstyle.report, checkstyle.sensor" 
       description="Runs Checkstyle."/>
 
-  <target name="checkstyle.tool" depends="checkstyle.install.config.file" description="Checks the style of the sources and reports issues.">
+  <target name="checkstyle.tool" depends="install-checkstyle, checkstyle.install.config.file" description="Checks the style of the sources and reports issues.">
     <taskdef resource="checkstyletask.properties" classpath="${checkstyle.install.dir}/${checkstyle.jar}" />
     <mkdir dir="${checkstyle.dir}"/>
     <checkstyle config="${checkstyle.config.file.path}"
