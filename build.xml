@@ -25,7 +25,7 @@
   <target name="compile" depends="install-ivy, install-libraries" description="Compiles the code.">
     <!-- Now compile the code into build/classes -->
     <mkdir dir="${build.dir}/classes" />
-    <javac srcdir="${src.dir}" destdir="${build.dir}/classes" source="1.5" target="1.5" debug="on" includeAntRuntime="no">
+    <javac srcdir="${src.dir}" destdir="${build.dir}/classes" debug="on" includeAntRuntime="no">
       <classpath refid="compile.classpath" />
       <compilerarg value="-Xlint:all" />
       <compilerarg value="-Werror" />
