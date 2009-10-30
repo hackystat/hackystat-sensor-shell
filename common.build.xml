@@ -7,7 +7,7 @@
   <property name="src.dir" location="${basedir}/src" />
   <property name="lib.dir" location="${basedir}/lib" />
   <property name="build.dir" location="${basedir}/build" />
-
+  
   <!-- Make sure we're running a Java 5 or better. -->
   <condition property="java.5.available">
     <or>
@@ -16,6 +16,9 @@
     </or>
   </condition>
   <fail message="This package requires Java 5 or 6." unless="java.5.available" />
+  
+  <!-- Define the target JVM. Because Eclipse/MacOS runs under 1.5, we must specify 1.5. -->
+  <property name="hackystat.javac.target" value="1.5"/>
 
   <!-- Make sure we're running Ant 1.7.1 or better. Ant 1.7.0 has a bug that we must avoid.  -->
   <condition property="ant.1.7.available">
