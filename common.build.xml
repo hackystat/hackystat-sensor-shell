@@ -68,7 +68,7 @@
 
   <!-- Basic properties for this system. -->
   <property name="majorVersionNumber" value="8" />
-  <property name="minorVersionNumber" value="3" />
+  <property name="minorVersionNumber" value="4" />
   <tstamp>
     <format property="DAYSTAMP" pattern="Mdd" />
   </tstamp>
